@@ -1,0 +1,47 @@
+# 下载的视频文件
+downloads/
+*.mp4
+*.mov
+*.mkv
+*.avi
+*.webm
+*.m4v
+*.flv
+
+# Python 虚拟环境
+venv/
+.venv/
+env/
+.env/
+
+# Python 缓存
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# 编辑器和 IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# 日志文件
+*.log
+
+# 环境变量文件
+.env
+.env.local
+
+# 临时文件
+*.tmp
+*.temp
+
+# 本地项目记录和生成清单
+MEMORY.md
+YT_DLP_SUPPORTED_SITES.txt
+
+# CocoIndex Code (ccc)
+/.cocoindex_code/

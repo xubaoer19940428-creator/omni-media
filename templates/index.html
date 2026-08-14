@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="QuickClean parses public video links and downloads available source files from major platforms."
+    />
+    <title>QuickClean — Public Video Downloader</title>
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="{{ url_for('static', filename='images/quickclean-logo/icon.svg') }}"
+    />
+    <link
+      rel="shortcut icon"
+      type="image/x-icon"
+      href="{{ url_for('static', filename='images/quickclean-logo/favicon.ico') }}"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,500;9..40,600;9..40,700;9..40,800&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="{{ url_for('static', filename='css/style.css') }}"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="site-header">
+        <a class="brand" href="/" aria-label="QuickClean home">
+          <img
+            class="brand-symbol"
+            src="{{ url_for('static', filename='images/quickclean-logo/icon.svg') }}"
+            alt=""
+          />
+          <span>QuickClean</span>
+        </a>
+
+        <div class="header-meta">
+          <span class="meta-item">
+            <span class="status-dot" aria-hidden="true"></span>
+            Local tool ready
+          </span>
+          <span class="meta-item meta-item-muted">{{ platforms|length }} platforms supported</span>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <section class="hero reveal reveal-1" aria-labelledby="pageTitle">
+          <p class="eyebrow">
+            <span>MEDIA FETCHER</span>
+            <span aria-hidden="true">/</span>
+            <span>Public media tool</span>
+          </p>
+          <h1 id="pageTitle">Public videos,<br />ready to save.</h1>
+          <p class="hero-copy">
+            Paste a public share link to inspect its metadata and download the
+            best source file currently available. No account details or browsing
+            history are stored here.
+          </p>
+        </section>
+
+        <section class="command-panel instrument-panel reveal reveal-2">
+          <div class="command-label-row">
+            <label for="shareUrl">Source video link</label>
+            <span>URL / SHARE TEXT</span>
+          </div>
+
+          <div class="command-bar">
+            <span class="command-prefix" aria-hidden="true">
+              <i class="fas fa-link"></i>
+            </span>
+            <input
+              type="text"
+              id="shareUrl"
+              autocomplete="url"
+              inputmode="url"
+              placeholder="Paste a public video link from any supported platform"
+            />
+            <button type="button" id="parseBtn" class="primary-action">
+              <span>Parse link</span>
+              <span class="action-icon" aria-hidden="true">
+                <i class="fas fa-arrow-right"></i>
+              </span>
+            </button>
+          </div>
+
+          <div class="command-footnote">
+            <span><i class="fas fa-shield-halved" aria-hidden="true"></i> Public content only</span>
+            <span><i class="fas fa-clock" aria-hidden="true"></i> Cached files can be cleared manually</span>
+          </div>
+        </section>
+
+        <section class="platform-strip reveal reveal-3" aria-label="Supported platforms">
+          <span class="platform-heading">COMPATIBILITY</span>
+          <div class="platform-list">
+            {% for platform in platforms %}
+            <span class="platform-chip">
+              <span aria-hidden="true">{{ platform.icon }}</span>
+              {{ platform.name }}
+            </span>
+            {% endfor %}
+          </div>
+        </section>
+
+        <section
+          id="loading"
+          class="status-panel instrument-panel"
+          style="display: none"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <div class="loading-track" aria-hidden="true">
+            <span></span>
+          </div>
+          <div class="status-copy">
+            <span class="status-code">FETCHING_METADATA</span>
+            <p>Reading metadata from the public page…</p>
+          </div>
+        </section>
+
+        <section
+          id="errorAlert"
+          class="error-panel instrument-panel"
+          style="display: none"
+          role="alert"
+        >
+          <span class="error-icon" aria-hidden="true">
+            <i class="fas fa-triangle-exclamation"></i>
+          </span>
+          <div>
+            <span class="status-code">REQUEST_ERROR</span>
+            <p id="errorMessage"></p>
+          </div>
+        </section>
+
+        <section id="videoInfo" class="result-section" style="display: none">
+          <article class="result-panel instrument-panel">
+            <div class="result-media">
+              <div class="preview-frame">
+                <img id="coverImage" src="" alt="Video cover preview" />
+                <span class="preview-badge">
+                  <span class="status-dot" aria-hidden="true"></span>
+                  Video found
+                </span>
+              </div>
+
+              <div class="stats-grid">
+                <div class="stat-item">
+                  <span>Likes</span>
+                  <strong id="likeCount">0</strong>
+                </div>
+                <div class="stat-item">
+                  <span>Comments</span>
+                  <strong id="commentCount">0</strong>
+                </div>
+                <div class="stat-item">
+                  <span>Shares / Views</span>
+                  <strong id="shareCount">0</strong>
+                </div>
+                <div class="stat-item">
+                  <span>Duration</span>
+                  <strong id="duration">0s</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="result-details">
+              <div>
+                <div class="result-kicker">
+                  <span>SOURCE READY</span>
+                  <span>// PUBLIC_MEDIA</span>
+                </div>
+                <h2 id="videoTitle" class="video-title"></h2>
+                <p class="video-author">
+                  <i class="fas fa-circle-user" aria-hidden="true"></i>
+                  <span id="videoAuthor"></span>
+                </p>
+              </div>
+
+              <div class="action-buttons">
+                <button id="downloadBtn" class="primary-action" type="button">
+                  <i class="fas fa-download" aria-hidden="true"></i>
+                  <span>Download video</span>
+                </button>
+                <button id="copyInfoBtn" class="secondary-action" type="button">
+                  <i class="fas fa-copy" aria-hidden="true"></i>
+                  <span>Copy details</span>
+                </button>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section
+          id="downloadProgress"
+          class="status-panel instrument-panel"
+          style="display: none"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <div class="loading-track" aria-hidden="true">
+            <span></span>
+          </div>
+          <div class="status-copy">
+            <span class="status-code">DOWNLOADING_SOURCE</span>
+            <p>Fetching the source file. Larger videos may take a little longer…</p>
+          </div>
+        </section>
+
+        <section
+          id="downloadComplete"
+          class="complete-panel instrument-panel"
+          style="display: none"
+          aria-live="polite"
+        >
+          <div class="complete-copy">
+            <span class="complete-icon" aria-hidden="true">
+              <i class="fas fa-check"></i>
+            </span>
+            <div>
+              <span class="status-code">FILE_READY</span>
+              <h3>Your file is ready</h3>
+              <p>Save it locally, then clear the temporary server cache when finished.</p>
+            </div>
+          </div>
+          <div class="complete-actions">
+            <a id="downloadLink" href="#" class="primary-action">
+              <i class="fas fa-floppy-disk" aria-hidden="true"></i>
+              Save file
+            </a>
+            <button id="cleanupBtn" class="secondary-action" type="button">
+              <i class="fas fa-broom" aria-hidden="true"></i>
+              Clear cache
+            </button>
+          </div>
+        </section>
+
+        <section class="workflow reveal reveal-4" aria-labelledby="workflowTitle">
+          <div class="workflow-heading">
+            <span class="platform-heading">WORKFLOW</span>
+            <h2 id="workflowTitle">Download in three steps</h2>
+          </div>
+          <ol class="workflow-grid">
+            <li>
+              <span class="step-number">01</span>
+              <div>
+                <h3>Paste a link</h3>
+                <p>Copy a public share link or the complete share text.</p>
+              </div>
+            </li>
+            <li>
+              <span class="step-number">02</span>
+              <div>
+                <h3>Check the details</h3>
+                <p>Confirm the title, creator, cover, and duration.</p>
+              </div>
+            </li>
+            <li>
+              <span class="step-number">03</span>
+              <div>
+                <h3>Save the file</h3>
+                <p>Download the best format currently available from the platform.</p>
+              </div>
+            </li>
+          </ol>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <div>
+          <strong>QuickClean</strong>
+          <span>Public media utility</span>
+        </div>
+        <p>Respect copyright. Download only public content you are authorized to use.</p>
+      </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  </body>
+</html>

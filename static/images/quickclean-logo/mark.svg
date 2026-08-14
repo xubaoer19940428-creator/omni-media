@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">QuickClean logo</title>
+  <desc id="desc">A precision download arrow entering a clean tray with a sparkle, inside a compact instrument badge.</desc>
+  <rect x="54" y="28" width="156" height="156" rx="38" fill="#B9D9FF"/>
+  <rect x="42" y="16" width="156" height="156" rx="38" fill="#161914"/>
+  <rect x="64" y="38" width="112" height="112" rx="27" fill="#F4F1EA"/>
+  <rect x="74" y="122" width="92" height="16" rx="8" fill="#C8F169"/>
+  <rect x="118" y="59" width="20" height="48" rx="10" fill="#161914"/>
+  <path d="M96 99L128 131L160 99H140V91H116V99H96Z" fill="#161914"/>
+  <path d="M160 45L165 57L177 62L165 67L160 79L155 67L143 62L155 57L160 45Z" fill="#C8F169"/>
+  <circle cx="79" cy="63" r="6" fill="#B9D9FF"/>
+  <text x="128" y="224" fill="#161914" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="700" letter-spacing="-1.2" text-anchor="middle">QuickClean</text>
+</svg>
