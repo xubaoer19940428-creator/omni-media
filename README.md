@@ -30,32 +30,32 @@ A powerful multi-platform video watermark removal and downloading tool that reco
 
 ## 🌍 Supported Platforms
 
-| Platform | Parse | Download | No Watermark | Note |
-| :--- | :---: | :---: | :---: | :--- |
-| 🎶 Douyin | ✅ | ✅ | ✅ | Supports pasting full share text directly |
-| 🎵 TikTok | ✅ | ✅ | ✅ | Supports full URLs and short links |
-| ✈️ Telegram | ✅ | ✅ | - | Supports public channel video posts |
-| 📸 Instagram | ✅ | ✅ | - | Supports Posts and Reels |
-| 🎬 YouTube | ✅ | ✅ | - | Supports standard Videos and Shorts |
-| 🐦 Twitter/X | ✅ | ✅ | - | Supports tweet videos |
-| 📘 Facebook | ✅ | ✅ | - | Supports public videos |
-| 📺 Bilibili | ✅ | ✅ | - | Supports standard public videos |
-| 🔴 Weibo | ✅ | ✅ | - | Supports video posts |
-| 🤖 Reddit | ✅ | ✅ | - | Supports public post videos |
-| 🎞️ Vimeo | ✅ | ✅ | - | Supports public standalone videos |
-| ▶️ Dailymotion | ✅ | ✅ | - | Supports public videos |
-| 🟣 Twitch | ✅ | ✅ | - | Supports Live streams, VODs, and Clips |
-| 📌 Pinterest | ✅ | ✅ | - | Supports public video Pins |
-| 📝 Tumblr | ✅ | ✅ | - | Supports public post videos |
-| 🟢 Rumble | ✅ | ✅ | - | Supports public videos |
-| 📕 Xiaohongshu (RED) | ✅ | ✅ | - | Supports public video notes |
-| 📺 AcFun | ✅ | ✅ | - | Supports public videos and bangumi |
-| 🎬 Youku | ✅ | ✅ | - | Supports public videos |
-| 📽️ iQIYI | ✅ | ✅ | - | Supports public videos |
-| 🐧 Tencent Video | ✅ | ✅ | - | Supports v.qq.com public videos |
-| 🍉 Xigua Video | ✅ | ✅ | - | Supports public videos |
+| Platform             | Parse | Download | No Watermark | Note                                      |
+| :------------------- | :---: | :------: | :----------: | :---------------------------------------- |
+| 🎶 Douyin            |  ✅   |    ✅    |      ✅      | Supports pasting full share text directly |
+| 🎵 TikTok            |  ✅   |    ✅    |      ✅      | Supports full URLs and short links        |
+| ✈️ Telegram          |  ✅   |    ✅    |      -       | Supports public channel video posts       |
+| 📸 Instagram         |  ✅   |    ✅    |      -       | Supports Posts and Reels                  |
+| 🎬 YouTube           |  ✅   |    ✅    |      -       | Supports standard Videos and Shorts       |
+| 🐦 Twitter/X         |  ✅   |    ✅    |      -       | Supports tweet videos                     |
+| 📘 Facebook          |  ✅   |    ✅    |      -       | Supports public videos                    |
+| 📺 Bilibili          |  ✅   |    ✅    |      -       | Supports standard public videos           |
+| 🔴 Weibo             |  ✅   |    ✅    |      -       | Supports video posts                      |
+| 🤖 Reddit            |  ✅   |    ✅    |      -       | Supports public post videos               |
+| 🎞️ Vimeo             |  ✅   |    ✅    |      -       | Supports public standalone videos         |
+| ▶️ Dailymotion       |  ✅   |    ✅    |      -       | Supports public videos                    |
+| 🟣 Twitch            |  ✅   |    ✅    |      -       | Supports Live streams, VODs, and Clips    |
+| 📌 Pinterest         |  ✅   |    ✅    |      -       | Supports public video Pins                |
+| 📝 Tumblr            |  ✅   |    ✅    |      -       | Supports public post videos               |
+| 🟢 Rumble            |  ✅   |    ✅    |      -       | Supports public videos                    |
+| 📕 Xiaohongshu (RED) |  ✅   |    ✅    |      -       | Supports public video notes               |
+| 📺 AcFun             |  ✅   |    ✅    |      -       | Supports public videos and bangumi        |
+| 🎬 Youku             |  ✅   |    ✅    |      -       | Supports public videos                    |
+| 📽️ iQIYI             |  ✅   |    ✅    |      -       | Supports public videos                    |
+| 🐧 Tencent Video     |  ✅   |    ✅    |      -       | Supports v.qq.com public videos           |
+| 🍉 Xigua Video       |  ✅   |    ✅    |      -       | Supports public videos                    |
 
-*Paid, private, login-required, geo-restricted, or DRM-protected content is not guaranteed to be parsed and this tool will not attempt to bypass access restrictions.*
+_Paid, private, login-required, geo-restricted, or DRM-protected content is not guaranteed to be parsed and this tool will not attempt to bypass access restrictions._
 
 ## 🚀 Quick Start
 
@@ -68,30 +68,30 @@ A powerful multi-platform video watermark removal and downloading tool that reco
 
 1. **Clone the repository**
 
-   ```bash
-   git clone https://github.com/xubaoer19940428-creator/remove-watermark.git
-   cd remove-watermark
-   ```
+    ```bash
+    git clone https://github.com/xubaoer19940428-creator/remove-watermark.git
+    cd remove-watermark
+    ```
 
 2. **Create virtual environment (recommended)**
 
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate  # macOS/Linux
-   # or .\venv\Scripts\activate  # Windows
-   ```
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate  # macOS/Linux
+    # or .\venv\Scripts\activate  # Windows
+    ```
 
 3. **Install dependencies**
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+    ```bash
+    pip install -r requirements.txt
+    ```
 
 4. **Run the application**
 
-   ```bash
-   python app.py
-   ```
+    ```bash
+    python app.py
+    ```
 
 5. **Open in browser**
    Navigate to `http://localhost:7860`
@@ -139,7 +139,7 @@ https://t.me/channel_name/12345
 https://t.me/s/channel_name/12345
 ```
 
-*Private groups, secret chats, and login-restricted posts are not supported.*
+_Private groups, secret chats, and login-restricted posts are not supported._
 
 **YouTube:**
 
@@ -155,20 +155,20 @@ https://www.youtube.com/shorts/xxxxx
 
 ### Backend
 
-| Technology | Purpose |
-| --- | --- |
-| **Flask** | Web framework and REST APIs |
-| **yt-dlp** | Multi-platform video parsing and downloading engine |
+| Technology    | Purpose                                                       |
+| ------------- | ------------------------------------------------------------- |
+| **Flask**     | Web framework and REST APIs                                   |
+| **yt-dlp**    | Multi-platform video parsing and downloading engine           |
 | **curl_cffi** | Browser-impersonated requests and Douyin mobile page scraping |
-| **requests** | General HTTP requests / Image proxying |
+| **requests**  | General HTTP requests / Image proxying                        |
 
 ### Frontend
 
-| Technology | Purpose |
-| --- | --- |
-| **Font Awesome** | Iconography |
-| **Vanilla JavaScript** | Client-side interaction logic |
-| **CSS3 Animations** | Responsive layout and loading transitions |
+| Technology             | Purpose                                   |
+| ---------------------- | ----------------------------------------- |
+| **Font Awesome**       | Iconography                               |
+| **Vanilla JavaScript** | Client-side interaction logic             |
+| **CSS3 Animations**    | Responsive layout and loading transitions |
 
 ### Directory Structure
 
@@ -207,21 +207,21 @@ Content-Type: application/json
 
 ```json
 {
-  "success": true,
-  "platform": "douyin",
-  "platform_name": "抖音",
-  "video_id": "7589158631908658458",
-  "video_info": {
-    "title": "Video title...",
-    "author": "Author name",
-    "video_url": "https://...",
-    "cover_url": "https://...",
-    "duration": 233,
-    "like_count": 44150,
-    "comment_count": 4466,
-    "view_count": 8241
-  },
-  "has_download_url": true
+	"success": true,
+	"platform": "douyin",
+	"platform_name": "抖音",
+	"video_id": "7589158631908658458",
+	"video_info": {
+		"title": "Video title...",
+		"author": "Author name",
+		"video_url": "https://...",
+		"cover_url": "https://...",
+		"duration": 233,
+		"like_count": 44150,
+		"comment_count": 4466,
+		"view_count": 8241
+	},
+	"has_download_url": true
 }
 ```
 
