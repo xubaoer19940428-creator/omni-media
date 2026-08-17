@@ -1,6 +1,12 @@
-# 🎬 多平台视频去水印下载工具
+# 🎬 Multi-Platform Video Watermark Remover & Downloader
 
-一个功能强大的多平台视频去水印工具，正式识别并处理 **22 个主流平台**的公开链接。
+<div align="center">
+
+[ English ](README.md) | [ 简体中文 ](README_zh.md)
+
+</div>
+
+A powerful multi-platform video watermark removal and downloading tool that recognizes and handles public links across **22 mainstream platforms**.
 
 <div align="center">
 
@@ -11,130 +17,131 @@
 
 </div>
 
-## ✨ 功能特性
+## ✨ Features
 
-- 🌐 **多平台支持** - 一站式识别 22 个主流视频平台
-- 🔗 **智能解析** - 支持各种分享链接格式，直接粘贴分享文本即可
-- 🎬 **无水印下载** - 获取高质量无水印视频（抖音去 Logo）
-- 📊 **信息提取** - 获取视频标题、作者、时长、点赞等数据
-- 🎨 **现代界面** - 精密工具台风格的响应式 Web 界面
-- ⚡ **快速处理** - 高效的视频解析和下载
-- 📱 **移动适配** - 完美支持手机和桌面设备
-- 🖼️ **图片代理** - 解决 Instagram 等平台封面图跨域加载问题
+- 🌐 **Multi-Platform Support** — One-stop recognition for 22 mainstream video platforms
+- 🔗 **Smart Parsing** — Supports various share link formats; paste raw share text directly
+- 🎬 **Watermark-Free Download** — Extract high-quality watermark-free videos (Douyin logo removal)
+- 📊 **Metadata Extraction** — Retrieve title, author, duration, likes, comments, and view counts
+- 🎨 **Modern Interface** — Precision workbench style responsive web UI
+- ⚡ **High Performance** — Fast and efficient video parsing and downloading
+- 📱 **Mobile Friendly** — Fully responsive for mobile and desktop screens
+- 🖼️ **Image Proxy** — Resolves CORS image loading issues for Instagram and other platforms
 
-## 🌍 支持平台
+## 🌍 Supported Platforms
 
-| 平台         | 解析 | 下载 | 无水印 | 备注                 |
-| ------------ | :--: | :--: | :----: | -------------------- |
-| 🎶 抖音      |  ✅  |  ✅  |   ✅   | 支持直接粘贴分享文本 |
-| 🎵 TikTok    |  ✅  |  ✅  |   ✅   | 支持完整链接和短链接 |
-| ✈️ Telegram  |  ✅  |  ✅  |   -    | 支持公开频道视频帖子 |
-| 📸 Instagram |  ✅  |  ✅  |   -    | 支持 Post 和 Reel    |
-| 🎬 YouTube   |  ✅  |  ✅  |   -    | 支持视频和 Shorts    |
-| 🐦 Twitter/X |  ✅  |  ✅  |   -    | 支持推文视频         |
-| 📘 Facebook  |  ✅  |  ✅  |   -    | 支持公开视频         |
-| 📺 B站       |  ✅  |  ✅  |   -    | 支持普通视频         |
-| 🔴 微博      |  ✅  |  ✅  |   -    | 支持视频微博         |
-| 🤖 Reddit    |  ✅  |  ✅  |   -    | 支持公开帖子视频     |
-| 🎞️ Vimeo    |  ✅  |  ✅  |   -    | 支持公开独立视频     |
-| ▶️ Dailymotion | ✅ | ✅ | - | 支持公开视频 |
-| 🟣 Twitch    |  ✅  |  ✅  |   -    | 支持直播、VOD、Clip  |
-| 📌 Pinterest |  ✅  |  ✅  |   -    | 支持公开视频 Pin     |
-| 📝 Tumblr    |  ✅  |  ✅  |   -    | 支持公开帖子视频     |
-| 🟢 Rumble    |  ✅  |  ✅  |   -    | 支持公开视频         |
-| 📕 小红书    |  ✅  |  ✅  |   -    | 支持公开笔记视频     |
-| 📺 AcFun     |  ✅  |  ✅  |   -    | 支持视频和番剧       |
-| 🎬 优酷      |  ✅  |  ✅  |   -    | 支持公开视频         |
-| 📽️ 爱奇艺   |  ✅  |  ✅  |   -    | 支持公开视频         |
-| 🐧 腾讯视频  |  ✅  |  ✅  |   -    | 支持 v.qq.com 视频   |
-| 🍉 西瓜视频  |  ✅  |  ✅  |   -    | 支持公开视频         |
-付费、私密、登录后、地区限制或 DRM 保护内容不保证可解析，也不会尝试绕过访问限制。
+| Platform | Parse | Download | No Watermark | Note |
+| :--- | :---: | :---: | :---: | :--- |
+| 🎶 Douyin | ✅ | ✅ | ✅ | Supports pasting full share text directly |
+| 🎵 TikTok | ✅ | ✅ | ✅ | Supports full URLs and short links |
+| ✈️ Telegram | ✅ | ✅ | - | Supports public channel video posts |
+| 📸 Instagram | ✅ | ✅ | - | Supports Posts and Reels |
+| 🎬 YouTube | ✅ | ✅ | - | Supports standard Videos and Shorts |
+| 🐦 Twitter/X | ✅ | ✅ | - | Supports tweet videos |
+| 📘 Facebook | ✅ | ✅ | - | Supports public videos |
+| 📺 Bilibili | ✅ | ✅ | - | Supports standard public videos |
+| 🔴 Weibo | ✅ | ✅ | - | Supports video posts |
+| 🤖 Reddit | ✅ | ✅ | - | Supports public post videos |
+| 🎞️ Vimeo | ✅ | ✅ | - | Supports public standalone videos |
+| ▶️ Dailymotion | ✅ | ✅ | - | Supports public videos |
+| 🟣 Twitch | ✅ | ✅ | - | Supports Live streams, VODs, and Clips |
+| 📌 Pinterest | ✅ | ✅ | - | Supports public video Pins |
+| 📝 Tumblr | ✅ | ✅ | - | Supports public post videos |
+| 🟢 Rumble | ✅ | ✅ | - | Supports public videos |
+| 📕 Xiaohongshu (RED) | ✅ | ✅ | - | Supports public video notes |
+| 📺 AcFun | ✅ | ✅ | - | Supports public videos and bangumi |
+| 🎬 Youku | ✅ | ✅ | - | Supports public videos |
+| 📽️ iQIYI | ✅ | ✅ | - | Supports public videos |
+| 🐧 Tencent Video | ✅ | ✅ | - | Supports v.qq.com public videos |
+| 🍉 Xigua Video | ✅ | ✅ | - | Supports public videos |
 
-## 🚀 快速开始
+*Paid, private, login-required, geo-restricted, or DRM-protected content is not guaranteed to be parsed and this tool will not attempt to bypass access restrictions.*
 
-### 环境要求
+## 🚀 Quick Start
 
-- Python 3.10+（推荐使用与 Docker 镜像一致的 Python 3.12）
+### Requirements
+
+- Python 3.10+ (Python 3.12 matching Docker image is recommended)
 - pip
 
-### 安装步骤
+### Installation Steps
 
-1. **克隆项目**
+1. **Clone the repository**
 
    ```bash
    git clone https://github.com/xubaoer19940428-creator/remove-watermark.git
    cd remove-watermark
    ```
 
-2. **创建虚拟环境（推荐）**
+2. **Create virtual environment (recommended)**
 
    ```bash
    python3 -m venv venv
    source venv/bin/activate  # macOS/Linux
-   # 或 .\venv\Scripts\activate  # Windows
+   # or .\venv\Scripts\activate  # Windows
    ```
 
-3. **安装依赖**
+3. **Install dependencies**
 
    ```bash
    pip install -r requirements.txt
    ```
 
-4. **运行应用**
+4. **Run the application**
 
    ```bash
    python app.py
    ```
 
-5. **访问应用**
-   打开浏览器访问 `http://localhost:7860`
+5. **Open in browser**
+   Navigate to `http://localhost:7860`
 
-### 一键启动（macOS/Linux）
+### One-Click Launch (macOS/Linux)
 
 ```bash
 ./start.sh
 ```
 
-### 一键启动（Windows）
+### One-Click Launch (Windows)
 
 ```bash
 start.bat
 ```
 
-## 📖 使用说明
+## 📖 Usage Guide
 
-### 基本使用
+### Basic Usage
 
-1. **复制视频链接** — 在任意支持的平台复制视频分享链接
-2. **粘贴并解析** — 将链接（或完整分享文本）粘贴到输入框，点击"解析"
-3. **查看视频信息** — 系统显示封面、标题、作者、统计数据
-4. **下载视频** — 点击"下载无水印视频"进行下载
+1. **Copy video link** — Copy share link from any supported platform.
+2. **Paste & Parse** — Paste the URL (or full share text) into the input box and click "Parse".
+3. **Inspect video metadata** — View cover image, title, author, and statistics.
+4. **Download video** — Click "Download Watermark-Free Video" to save the file.
 
-### 支持的链接格式
+### Supported URL Formats
 
-**抖音** — 直接粘贴分享文本即可：
+**Douyin** — Paste the raw share text directly:
 
 ```
-2.84 04/14 Vlp:/ P@X.ZZ 标题... https://v.douyin.com/xxxxx/ 复制此链接...
+2.84 04/14 Vlp:/ P@X.ZZ Title... https://v.douyin.com/xxxxx/ Copy this link...
 ```
 
-**TikTok：**
+**TikTok:**
 
 ```
 https://www.tiktok.com/@username/video/1234567890
 https://vm.tiktok.com/xxxxx/
 ```
 
-**Telegram（公开频道帖子）：**
+**Telegram (Public channel posts):**
 
 ```
 https://t.me/channel_name/12345
 https://t.me/s/channel_name/12345
 ```
 
-私密群组、私聊以及需要登录才能查看的内容不受支持。
+*Private groups, secret chats, and login-restricted posts are not supported.*
 
-**YouTube：**
+**YouTube:**
 
 ```
 https://www.youtube.com/watch?v=xxxxx
@@ -142,60 +149,61 @@ https://youtu.be/xxxxx
 https://www.youtube.com/shorts/xxxxx
 ```
 
-**Instagram / Twitter / Facebook / B站 / 微博** — 直接粘贴视频链接即可。
+**Instagram / Twitter / Facebook / Bilibili / Weibo** — Paste the video URL directly.
 
-## 🛠️ 技术架构
+## 🛠️ Architecture & Tech Stack
 
-### 后端
+### Backend
 
-| 技术              | 用途                         |
-| ----------------- | ---------------------------- |
-| **Flask**         | Web 框架                     |
-| **yt-dlp**        | 多平台视频解析/下载引擎      |
-| **curl_cffi**     | 浏览器兼容请求与抖音页面访问 |
-| **requests**      | HTTP 请求 / 图片代理         |
+| Technology | Purpose |
+| --- | --- |
+| **Flask** | Web framework and REST APIs |
+| **yt-dlp** | Multi-platform video parsing and downloading engine |
+| **curl_cffi** | Browser-impersonated requests and Douyin mobile page scraping |
+| **requests** | General HTTP requests / Image proxying |
 
-### 前端
+### Frontend
 
-| 技术                | 用途               |
-| ------------------- | ------------------ |
-| **Font Awesome**    | 图标库             |
-| **原生 JavaScript** | 交互逻辑           |
-| **CSS3 动画**       | 加载动画和过渡效果 |
+| Technology | Purpose |
+| --- | --- |
+| **Font Awesome** | Iconography |
+| **Vanilla JavaScript** | Client-side interaction logic |
+| **CSS3 Animations** | Responsive layout and loading transitions |
 
-### 核心模块
+### Directory Structure
 
 ```
 remove-watermark/
-├── app.py                    # Flask 应用主文件，API 路由
-├── universal_downloader.py   # 🌐 通用下载器（多平台核心）
-├── requirements.txt          # Python 依赖
-├── README.md                 # 项目说明
-├── start.sh / start.bat      # 一键启动脚本
+├── app.py                    # Flask application entry point & API routes
+├── universal_downloader.py   # 🌐 Universal downloader core (multi-platform)
+├── requirements.txt          # Python dependencies
+├── README.md                 # Project documentation (English, Default)
+├── README_zh.md              # Project documentation (Chinese)
+├── start.sh / start.bat      # One-click start scripts
 ├── templates/
-│   └── index.html            # 主页面模板
+│   └── index.html            # Main HTML template
 ├── static/
 │   ├── css/
-│   │   └── style.css         # 样式文件
+│   │   └── style.css         # UI styles
 │   └── js/
-│       └── app.js            # 前端交互逻辑
-└── downloads/                # 下载文件目录（自动创建）
+│       └── app.js            # Frontend JavaScript logic
+└── downloads/                # Downloaded files cache directory (auto-created)
 ```
 
-## 🔍 API 接口
+## 🔍 API Endpoints
 
-### 解析视频链接
+### Parse Video URL
 
 ```http
 POST /api/parse
 Content-Type: application/json
 
 {
-    "url": "视频链接或分享文本"
+    "url": "Video link or raw share text"
 }
 ```
 
-**响应示例：**
+**Sample Response:**
 
 ```json
 {
@@ -204,8 +212,8 @@ Content-Type: application/json
   "platform_name": "抖音",
   "video_id": "7589158631908658458",
   "video_info": {
-    "title": "视频标题...",
-    "author": "作者名",
+    "title": "Video title...",
+    "author": "Author name",
     "video_url": "https://...",
     "cover_url": "https://...",
     "duration": 233,
@@ -217,36 +225,36 @@ Content-Type: application/json
 }
 ```
 
-### 下载视频
+### Download Video
 
 ```http
 POST /api/download
 Content-Type: application/json
 
 {
-    "video_id": "视频ID",
-    "original_url": "原始链接",
-    "platform": "平台标识"
+    "video_id": "video_id",
+    "original_url": "original_url",
+    "platform": "platform_name"
 }
 ```
 
-### 图片代理
+### Image Proxy
 
 ```http
-GET /api/proxy-image?url=图片URL
+GET /api/proxy-image?url=IMAGE_URL
 ```
 
-解决 Instagram 等平台封面图的跨域加载问题。
+Resolves CORS and referrer blocking for cover images (e.g. Instagram).
 
-### 获取支持平台列表
+### List Supported Platforms
 
 ```http
 GET /api/platforms
 ```
 
-## 🔧 配置说明
+## 🔧 Configuration
 
-应用默认监听 `7860` 端口，常用配置可以通过环境变量覆盖：
+The application listens on port `7860` by default. You can override settings via environment variables:
 
 ```bash
 PORT=7860
@@ -261,71 +269,71 @@ GUNICORN_THREADS=8
 LOG_LEVEL=INFO
 ```
 
-本地运行时会在检测到 Chrome 用户配置后自动使用浏览器 cookies。服务器部署时默认不会尝试读取不存在的浏览器配置；如公开内容确实需要 cookies，可设置 `YTDLP_COOKIE_FILE=/path/to/cookies.txt`。也可以通过 `YTDLP_COOKIES_FROM_BROWSER=chrome` 显式选择浏览器，或设置为 `off` 禁用自动检测。
+When running locally, the downloader automatically loads cookies from your local Chrome profile if detected. In server environments, it will not look for non-existent local browser profiles; if cookies are required for public content, set `YTDLP_COOKIE_FILE=/path/to/cookies.txt`. You can also explicitly specify `YTDLP_COOKIES_FROM_BROWSER=chrome` or set it to `off` to disable auto-detection.
 
-在 Railway 等只通过可信反向代理访问的环境中，可设置 `TRUST_PROXY=true`，让限流正确识别客户端地址并识别 HTTPS。请勿在应用还能被客户端直接访问时启用此选项。
+In reverse proxy environments such as Railway, set `TRUST_PROXY=true` to let rate-limiting correctly identify client IP addresses and detect HTTPS. Do not enable this if clients connect directly to the application.
 
-## 🐛 常见问题
+## 🐛 FAQ
 
-### Q: 抖音解析失败？
+### Q: Douyin parsing fails?
 
-**A:** 工具使用移动端页面解析方式。如果失败，请确认依赖已经完整安装：
+**A:** The parser utilizes mobile endpoint extraction. Ensure the required dependency is installed:
 
 ```bash
 pip install curl_cffi
 ```
 
-### Q: 抖音下载很慢？
+### Q: Douyin download is slow?
 
-**A:** 无水印版视频是高清原画，文件较大（可达几百MB），下载需要一定时间，这是正常的。
+**A:** The watermark-free video is original high-definition source media and files can be several hundred megabytes. Download time depends on network bandwidth.
 
-### Q: TikTok 短链接解析失败？
+### Q: TikTok short links fail to parse?
 
-**A:** TikTok 反爬虫机制较严格，建议使用完整链接格式（`https://www.tiktok.com/@username/video/xxx`）。
+**A:** TikTok implements strict anti-bot measures. We recommend using standard URLs (`https://www.tiktok.com/@username/video/xxx`).
 
-### Q: Instagram 封面图不显示？
+### Q: Instagram cover images do not load?
 
-**A:** 工具内置了图片代理服务，会自动通过服务端代理加载封面图。
+**A:** The application has a built-in image proxy service that bypasses cross-origin and referer restrictions automatically.
 
-### Q: YouTube 视频无法下载？
+### Q: YouTube videos cannot be downloaded?
 
-**A:** 先按项目锁定的兼容版本重新安装依赖：
+**A:** Reinstall dependencies matching the pinned versions in `requirements.txt`:
 
 ```bash
 pip install --upgrade -r requirements.txt
 ```
 
-### Q: 如何部署到服务器？
+### Q: How to deploy on a production server?
 
-**A:** 推荐使用 Gunicorn 部署：
+**A:** Gunicorn is recommended:
 
 ```bash
 pip install gunicorn
 gunicorn -w 1 --threads 8 -b 0.0.0.0:7860 app:app
 ```
 
-## 🛡️ 注意事项
+## 🛡️ Notes & Compliance
 
-1. ⚖️ **合法使用** — 请遵守相关法律法规，仅用于个人学习和研究
-2. ©️ **版权尊重** — 尊重原创作者的版权，不要用于商业用途
-3. 🌐 **网络环境** — 确保网络连接稳定，部分平台可能需要特殊网络环境
-4. 💾 **存储空间** — 注意磁盘空间，及时清理下载文件
-5. 🔄 **保持更新** — 定期更新 yt-dlp 以确保各平台兼容性
+1. ⚖️ **Legal Use** — Please comply with applicable laws and regulations; use only for personal learning and research.
+2. ©️ **Copyright Respect** — Respect original creators' copyright. Do not use for commercial purposes.
+3. 🌐 **Network Environment** — Ensure stable network connectivity; some platforms may require specific network access.
+4. 💾 **Disk Management** — Monitor disk space and clean downloaded files periodically.
+5. 🔄 **Stay Updated** — Regularly update `yt-dlp` to ensure ongoing compatibility with platform changes.
 
-## 🤝 贡献指南
+## 🤝 Contributing
 
-欢迎提交 Issue 和 Pull Request！
+Issues and Pull Requests are welcome!
 
-1. Fork 项目
-2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 打开 Pull Request
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-## 📄 许可证
+## 📄 License
 
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-**免责声明**: 本工具仅供学习和研究使用。使用者需自行承担使用风险，开发者不对因使用本工具而产生的任何法律责任负责。请尊重内容创作者的权益。
+**Disclaimer**: This tool is intended for educational and research purposes only. Users assume full responsibility for their usage. The developers bear no liability for any legal issues arising from the use of this tool. Please respect the rights of content creators.
