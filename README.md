@@ -1,4 +1,4 @@
-# 🎬 Multi-Platform Video Watermark Remover & Downloader
+# 🎬 OmniMedia — Multi-Platform Video Downloader & Archiver
 
 <div align="center">
 
@@ -6,7 +6,7 @@
 
 </div>
 
-A powerful multi-platform video watermark removal and downloading tool that recognizes and handles public links across **22 mainstream platforms**.
+**OmniMedia** is a powerful, lightweight multi-platform video downloader and archival tool that seamlessly recognizes and processes public links across **22 mainstream platforms**.
 
 <div align="center">
 
@@ -69,8 +69,8 @@ _Paid, private, login-required, geo-restricted, or DRM-protected content is not 
 1. **Clone the repository**
 
     ```bash
-    git clone https://github.com/xubaoer19940428-creator/remove-watermark.git
-    cd remove-watermark
+    git clone https://github.com/xubaoer19940428-creator/omni-media.git
+    cd omni-media
     ```
 
 2. **Create virtual environment (recommended)**
@@ -173,7 +173,7 @@ https://www.youtube.com/shorts/xxxxx
 ### Directory Structure
 
 ```
-remove-watermark/
+omni-media/
 ├── app.py                    # Flask application entry point & API routes
 ├── universal_downloader.py   # 🌐 Universal downloader core (multi-platform)
 ├── requirements.txt          # Python dependencies

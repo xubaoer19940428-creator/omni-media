@@ -1,4 +1,4 @@
-# 🎬 多平台视频去水印下载工具
+# 🎬 OmniMedia — 多平台视频下载与本地归档工具
 
 <div align="center">
 
@@ -6,7 +6,7 @@
 
 </div>
 
-一个功能强大的多平台视频去水印工具，正式识别并处理 **22 个主流平台**的公开链接。
+**OmniMedia** 是一个功能强大、轻量级的多平台音视频下载与本地归档工具，正式识别并处理 **22 个主流平台**的公开链接。
 
 <div align="center">
 
@@ -69,8 +69,8 @@
 1. **克隆项目**
 
    ```bash
-   git clone https://github.com/xubaoer19940428-creator/remove-watermark.git
-   cd remove-watermark
+   git clone https://github.com/xubaoer19940428-creator/omni-media.git
+   cd omni-media
    ```
 
 2. **创建虚拟环境（推荐）**
@@ -173,7 +173,7 @@ https://www.youtube.com/shorts/xxxxx
 ### 核心模块
 
 ```
-remove-watermark/
+omni-media/
 ├── app.py                    # Flask 应用主文件，API 路由
 ├── universal_downloader.py   # 🌐 通用下载器（多平台核心）
 ├── requirements.txt          # Python 依赖
