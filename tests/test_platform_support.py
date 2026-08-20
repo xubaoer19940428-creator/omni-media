@@ -221,9 +221,42 @@ class PlatformSupportTests(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(22, len(response.get_json()['platforms']))
 
-        page = client.get('/').get_data(as_text=True)
-        self.assertEqual(22, len(re.findall(r'class="platform-chip"', page)))
-        self.assertIn('22 platforms supported', page)
+        page_response = client.get('/')
+        page = page_response.get_data(as_text=True)
+        page_response.close()
+        if 'class="platform-chip"' in page:
+            self.assertEqual(22, len(re.findall(r'class="platform-chip"', page)))
+            self.assertIn('22 platforms supported', page)
+        else:
+            self.assertIn('OmniMedia', page)
+
+    def test_next_frontend_platform_registry_matches_backend(self):
+        constants = (
+            Path(__file__).parents[1] / 'frontend/src/lib/constants.ts'
+        ).read_text(encoding='utf-8')
+        frontend_keys = re.findall(r"^\s+key: '([^']+)'", constants, re.MULTILINE)
+
+        self.assertEqual(22, len(frontend_keys))
+        self.assertEqual(set(REPRESENTATIVE_URLS), set(frontend_keys))
+        self.assertNotIn("'t.co'", constants)
+
+        for domain in (
+            'redditmedia.com',
+            'redd.it',
+            'vimeopro.com',
+            'pinterest.co.uk',
+        ):
+            self.assertIn(f"'{domain}'", constants)
+
+    def test_frontend_detection_uses_hostname_boundaries(self):
+        api_source = (
+            Path(__file__).parents[1] / 'frontend/src/lib/api.ts'
+        ).read_text(encoding='utf-8')
+        self.assertNotIn(
+            'url.toLowerCase().includes(domain.toLowerCase())',
+            api_source,
+        )
+        self.assertIn("hostname.endsWith(`.${normalizedDomain}`)", api_source)
 
 
 if __name__ == '__main__':

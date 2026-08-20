@@ -1,0 +1,237 @@
+import { PlatformConfig } from '@/types';
+
+export const SUPPORTED_PLATFORMS: PlatformConfig[] = [
+  {
+    key: 'douyin',
+    name: 'Douyin',
+    color: '#fe2c55',
+    domains: ['douyin.com', 'iesdouyin.com', 'v.douyin.com'],
+    supportsNoWatermark: false,
+    supportsGallery: false,
+    supportsAudio: false,
+    demoUrl: 'https://v.douyin.com/iRS2aYk/'
+  },
+  {
+    key: 'tiktok',
+    name: 'TikTok',
+    color: '#00f2fe',
+    domains: ['tiktok.com', 'vm.tiktok.com', 'vt.tiktok.com'],
+    supportsNoWatermark: false,
+    supportsGallery: false,
+    supportsAudio: false,
+    demoUrl: 'https://www.tiktok.com/@tiktok/video/7106594312292453678'
+  },
+  {
+    key: 'xiaohongshu',
+    name: 'Xiaohongshu (RED)',
+    color: '#ff2442',
+    domains: ['xiaohongshu.com', 'xhslink.com'],
+    supportsNoWatermark: false,
+    supportsGallery: false,
+    supportsAudio: false,
+    demoUrl: 'https://xhslink.com/a/sample'
+  },
+  {
+    key: 'instagram',
+    name: 'Instagram',
+    color: '#e1306c',
+    domains: ['instagram.com', 'instagr.am'],
+    supportsNoWatermark: false,
+    supportsGallery: false,
+    supportsAudio: false,
+    demoUrl: 'https://www.instagram.com/reel/C8xxxxxxxx/'
+  },
+  {
+    key: 'youtube',
+    name: 'YouTube',
+    color: '#ff0000',
+    domains: ['youtube.com', 'youtu.be'],
+    supportsNoWatermark: false,
+    supportsGallery: false,
+    supportsAudio: false,
+    demoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+  },
+  {
+    key: 'twitter',
+    name: 'X (Twitter)',
+    color: '#1da1f2',
+    domains: ['twitter.com', 'x.com'],
+    supportsNoWatermark: false,
+    supportsGallery: false,
+    supportsAudio: false,
+    demoUrl: 'https://x.com/OpenAI/status/1758220042456486127'
+  },
+  {
+    key: 'bilibili',
+    name: 'Bilibili',
+    color: '#00aeec',
+    domains: ['bilibili.com', 'b23.tv'],
+    supportsNoWatermark: false,
+    supportsGallery: false,
+    supportsAudio: false,
+    demoUrl: 'https://www.bilibili.com/video/BV1xx411c7mD'
+  },
+  {
+    key: 'weibo',
+    name: 'Weibo',
+    color: '#e6162d',
+    domains: ['weibo.com', 'weibo.cn', 'video.weibo.com'],
+    supportsNoWatermark: false,
+    supportsGallery: false,
+    supportsAudio: false,
+  },
+  {
+    key: 'reddit',
+    name: 'Reddit',
+    color: '#ff4500',
+    domains: ['reddit.com', 'redditmedia.com', 'redd.it'],
+    supportsNoWatermark: false,
+    supportsGallery: false,
+    supportsAudio: false,
+  },
+  {
+    key: 'facebook',
+    name: 'Facebook',
+    color: '#1877f2',
+    domains: ['facebook.com', 'fb.watch', 'fb.com'],
+    supportsNoWatermark: false,
+    supportsGallery: false,
+    supportsAudio: false,
+  },
+  {
+    key: 'telegram',
+    name: 'Telegram',
+    color: '#24a1de',
+    domains: ['t.me', 'telegram.me'],
+    supportsNoWatermark: false,
+    supportsGallery: false,
+    supportsAudio: false,
+  },
+  {
+    key: 'pinterest',
+    name: 'Pinterest',
+    color: '#bd081c',
+    domains: ['pinterest.com', 'pinterest.ca', 'pinterest.ch', 'pinterest.cl', 'pinterest.co.kr', 'pinterest.co.uk', 'pinterest.com.au', 'pinterest.com.mx', 'pinterest.de', 'pinterest.dk', 'pinterest.es', 'pinterest.fr', 'pinterest.ie', 'pinterest.it', 'pinterest.jp', 'pinterest.nz', 'pinterest.ph', 'pinterest.pt', 'pinterest.ru', 'pinterest.se', 'pin.it'],
+    supportsNoWatermark: false,
+    supportsGallery: false,
+    supportsAudio: false,
+  },
+  {
+    key: 'vimeo',
+    name: 'Vimeo',
+    color: '#1ab7ea',
+    domains: ['vimeo.com', 'vimeopro.com'],
+    supportsNoWatermark: false,
+    supportsGallery: false,
+    supportsAudio: false,
+  },
+  {
+    key: 'dailymotion',
+    name: 'Dailymotion',
+    color: '#0a0a0a',
+    domains: ['dailymotion.com', 'dai.ly'],
+    supportsNoWatermark: false,
+    supportsGallery: false,
+    supportsAudio: false,
+  },
+  {
+    key: 'twitch',
+    name: 'Twitch',
+    color: '#9146ff',
+    domains: ['twitch.tv', 'clips.twitch.tv'],
+    supportsNoWatermark: false,
+    supportsGallery: false,
+    supportsAudio: false,
+  },
+  {
+    key: 'tumblr',
+    name: 'Tumblr',
+    color: '#001935',
+    domains: ['tumblr.com'],
+    supportsNoWatermark: false,
+    supportsGallery: false,
+    supportsAudio: false,
+  },
+  {
+    key: 'rumble',
+    name: 'Rumble',
+    color: '#85c742',
+    domains: ['rumble.com'],
+    supportsNoWatermark: false,
+    supportsGallery: false,
+    supportsAudio: false,
+  },
+  {
+    key: 'ixigua',
+    name: 'Xigua Video',
+    color: '#ff2c55',
+    domains: ['ixigua.com'],
+    supportsNoWatermark: false,
+    supportsGallery: false,
+    supportsAudio: false,
+  },
+  {
+    key: 'acfun',
+    name: 'AcFun',
+    color: '#fd4c5b',
+    domains: ['acfun.cn'],
+    supportsNoWatermark: false,
+    supportsGallery: false,
+    supportsAudio: false,
+  },
+  {
+    key: 'youku',
+    name: 'Youku',
+    color: '#ff2851',
+    domains: ['youku.com', 'tudou.com'],
+    supportsNoWatermark: false,
+    supportsGallery: false,
+    supportsAudio: false,
+  },
+  {
+    key: 'iqiyi',
+    name: 'iQIYI',
+    color: '#00be06',
+    domains: ['iqiyi.com', 'iq.com', 'pps.tv'],
+    supportsNoWatermark: false,
+    supportsGallery: false,
+    supportsAudio: false,
+  },
+  {
+    key: 'tencent_video',
+    name: 'Tencent Video',
+    color: '#00a4ff',
+    domains: ['v.qq.com'],
+    supportsNoWatermark: false,
+    supportsGallery: false,
+    supportsAudio: false,
+  }
+];
+
+export const DEMO_LINKS = [
+  {
+    platform: 'TikTok',
+    title: 'TikTok Video',
+    url: 'https://www.tiktok.com/@tiktok/video/7106594312292453678'
+  },
+  {
+    platform: 'Douyin',
+    title: 'Douyin Video',
+    url: 'https://v.douyin.com/iRS2aYk/'
+  },
+  {
+    platform: 'YouTube',
+    title: 'YouTube Video',
+    url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+  },
+  {
+    platform: 'X (Twitter)',
+    title: 'X / Twitter Media',
+    url: 'https://x.com/OpenAI/status/1758220042456486127'
+  },
+  {
+    platform: 'Bilibili',
+    title: 'Bilibili Video',
+    url: 'https://www.bilibili.com/video/BV1xx411c7mD'
+  }
+];

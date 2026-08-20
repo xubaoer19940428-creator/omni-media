@@ -298,6 +298,7 @@ class UniversalDownloader:
                 'key': key,
                 'name': info['name'],
                 'icon': info['icon'],
+                'patterns': list(info['patterns']),
             }
             for key, info in self.PLATFORMS.items()
         ]

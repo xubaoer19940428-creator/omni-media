@@ -1,0 +1,85 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import { createRequire } from 'node:module';
+
+const frontendRequire = createRequire(new URL('../frontend/package.json', import.meta.url));
+const ts = frontendRequire('typescript');
+
+function transpile(path) {
+  return ts.transpileModule(fs.readFileSync(path, 'utf8'), {
+    compilerOptions: {
+      module: ts.ModuleKind.CommonJS,
+      target: ts.ScriptTarget.ES2020,
+      esModuleInterop: true,
+    },
+  }).outputText;
+}
+
+function evaluateCommonJs(source, requireStub = frontendRequire) {
+  const module = { exports: {} };
+  Function('require', 'module', 'exports', source)(requireStub, module, module.exports);
+  return module.exports;
+}
+
+const constants = evaluateCommonJs(
+  transpile(new URL('../frontend/src/lib/constants.ts', import.meta.url)),
+);
+const api = evaluateCommonJs(
+  transpile(new URL('../frontend/src/lib/api.ts', import.meta.url)),
+  (specifier) => {
+    if (specifier === './constants') return constants;
+    return frontendRequire(specifier);
+  },
+);
+
+const platformCases = new Map([
+  ['https://www.youtube.com/watch?v=abc', 'youtube'],
+  ['https://www.pinterest.co.uk/pin/123', 'pinterest'],
+  ['https://media.redditmedia.com/example', 'reddit'],
+  ['https://player.vimeopro.com/video/123', 'vimeo'],
+  ['https://youtube.com.evil.example/watch?v=abc', 'unknown'],
+  ['https://notiktok.com/video/123', 'unknown'],
+]);
+for (const [url, expected] of platformCases) {
+  assert.equal(api.detectPlatformKey(url), expected, url);
+}
+
+const calls = [];
+const originalFetch = globalThis.fetch;
+globalThis.fetch = async (_url, options) => {
+  const urls = JSON.parse(options.body).urls;
+  calls.push(urls);
+  return {
+    ok: true,
+    async json() {
+      return {
+        success: true,
+        results: urls.map((original_url) => ({ success: true, original_url })),
+      };
+    },
+  };
+};
+
+try {
+  const urls = Array.from({ length: 21 }, (_, index) =>
+    `https://www.youtube.com/watch?v=${index}`,
+  );
+  const response = await api.batchParseMediaUrls(urls);
+  assert.deepEqual(calls.map((batch) => batch.length), [10, 10, 1]);
+  assert.deepEqual(
+    response.results.map((result) => result.original_url),
+    urls,
+  );
+
+  await assert.rejects(
+    api.batchParseMediaUrls(Array.from({ length: 41 }, (_, index) =>
+      `https://www.youtube.com/watch?v=${index}`,
+    )),
+    /maximum of 40/i,
+  );
+  assert.equal(calls.length, 3, 'oversized queue should not call the API');
+} finally {
+  globalThis.fetch = originalFetch;
+}
+
+console.log(`Next frontend contract passed (${platformCases.size} domain cases, batch 10/10/1, queue cap 40).`);

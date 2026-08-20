@@ -1,6 +1,9 @@
 from collections import defaultdict, deque
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
+import base64
+import hashlib
 import ipaddress
 import logging
 import math
@@ -36,7 +39,10 @@ def _env_int(name, default, minimum=1):
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = _env_int('MAX_REQUEST_BYTES', 64 * 1024)
 
-if os.environ.get('TRUST_PROXY', '').lower() in {'1', 'true', 'yes'}:
+if (
+    os.environ.get('RAILWAY_ENVIRONMENT_NAME')
+    or os.environ.get('TRUST_PROXY', '').lower() in {'1', 'true', 'yes'}
+):
     # Enable only when the app is reachable exclusively through one trusted proxy.
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 
@@ -57,7 +63,47 @@ PROXY_RATE_LIMIT = _env_int('PROXY_RATE_LIMIT', 60)
 RATE_LIMIT_WINDOW_SECONDS = _env_int('RATE_LIMIT_WINDOW_SECONDS', 60)
 MAX_CONCURRENT_DOWNLOADS = _env_int('MAX_CONCURRENT_DOWNLOADS', 2)
 MAX_CONCURRENT_PARSES = _env_int('MAX_CONCURRENT_PARSES', 4)
+# The public API contract is intentionally capped at ten URLs per request.
+# Operators may lower this value, but cannot raise it through configuration.
+MAX_BATCH_SIZE = min(_env_int('MAX_BATCH_SIZE', 10), 10)
 MAX_RATE_LIMIT_CLIENTS = _env_int('MAX_RATE_LIMIT_CLIENTS', 10_000)
+BATCH_RATE_LIMIT = _env_int('BATCH_RATE_LIMIT', 4)
+
+FRONTEND_DIR = Path(
+    os.environ.get('FRONTEND_DIR', Path(__file__).parent / 'frontend' / 'out')
+).resolve()
+CORS_ALLOWED_ORIGINS = {
+    origin.strip()
+    for origin in os.environ.get(
+        'CORS_ALLOWED_ORIGINS',
+        'http://localhost:3001,http://127.0.0.1:3001',
+    ).split(',')
+    if origin.strip()
+}
+
+
+def _frontend_script_hashes():
+    index_path = FRONTEND_DIR / 'index.html'
+    if not index_path.is_file():
+        return ()
+    try:
+        html = index_path.read_text(encoding='utf-8')
+    except OSError:
+        logging.exception('Could not read the exported frontend for CSP hashing')
+        return ()
+
+    hashes = []
+    for match in re.finditer(
+        r'<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>',
+        html,
+        re.IGNORECASE | re.DOTALL,
+    ):
+        digest = hashlib.sha256(match.group(1).encode('utf-8')).digest()
+        hashes.append(f"'sha256-{base64.b64encode(digest).decode('ascii')}'")
+    return tuple(dict.fromkeys(hashes))
+
+
+FRONTEND_SCRIPT_HASHES = _frontend_script_hashes()
 
 DOWNLOAD_FILENAME_RE = re.compile(
     r'^[a-z][a-z0-9_]{0,31}_[0-9a-f]{32}\.(?:mp4|webm|mkv|mov|m4a|m4v)$'
@@ -98,6 +144,85 @@ def _json_object():
         return None
     data = request.get_json(silent=True)
     return data if isinstance(data, dict) else None
+
+
+def _cors_origin():
+    origin = request.headers.get('Origin', '')
+    if origin and ('*' in CORS_ALLOWED_ORIGINS or origin in CORS_ALLOWED_ORIGINS):
+        return origin
+    return None
+
+
+def _normalize_parse_result(result, original_url):
+    """Expose a stable, flat API shape while retaining legacy video_info."""
+    normalized = dict(result)
+    normalized['original_url'] = downloader.extract_url_from_text(original_url)
+
+    video_info = result.get('video_info')
+    if not isinstance(video_info, dict):
+        return normalized
+
+    normalized.update({
+        'platform_key': result.get('platform'),
+        'title': video_info.get('title', ''),
+        'author': video_info.get('author', ''),
+        'video_url': video_info.get('video_url', ''),
+        'cover_url': video_info.get('cover_url', ''),
+        'duration': video_info.get('duration', 0),
+        'likes': video_info.get('like_count', 0),
+        'views': video_info.get('view_count', 0),
+        'comments': video_info.get('comment_count', 0),
+    })
+    return normalized
+
+
+def _parse_media(share_url):
+    clean_url = (
+        downloader.extract_url_from_text(share_url)
+        if isinstance(share_url, str)
+        else ''
+    )
+    if not isinstance(share_url, str) or not share_url.strip():
+        return {
+            'success': False,
+            'error': 'Please provide a video share link',
+            'original_url': clean_url,
+        }, 400
+    if len(share_url) > 4096:
+        return {
+            'success': False,
+            'error': 'The video URL is too long',
+            'original_url': clean_url,
+        }, 400
+
+    platform_key, _platform_name = downloader.detect_platform(share_url)
+    if platform_key in ('unknown', 'other'):
+        return {
+            'success': False,
+            'error': 'This platform is not supported',
+            'original_url': clean_url,
+        }, 400
+
+    if not _parse_slots.acquire(blocking=False):
+        return {
+            'success': False,
+            'error': 'The parsing service is busy. Please try again shortly',
+            'original_url': clean_url,
+        }, 429
+
+    try:
+        result = downloader.process_url(share_url)
+        normalized = _normalize_parse_result(result, share_url)
+        return normalized, 200 if normalized.get('success') else 400
+    except Exception:
+        logging.exception('Unexpected parse endpoint failure')
+        return {
+            'success': False,
+            'error': 'The parsing service encountered an error',
+            'original_url': downloader.extract_url_from_text(share_url),
+        }, 500
+    finally:
+        _parse_slots.release()
 
 
 def _rate_limit_response(scope, limit):
@@ -309,8 +434,28 @@ def _fetch_proxy_image(image_url):
     raise ImageProxyError('Too many image redirects', 502)
 
 
+@app.before_request
+def handle_preflight():
+    if request.method == 'OPTIONS' and request.path.startswith('/api/'):
+        response = Response(status=204)
+        allowed_origin = _cors_origin()
+        if allowed_origin:
+            response.headers['Access-Control-Allow-Origin'] = allowed_origin
+            response.headers['Vary'] = 'Origin'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+        response.headers['Access-Control-Max-Age'] = '86400'
+        return response
+
+
 @app.after_request
 def add_security_headers(response):
+    allowed_origin = _cors_origin()
+    if allowed_origin:
+        response.headers['Access-Control-Allow-Origin'] = allowed_origin
+        response.headers['Vary'] = 'Origin'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
     response.headers.setdefault('X-Content-Type-Options', 'nosniff')
     response.headers.setdefault('Referrer-Policy', 'no-referrer')
     response.headers.setdefault('X-Frame-Options', 'SAMEORIGIN')
@@ -318,14 +463,18 @@ def add_security_headers(response):
         'Permissions-Policy',
         'camera=(), microphone=(), geolocation=()',
     )
+    script_sources = "'self'"
+    if FRONTEND_SCRIPT_HASHES:
+        script_sources = f"{script_sources} {' '.join(FRONTEND_SCRIPT_HASHES)}"
     response.headers.setdefault(
         'Content-Security-Policy',
         "default-src 'self'; "
-        "script-src 'self'; "
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; "
-        "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; "
-        "img-src 'self' data: https:; "
-        "connect-src 'self'; object-src 'none'; base-uri 'self'; "
+        f"script-src {script_sources}; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: blob: https:; "
+        "media-src 'self' blob: https:; "
+        "connect-src 'self'; "
+        "font-src 'self' data:; object-src 'none'; base-uri 'self'; "
         "frame-ancestors 'self'; form-action 'self'",
     )
     if request.is_secure:
@@ -347,8 +496,22 @@ def cleanup_expired_downloads_periodically():
 def request_too_large(_error):
     return jsonify({'error': 'Request body is too large'}), 413
 
+
+@app.route('/api/health')
+def health_check():
+    """服务健康检查接口"""
+    return jsonify({
+        'status': 'ok',
+        'timestamp': time.time(),
+        'supported_platforms_count': len(downloader.get_supported_platforms())
+    })
+
+
 @app.route('/')
 def index():
+    frontend_index = FRONTEND_DIR / 'index.html'
+    if frontend_index.is_file():
+        return send_from_directory(FRONTEND_DIR, 'index.html')
     return render_template(
         'index.html',
         platforms=downloader.get_supported_platforms(),
@@ -372,31 +535,39 @@ def parse_url():
     if data is None:
         return jsonify({'error': 'A JSON object is required'}), 400
 
-    share_url = data.get('url', '')
-    if not isinstance(share_url, str) or not share_url.strip():
-        return jsonify({'error': 'Please provide a video share link'}), 400
-    if len(share_url) > 4096:
-        return jsonify({'error': 'The video URL is too long'}), 400
+    result, status_code = _parse_media(data.get('url', ''))
+    return jsonify(result), status_code
 
-    platform_key, _platform_name = downloader.detect_platform(share_url)
-    if platform_key in ('unknown', 'other'):
-        return jsonify({'error': 'This platform is not supported'}), 400
 
-    if not _parse_slots.acquire(blocking=False):
+@app.route('/api/batch-parse', methods=['POST'])
+def batch_parse_urls():
+    """Parse a small, bounded batch while preserving input order."""
+    limited = _rate_limit_response('batch-parse', BATCH_RATE_LIMIT)
+    if limited:
+        return limited
+
+    data = _json_object()
+    if data is None:
+        return jsonify({'error': 'A JSON object is required'}), 400
+
+    urls = data.get('urls')
+    if not isinstance(urls, list) or not urls:
+        return jsonify({'error': 'A non-empty URL list is required'}), 400
+    if len(urls) > MAX_BATCH_SIZE:
         return jsonify({
-            'error': 'The parsing service is busy. Please try again shortly'
-        }), 429
+            'error': f'A maximum of {MAX_BATCH_SIZE} URLs is allowed per batch'
+        }), 400
 
-    try:
-        result = downloader.process_url(share_url)
-        if not result.get('success'):
-            return jsonify(result), 400
-        return jsonify(result)
-    except Exception:
-        logging.exception('Unexpected parse endpoint failure')
-        return jsonify({'error': 'The parsing service encountered an error'}), 500
-    finally:
-        _parse_slots.release()
+    workers = min(MAX_CONCURRENT_PARSES, len(urls))
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        parsed = list(executor.map(_parse_media, urls))
+
+    results = [result for result, _status_code in parsed]
+    return jsonify({
+        'success': True,
+        'total': len(results),
+        'results': results,
+    })
 
 @app.route('/api/download', methods=['POST'])
 def download_video():
@@ -539,6 +710,21 @@ def proxy_image():
     except Exception:
         logging.exception('Unexpected image proxy failure')
         return jsonify({'error': 'The image proxy encountered an error'}), 500
+
+
+@app.route('/<path:asset_path>')
+def serve_frontend_asset(asset_path):
+    """Serve the exported Next.js assets from the production image."""
+    if FRONTEND_DIR.is_dir():
+        candidate = (FRONTEND_DIR / asset_path).resolve()
+        if FRONTEND_DIR not in candidate.parents:
+            return jsonify({'error': 'Not found'}), 404
+        if candidate.is_file():
+            return send_from_directory(FRONTEND_DIR, asset_path)
+        directory_index = candidate / 'index.html'
+        if directory_index.is_file():
+            return send_from_directory(candidate, 'index.html')
+    return jsonify({'error': 'Not found'}), 404
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 7860))

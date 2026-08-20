@@ -1,0 +1,361 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-page: #fafbfc;
+    --fg-page: #0f172a;
+    --card-bg: #ffffff;
+    --card-border: #e2e8f0;
+    --panel-header: #f8fafc;
+    --accent-blue: #2563eb;
+    --accent-indigo: #4f46e5;
+  }
+
+  .dark {
+    --bg-page: #07090e;
+    --fg-page: #f8fafc;
+    --card-bg: #0c1017;
+    --card-border: rgba(255, 255, 255, 0.08);
+    --panel-header: #080c14;
+    --accent-blue: #00f2fe;
+    --accent-indigo: #6366f1;
+  }
+
+  * {
+    border-color: var(--card-border);
+  }
+
+  body {
+    background-color: var(--bg-page);
+    color: var(--fg-page);
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Background Ambient Lighting with smooth slow pulse */
+body {
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(37, 99, 235, 0.08), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(79, 70, 229, 0.05), transparent 70%);
+  background-attachment: fixed;
+}
+
+.dark body {
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 242, 254, 0.12), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(99, 102, 241, 0.08), transparent 70%);
+}
+
+/* Dot grid overlay for Light mode, Line grid for Dark mode */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-image: radial-gradient(rgba(15, 23, 42, 0.05) 1px, transparent 1px);
+  background-size: 24px 24px;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.dark body::before {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* SaaS Bento & Feature Cards with Spotlight Hover Effect */
+.tikhub-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 8px 24px -4px rgba(15, 23, 42, 0.04);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.tikhub-card:hover {
+  border-color: rgba(37, 99, 235, 0.45);
+  box-shadow: 0 16px 36px -8px rgba(37, 99, 235, 0.15);
+  transform: translateY(-3px);
+}
+
+.dark .tikhub-card {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 8px 24px -6px rgba(0, 0, 0, 0.6);
+}
+
+.dark .tikhub-card:hover {
+  border-color: rgba(0, 242, 254, 0.45);
+  box-shadow: 0 16px 38px -8px rgba(0, 242, 254, 0.2);
+}
+
+/* High-tech Panel Frame */
+.tikhub-panel {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: 0 14px 40px -12px rgba(15, 23, 42, 0.09), 0 1px 3px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s ease;
+}
+
+.dark .tikhub-panel {
+  box-shadow: 0 18px 44px -12px rgba(0, 0, 0, 0.75);
+}
+
+/* Glowing Border Scanning Animation during extraction */
+@keyframes border-scan {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.scanning-border {
+  background: linear-gradient(90deg, #2563eb, #00f2fe, #6366f1, #2563eb);
+  background-size: 300% 300%;
+  animation: border-scan 2s linear infinite;
+}
+
+/* Float Animation */
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-float {
+  animation: float-slow 4s ease-in-out infinite;
+}
+
+/* Pulse Glow Animation */
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+/* Gradients */
+.text-hero-gradient {
+  background: linear-gradient(135deg, #0f172a 0%, #334155 50%, #475569 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dark .text-hero-gradient {
+  background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 50%, #94a3b8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-accent-gradient {
+  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 50%, #7c3aed 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dark .text-accent-gradient {
+  background: linear-gradient(135deg, #00f2fe 0%, #4facfe 50%, #6366f1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.tech-bracket {
+  color: #2563eb;
+  font-weight: 300;
+  opacity: 0.85;
+}
+
+.dark .tech-bracket {
+  color: #00f2fe;
+}
+
+/* Interactive Buttons */
+.btn-gradient-pill {
+  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+  color: #ffffff;
+  font-weight: 600;
+  padding: 0.65rem 1.4rem;
+  border-radius: 9999px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-gradient-pill:hover {
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.45);
+  transform: translateY(-1.5px);
+}
+
+.btn-gradient-pill:active {
+  transform: translateY(0px) scale(0.98);
+}
+
+.dark .btn-gradient-pill {
+  background: linear-gradient(135deg, #00f2fe 0%, #4facfe 50%, #6366f1 100%);
+  color: #040812;
+  box-shadow: 0 0 20px rgba(0, 242, 254, 0.3);
+}
+
+.dark .btn-gradient-pill:hover {
+  box-shadow: 0 0 32px rgba(0, 242, 254, 0.55);
+}
+
+.btn-primary-pill {
+  background: #0f172a;
+  color: #ffffff;
+  font-weight: 600;
+  padding: 0.65rem 1.4rem;
+  border-radius: 9999px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+}
+
+.btn-primary-pill:hover {
+  background: #1e293b;
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.25);
+}
+
+.btn-primary-pill:active {
+  transform: translateY(0px) scale(0.98);
+}
+
+.dark .btn-primary-pill {
+  background: #ffffff;
+  color: #080c14;
+}
+
+.dark .btn-primary-pill:hover {
+  background: #f1f5f9;
+}
+
+.btn-secondary-pill {
+  background: #ffffff;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+  font-weight: 600;
+  padding: 0.65rem 1.25rem;
+  border-radius: 9999px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.btn-secondary-pill:hover {
+  background: #f8fafc;
+  border-color: rgba(37, 99, 235, 0.5);
+  color: #0f172a;
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 16px -4px rgba(37, 99, 235, 0.15);
+}
+
+.btn-secondary-pill:active {
+  transform: translateY(0px) scale(0.98);
+}
+
+.dark .btn-secondary-pill {
+  background: rgba(15, 23, 42, 0.8);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.dark .btn-secondary-pill:hover {
+  background: rgba(30, 41, 59, 0.9);
+  border-color: rgba(0, 242, 254, 0.4);
+  color: #ffffff;
+}
+
+/* macOS Terminal Window Dots */
+.mac-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+.mac-dot:hover {
+  transform: scale(1.2);
+}
+
+.mac-dot-red {
+  background-color: #ff5f56;
+}
+
+.mac-dot-yellow {
+  background-color: #ffbd2e;
+}
+
+.mac-dot-green {
+  background-color: #27c93f;
+}
+
+/* Infinite Marquee Animation for Platform Ticker */
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 32s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #1e293b;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}

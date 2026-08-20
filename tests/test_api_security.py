@@ -1,4 +1,6 @@
 import os
+import subprocess
+import sys
 import tempfile
 import time
 import unittest
@@ -84,6 +86,144 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertEqual(200, first.status_code)
         self.assertEqual(200, second.status_code)
         self.assertEqual(429, third.status_code)
+
+    def test_parse_response_exposes_flat_frontend_contract(self):
+        parsed = {
+            'success': True,
+            'platform': 'youtube',
+            'video_info': {
+                'title': 'Example',
+                'author': 'Creator',
+                'video_url': 'https://cdn.example/video.mp4',
+                'cover_url': 'https://cdn.example/cover.jpg',
+                'duration': 12,
+                'like_count': 3,
+                'view_count': 4,
+                'comment_count': 5,
+            },
+        }
+        with patch.object(app_module.downloader, 'process_url', return_value=parsed):
+            response = self.client.post('/api/parse', json={'url': YOUTUBE_URL})
+
+        self.assertEqual(200, response.status_code)
+        data = response.get_json()
+        self.assertEqual(YOUTUBE_URL, data['original_url'])
+        self.assertEqual('youtube', data['platform_key'])
+        self.assertEqual('Example', data['title'])
+        self.assertEqual('https://cdn.example/video.mp4', data['video_url'])
+        self.assertEqual(4, data['views'])
+
+    def test_batch_parse_is_bounded_and_preserves_results(self):
+        urls = [YOUTUBE_URL, 'https://example.com/video']
+        parsed = {
+            'success': True,
+            'platform': 'youtube',
+            'video_info': {'title': 'Example'},
+        }
+        with patch.object(app_module.downloader, 'process_url', return_value=parsed):
+            response = self.client.post('/api/batch-parse', json={'urls': urls})
+
+        self.assertEqual(200, response.status_code)
+        data = response.get_json()
+        self.assertEqual(2, data['total'])
+        self.assertTrue(data['results'][0]['success'])
+        self.assertEqual(YOUTUBE_URL, data['results'][0]['original_url'])
+        self.assertFalse(data['results'][1]['success'])
+        self.assertEqual('This platform is not supported', data['results'][1]['error'])
+
+        with patch.object(app_module, 'MAX_BATCH_SIZE', 1):
+            oversized = self.client.post('/api/batch-parse', json={'urls': urls})
+        self.assertEqual(400, oversized.status_code)
+
+    def test_batch_parse_has_a_hard_ten_url_ceiling(self):
+        urls = [YOUTUBE_URL] * 11
+        response = self.client.post('/api/batch-parse', json={'urls': urls})
+
+        self.assertEqual(400, response.status_code)
+        self.assertIn('maximum of 10', response.get_json()['error'])
+
+    def test_batch_size_environment_cannot_raise_hard_ceiling(self):
+        env = {**os.environ, 'MAX_BATCH_SIZE': '99'}
+        output = subprocess.check_output(
+            [sys.executable, '-c', 'import app; print(app.MAX_BATCH_SIZE)'],
+            cwd=Path(__file__).parents[1],
+            env=env,
+            text=True,
+        )
+        self.assertEqual('10', output.strip())
+
+    def test_cors_only_echoes_configured_origins(self):
+        with patch.object(
+            app_module,
+            'CORS_ALLOWED_ORIGINS',
+            {'https://app.example'},
+        ):
+            allowed = self.client.get(
+                '/api/health',
+                headers={'Origin': 'https://app.example'},
+            )
+            rejected = self.client.get(
+                '/api/health',
+                headers={'Origin': 'https://evil.example'},
+            )
+
+        self.assertEqual(
+            'https://app.example',
+            allowed.headers['Access-Control-Allow-Origin'],
+        )
+        self.assertNotIn('Access-Control-Allow-Origin', rejected.headers)
+
+    def test_cors_preflight_only_allows_configured_origins(self):
+        with patch.object(
+            app_module,
+            'CORS_ALLOWED_ORIGINS',
+            {'https://app.example'},
+        ):
+            allowed = self.client.options(
+                '/api/parse',
+                headers={
+                    'Origin': 'https://app.example',
+                    'Access-Control-Request-Method': 'POST',
+                },
+            )
+            rejected = self.client.options(
+                '/api/parse',
+                headers={
+                    'Origin': 'https://evil.example',
+                    'Access-Control-Request-Method': 'POST',
+                },
+            )
+
+        self.assertEqual(204, allowed.status_code)
+        self.assertEqual(
+            'https://app.example',
+            allowed.headers['Access-Control-Allow-Origin'],
+        )
+        self.assertIn('POST', allowed.headers['Access-Control-Allow-Methods'])
+        self.assertEqual(204, rejected.status_code)
+        self.assertNotIn('Access-Control-Allow-Origin', rejected.headers)
+
+    def test_frontend_asset_route_cannot_escape_export_directory(self):
+        with tempfile.TemporaryDirectory() as frontend_dir:
+            frontend_path = Path(frontend_dir)
+            (frontend_path / 'asset.js').write_text('safe', encoding='utf-8')
+            outside = frontend_path.parent / 'private'
+            outside.mkdir(exist_ok=True)
+            (outside / 'index.html').write_text('private', encoding='utf-8')
+
+            with patch.object(app_module, 'FRONTEND_DIR', frontend_path.resolve()):
+                safe = self.client.get('/asset.js')
+                escaped = self.client.get('/..%2Fprivate/')
+
+            safe_status = safe.status_code
+            escaped_status = escaped.status_code
+            escaped_data = escaped.get_data()
+            safe.close()
+            escaped.close()
+
+        self.assertEqual(200, safe_status)
+        self.assertEqual(404, escaped_status)
+        self.assertNotIn(b'private', escaped_data)
 
     def test_download_rejects_unsupported_url_before_downloading(self):
         with patch.object(app_module.downloader, 'download_video') as download_video:
@@ -181,14 +321,25 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertFalse(expired.exists())
 
     def test_security_headers_include_csp_and_https_hsts(self):
-        response = self.client.get('/', base_url='https://quickclean.example')
+        with patch.object(
+            app_module,
+            'FRONTEND_SCRIPT_HASHES',
+            ("'sha256-test-inline-script-hash='",),
+        ):
+            response = self.client.get('/', base_url='https://quickclean.example')
 
         self.assertEqual(200, response.status_code)
         self.assertIn("default-src 'self'", response.headers['Content-Security-Policy'])
+        self.assertNotIn("script-src 'self' 'unsafe-inline'", response.headers['Content-Security-Policy'])
+        self.assertIn(
+            "script-src 'self' 'sha256-test-inline-script-hash='",
+            response.headers['Content-Security-Policy'],
+        )
         self.assertEqual(
             'max-age=31536000',
             response.headers['Strict-Transport-Security'],
         )
+        response.close()
 
     def test_cleanup_rejects_path_traversal(self):
         victim = Path(self.temp_dir.name) / 'victim.txt'
