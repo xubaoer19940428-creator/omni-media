@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Film,
   Image as ImageIcon,
@@ -33,6 +33,11 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [isServerDownloading, setIsServerDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [videoPreviewFailed, setVideoPreviewFailed] = useState(false);
+
+  useEffect(() => {
+    setVideoPreviewFailed(false);
+  }, [data.video_url]);
 
   const hasImages = data.images && data.images.length > 0;
   const hasAudio = !!data.audio_url;
@@ -162,12 +167,14 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* Player Container */}
             <div className="lg:col-span-7 bg-slate-950 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl flex flex-col items-center justify-center relative min-h-[340px]">
-              {data.video_url ? (
+              {data.video_url && !videoPreviewFailed ? (
                 <video
                   src={data.video_url}
                   poster={getProxyImageUrl(data.cover || data.cover_url)}
                   controls
                   playsInline
+                  preload="metadata"
+                  onError={() => setVideoPreviewFailed(true)}
                   className="w-full max-h-[480px] object-contain rounded-2xl"
                 />
               ) : data.cover || data.cover_url ? (
@@ -178,14 +185,25 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
                     className="w-full h-full object-cover rounded-2xl opacity-60"
                   />
                   <div className="absolute inset-0 flex flex-col items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <ImageIcon className="w-12 h-12 text-blue-400 dark:text-cyan-400 mb-2" />
-                    <p className="text-sm font-semibold text-white">{t.result.photoCarouselNote}</p>
-                    <button
-                      onClick={() => setActiveTab('gallery')}
-                      className="mt-3 btn-gradient-pill text-xs font-semibold"
-                    >
-                      {t.result.viewAllPhotos} ({data.images?.length || 0})
-                    </button>
+                    {videoPreviewFailed ? (
+                      <>
+                        <AlertCircle className="w-12 h-12 text-amber-400 mb-2" />
+                        <p className="max-w-sm text-center text-sm font-semibold text-white">{t.result.previewFailed}</p>
+                      </>
+                    ) : (
+                      <>
+                        <ImageIcon className="w-12 h-12 text-blue-400 dark:text-cyan-400 mb-2" />
+                        <p className="text-sm font-semibold text-white">{hasImages ? t.result.photoCarouselNote : t.result.noVideoPreview}</p>
+                        {hasImages && (
+                          <button
+                            onClick={() => setActiveTab('gallery')}
+                            className="mt-3 btn-gradient-pill text-xs font-semibold"
+                          >
+                            {t.result.viewAllPhotos} ({data.images?.length || 0})
+                          </button>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
               ) : (

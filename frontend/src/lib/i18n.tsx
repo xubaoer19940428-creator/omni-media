@@ -45,6 +45,7 @@ export const translations = {
       untitled: 'Untitled Media',
       noUrlError: 'Please provide a video or post share URL.',
       clipboardError: 'Unable to read clipboard. Please paste manually (Ctrl+V / Cmd+V).',
+      storagePolicy: 'Public, login-free links only · 512 MB max · processed videos are stored privately in Cloudflare R2 · download links expire in 10 minutes · temporary files are removed after about 1 day · only download content you own or are authorized to use.',
     },
     // Result Card
     result: {
@@ -54,6 +55,7 @@ export const translations = {
       meta: 'Metadata',
       json: 'JSON',
       noVideoPreview: 'No direct video stream found for preview',
+      previewFailed: 'The source blocked browser preview. Server download is still available.',
       photoCarouselNote: 'This post is a high-res photo carousel',
       viewAllPhotos: 'View all photos',
       duration: 'Duration:',
@@ -187,6 +189,7 @@ export const translations = {
       untitled: '无标题作品',
       noUrlError: '请输入有效的视频或图文分享链接',
       clipboardError: '无法读取剪贴板，请使用 Ctrl+V / Cmd+V 手动粘贴',
+      storagePolicy: '仅支持公开且无需登录的链接 · 单文件最大 512 MB · 成品临时存入私有 Cloudflare R2 · 下载链接 10 分钟有效 · 文件约 1 天后清理 · 请仅下载自己拥有或已获授权的内容。',
     },
     // Result Card
     result: {
@@ -196,6 +199,7 @@ export const translations = {
       meta: '数据指标',
       json: 'JSON',
       noVideoPreview: '未获取到可直接预览的视频流',
+      previewFailed: '源站限制了浏览器预览，仍可使用服务端下载。',
       photoCarouselNote: '此作品为高清图文笔记 / 幻灯片',
       viewAllPhotos: '查看全部高清原图',
       duration: '时长:',

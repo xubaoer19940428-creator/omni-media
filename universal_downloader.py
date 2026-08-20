@@ -5,7 +5,9 @@
 """
 import logging
 import os
+import random
 import re
+import string
 import time
 import uuid
 from pathlib import Path
@@ -24,6 +26,14 @@ try:
     _has_curl_cffi = True
 except ImportError:
     _has_curl_cffi = False
+
+try:
+    from douyin_signer import ABogus, BrowserFingerprintGenerator
+    _has_douyin_signer = True
+except ImportError:
+    ABogus = None
+    BrowserFingerprintGenerator = None
+    _has_douyin_signer = False
 
 
 logger = logging.getLogger(__name__)
@@ -390,6 +400,10 @@ class UniversalDownloader:
         logger.info('[Douyin] Parsing video %s', video_id)
         
         try:
+            signed_detail = self._get_douyin_signed_detail(video_id)
+            if signed_detail:
+                return self._douyin_detail_to_video_info(video_id, signed_detail)
+
             # 访问移动端页面
             if _has_curl_cffi:
                 session = cffi_requests.Session(impersonate='chrome120')
@@ -506,6 +520,154 @@ class UniversalDownloader:
             return self._error_response(
                 'Douyin parsing failed. The platform may be temporarily unavailable'
             )
+
+    def _get_douyin_signed_detail(self, video_id: str) -> Dict[str, Any]:
+        """Fetch current public Douyin detail data with an anonymous guest session."""
+        if not _has_douyin_signer:
+            return {}
+
+        desktop_user_agent = (
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+            'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 '
+            'Safari/537.36 Edg/130.0.0.0'
+        )
+        register_payload = (
+            '{"region":"cn","aid":1768,"needFid":false,'
+            '"service":"www.ixigua.com","migrate_info":{"ticket":"",'
+            '"source":"node"},"cbUrlProtocol":"https","union":true}'
+        )
+
+        session = requests.Session()
+        try:
+            registered = session.post(
+                'https://ttwid.bytedance.com/ttwid/union/register/',
+                data=register_payload,
+                headers={
+                    'User-Agent': desktop_user_agent,
+                    'Content-Type': 'application/json; charset=utf-8',
+                },
+                timeout=self.http_timeout,
+            )
+            registered.raise_for_status()
+            ttwid = registered.cookies.get('ttwid')
+            if not ttwid:
+                return {}
+
+            token_alphabet = string.ascii_letters + string.digits + '-_'
+            params = {
+                'device_platform': 'webapp',
+                'aid': '6383',
+                'channel': 'channel_pc_web',
+                'pc_client_type': 1,
+                'publish_video_strategy_type': 2,
+                'pc_libra_divert': 'Windows',
+                'version_code': '290100',
+                'version_name': '29.1.0',
+                'cookie_enabled': 'true',
+                'screen_width': 1920,
+                'screen_height': 1080,
+                'browser_language': 'zh-CN',
+                'browser_platform': 'Win32',
+                'browser_name': 'Edge',
+                'browser_version': '130.0.0.0',
+                'browser_online': 'true',
+                'engine_name': 'Blink',
+                'engine_version': '130.0.0.0',
+                'os_name': 'Windows',
+                'os_version': 10,
+                'cpu_core_num': 12,
+                'device_memory': 8,
+                'platform': 'PC',
+                'downlink': 10,
+                'effective_type': '4g',
+                'round_trip_time': 100,
+                'msToken': ''.join(random.choices(token_alphabet, k=184)),
+                'aweme_id': video_id,
+            }
+            param_string = '&'.join(
+                f'{key}={value}' for key, value in params.items()
+            )
+            fingerprint = BrowserFingerprintGenerator.generate_fingerprint('Edge')
+            signed_params = ABogus(
+                fp=fingerprint,
+                user_agent=desktop_user_agent,
+            ).generate_abogus(param_string, '')[0]
+            verify_alphabet = string.ascii_letters + string.digits
+            s_v_web_id = (
+                f'verify_{int(time.time() * 1000)}_'
+                + ''.join(random.choices(verify_alphabet, k=36))
+            )
+            response = session.get(
+                'https://www.douyin.com/aweme/v1/web/aweme/detail/'
+                f'?{signed_params}',
+                headers={
+                    'User-Agent': desktop_user_agent,
+                    'Referer': 'https://www.douyin.com/',
+                    'Cookie': f'ttwid={ttwid}; s_v_web_id={s_v_web_id};',
+                },
+                timeout=self.http_timeout,
+            )
+            response.raise_for_status()
+            payload = response.json()
+            detail = payload.get('aweme_detail') if isinstance(payload, dict) else None
+            return detail if isinstance(detail, dict) else {}
+        except (requests.RequestException, ValueError, TypeError, KeyError):
+            logger.warning('[Douyin] Signed public detail request failed')
+            return {}
+        finally:
+            session.close()
+
+    @staticmethod
+    def _douyin_detail_to_video_info(
+        video_id: str,
+        detail: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        video = detail.get('video') or {}
+        play_addr = (
+            video.get('play_addr')
+            or video.get('play_addr_h264')
+            or video.get('play_addr_h265')
+            or {}
+        )
+        play_uri = play_addr.get('uri', '')
+        play_urls = play_addr.get('url_list') or []
+        if play_uri:
+            video_url = (
+                'https://www.douyin.com/aweme/v1/play/'
+                f'?video_id={play_uri}&ratio=1080p&line=0'
+            )
+        else:
+            video_url = next(
+                (
+                    candidate.replace('/playwm/', '/play/')
+                    for candidate in play_urls
+                    if isinstance(candidate, str) and candidate
+                ),
+                '',
+            )
+
+        cover = video.get('cover') or video.get('origin_cover') or {}
+        cover_urls = cover.get('url_list') or []
+        author = detail.get('author') or {}
+        duration_ms = detail.get('duration') or video.get('duration') or 0
+        statistics = detail.get('statistics') or {}
+        return {
+            'success': bool(video_url),
+            'platform': 'douyin',
+            'platform_name': 'Douyin',
+            'video_id': detail.get('aweme_id') or video_id,
+            'title': detail.get('desc') or f'Douyin video {video_id}',
+            'author': author.get('nickname') or 'Unknown creator',
+            'video_url': video_url,
+            'cover_url': next(
+                (candidate for candidate in cover_urls if candidate),
+                '',
+            ),
+            'duration': int(duration_ms / 1000) if duration_ms else 0,
+            'like_count': statistics.get('digg_count', 0),
+            'comment_count': statistics.get('comment_count', 0),
+            'view_count': statistics.get('play_count', 0),
+        }
     
     def get_video_info(self, url: str) -> Dict[str, Any]:
         """

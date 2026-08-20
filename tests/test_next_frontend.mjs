@@ -44,6 +44,19 @@ assert.doesNotMatch(resultCardSource, /href=\{data\.video_url\}/);
 assert.doesNotMatch(batchCenterSource, /window\.open\(task\.result\.video_url/);
 assert.match(resultCardSource, /triggerServerDownload/);
 assert.match(batchCenterSource, /triggerServerDownload/);
+assert.match(resultCardSource, /onError=\{\(\) => setVideoPreviewFailed\(true\)\}/);
+
+const workbenchSource = fs.readFileSync(
+  new URL('../frontend/src/components/Workbench.tsx', import.meta.url),
+  'utf8',
+);
+const i18nSource = fs.readFileSync(
+  new URL('../frontend/src/lib/i18n.tsx', import.meta.url),
+  'utf8',
+);
+assert.match(workbenchSource, /t\.workbench\.storagePolicy/);
+assert.match(i18nSource, /512 MB/);
+assert.match(i18nSource, /10 分钟有效/);
 
 const platformCases = new Map([
   ['https://www.youtube.com/watch?v=abc', 'youtube'],

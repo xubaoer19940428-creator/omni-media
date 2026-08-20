@@ -114,6 +114,53 @@ class PlatformSupportTests(unittest.TestCase):
             with self.subTest(text=text):
                 self.assertEqual(expected_url, self.downloader.extract_url_from_text(text))
 
+    def test_current_douyin_share_text_extracts_the_short_link(self):
+        share_text = (
+            '6.97 Nwf:/ 01/02 r@r.Eh :5pm 小麦和威龙偶遇小博博会发生什么？ '
+            '# 三角洲行动 https://v.douyin.com/EtPAAlUsaGU/ '
+            '复制此链接，打开Dou音搜索，直接观看视频！'
+        )
+        self.assertEqual(
+            'https://v.douyin.com/EtPAAlUsaGU/',
+            self.downloader.extract_url_from_text(share_text),
+        )
+
+    def test_current_douyin_detail_builds_a_browser_playable_url(self):
+        detail = {
+            'aweme_id': '7674193013408681279',
+            'desc': '小麦和威龙偶遇小博博会发生什么？',
+            'author': {'nickname': '左手动漫'},
+            'duration': 97_269,
+            'statistics': {
+                'digg_count': 12,
+                'comment_count': 3,
+                'play_count': 456,
+            },
+            'video': {
+                'play_addr': {
+                    'uri': 'video-resource-id',
+                    'url_list': ['https://cdn.example/fallback.mp4'],
+                },
+                'cover': {'url_list': ['https://cdn.example/cover.jpg']},
+            },
+        }
+
+        result = self.downloader._douyin_detail_to_video_info(
+            '7674193013408681279',
+            detail,
+        )
+
+        self.assertTrue(result['success'])
+        self.assertEqual('左手动漫', result['author'])
+        self.assertEqual(97, result['duration'])
+        self.assertEqual(12, result['like_count'])
+        self.assertEqual(456, result['view_count'])
+        self.assertEqual(
+            'https://www.douyin.com/aweme/v1/play/'
+            '?video_id=video-resource-id&ratio=1080p&line=0',
+            result['video_url'],
+        )
+
     def test_process_url_passes_the_clean_url_to_yt_dlp(self):
         info = {
             'success': True,

@@ -11,7 +11,8 @@ import {
   Trash2,
   ChevronDown,
   Zap,
-  Sparkles
+  Sparkles,
+  ShieldCheck
 } from 'lucide-react';
 import { ParsedMedia, PlatformKey } from '@/types';
 import { extractUrlFromText, parseMediaUrl } from '@/lib/api';
@@ -260,6 +261,11 @@ export const Workbench: React.FC<WorkbenchProps> = ({ initialUrl = '' }) => {
                 )}
               </button>
             </div>
+          </div>
+
+          <div className="flex items-start gap-2.5 rounded-xl border border-blue-200/80 bg-blue-50/70 px-3.5 py-3 text-[11px] leading-relaxed text-slate-600 dark:border-cyan-500/20 dark:bg-cyan-500/[0.06] dark:text-slate-400">
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-blue-600 dark:text-cyan-400" />
+            <p>{t.workbench.storagePolicy}</p>
           </div>
 
           {/* Clean URL Output */}
