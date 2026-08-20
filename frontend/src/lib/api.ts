@@ -117,6 +117,7 @@ export async function triggerServerDownload(originalUrl: string): Promise<{
   success: boolean;
   filename: string;
   download_url: string;
+  expires_in?: number;
 }> {
   const res = await fetch(`${API_BASE_URL}/api/download`, {
     method: 'POST',

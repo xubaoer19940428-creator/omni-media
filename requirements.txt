@@ -3,3 +3,4 @@ gunicorn==26.0.0
 requests==2.34.2
 curl-cffi==0.16.0
 yt-dlp==2026.7.4
+boto3==1.43.75

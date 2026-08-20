@@ -112,13 +112,18 @@ export const BatchCenter: React.FC = () => {
   };
 
   const downloadTaskMedia = async (task: BatchTaskItem) => {
-    if (task.result?.video_url) {
-      window.open(task.result.video_url, '_blank');
-    } else if (task.extractedUrl) {
+    if (task.extractedUrl) {
+      const downloadWindow = window.open('about:blank', '_blank');
+      if (downloadWindow) downloadWindow.opener = null;
       try {
         const res = await triggerServerDownload(task.extractedUrl);
-        window.open(res.download_url, '_blank');
+        if (downloadWindow) {
+          downloadWindow.location.href = res.download_url;
+        } else {
+          window.location.href = res.download_url;
+        }
       } catch (err: any) {
+        downloadWindow?.close();
         alert(err.message || 'Download failed');
       }
     }

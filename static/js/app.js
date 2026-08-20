@@ -124,8 +124,9 @@ async function handleDownload() {
         const data = await res.json();
 
         if (res.ok && data.success) {
-            state.filename = data.filename;
+            state.filename = data.expires_in ? null : data.filename;
             elements.downloadLink.href = data.download_url;
+            elements.cleanupBtn.hidden = Boolean(data.expires_in);
             toggleUI('complete', true);
         } else {
             notify('error', data.error || "The download could not be completed");

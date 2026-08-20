@@ -19,6 +19,7 @@ import requests
 from flask import Flask, render_template, request, jsonify, send_from_directory, Response
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+from storage import StoragePublishError, create_storage_backend
 from universal_downloader import UniversalDownloader
 
 
@@ -131,6 +132,7 @@ _image_session = requests.Session()
 _image_session.trust_env = False
 
 downloader = UniversalDownloader(DOWNLOAD_DIR)
+storage_backend = create_storage_backend()
 
 
 class ImageProxyError(Exception):
@@ -503,7 +505,8 @@ def health_check():
     return jsonify({
         'status': 'ok',
         'timestamp': time.time(),
-        'supported_platforms_count': len(downloader.get_supported_platforms())
+        'supported_platforms_count': len(downloader.get_supported_platforms()),
+        'storage_backend': storage_backend.name,
     })
 
 
@@ -636,11 +639,25 @@ def download_video():
             logging.warning('Downloader returned an unsafe or oversized file')
             return jsonify({'error': 'The downloaded file could not be accepted'}), 500
 
-        return jsonify({
+        published = storage_backend.publish(completed_path, completed_path.name)
+        response = {
             'success': True,
-            'filename': completed_path.name,
-            'download_url': f'/download/{completed_path.name}',
-        })
+            'filename': published.filename,
+            'download_url': published.download_url,
+        }
+        if published.expires_in is not None:
+            response['expires_in'] = published.expires_in
+        if published.remove_local_file:
+            try:
+                completed_path.unlink()
+            except OSError:
+                logging.exception('Could not remove the published temporary download')
+        return jsonify(response)
+
+    except StoragePublishError as exc:
+        _remove_download_stem(download_stem)
+        logging.error('Could not publish the completed download (%s)', type(exc).__name__)
+        return jsonify({'error': 'The download storage is temporarily unavailable'}), 503
 
     except Exception:
         _remove_download_stem(download_stem)

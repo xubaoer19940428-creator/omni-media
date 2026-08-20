@@ -269,6 +269,25 @@ GUNICORN_THREADS=8
 LOG_LEVEL=INFO
 ```
 
+Completed downloads use local storage by default. Production deployments can
+publish every server-processed video to a private Cloudflare R2 bucket and
+return a short-lived signed URL:
+
+```bash
+STORAGE_BACKEND=r2
+R2_ACCOUNT_ID=your-account-id
+R2_BUCKET_NAME=omnimedia-downloads
+R2_ACCESS_KEY_ID=your-bucket-scoped-access-key
+R2_SECRET_ACCESS_KEY=your-bucket-scoped-secret
+R2_PRESIGNED_URL_SECONDS=600
+R2_OBJECT_PREFIX=downloads
+```
+
+Keep R2 credentials on the backend only. Railway still needs temporary disk
+space while yt-dlp and ffmpeg download or merge a video; the temporary file is
+removed after R2 publication. Configure a bucket lifecycle rule for the object
+prefix if downloads should expire automatically.
+
 When running locally, the downloader automatically loads cookies from your local Chrome profile if detected. In server environments, it will not look for non-existent local browser profiles; if cookies are required for public content, set `YTDLP_COOKIE_FILE=/path/to/cookies.txt`. You can also explicitly specify `YTDLP_COOKIES_FROM_BROWSER=chrome` or set it to `off` to disable auto-detection.
 
 In reverse proxy environments such as Railway, set `TRUST_PROXY=true` to let rate-limiting correctly identify client IP addresses and detect HTTPS. Do not enable this if clients connect directly to the application.

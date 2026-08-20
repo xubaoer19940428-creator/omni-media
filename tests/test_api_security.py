@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import app as app_module
+from storage import PublishedObject, StoragePublishError
 
 
 YOUTUBE_URL = 'https://www.youtube.com/watch?v=BaW_jenozKc'
@@ -32,7 +33,7 @@ class ApiSecurityTests(unittest.TestCase):
         )
         self.download_dir_patch.start()
         app_module._rate_limit_state.clear()
-        app_module._last_cleanup_check = 0.0
+        app_module._last_cleanup_check = -float('inf')
         app_module.app.config.update(TESTING=True)
         self.client = app_module.app.test_client()
 
@@ -68,6 +69,57 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertEqual(app_module.MAX_DOWNLOAD_BYTES, captured['max_bytes'])
         self.assertNotIn('filepath', data)
         self.assertEqual(f"/download/{data['filename']}", data['download_url'])
+
+    def test_r2_publication_returns_signed_url_and_removes_local_file(self):
+        published_path = None
+
+        def fake_download(_url, filename, max_bytes=None):
+            nonlocal published_path
+            published_path = Path(filename)
+            published_path.write_bytes(b'video')
+            return published_path.name
+
+        storage = Mock()
+        storage.publish.return_value = PublishedObject(
+            download_url='https://signed.example/video',
+            filename=f'youtube_{"a" * 32}.mp4',
+            expires_in=600,
+            remove_local_file=True,
+        )
+        with (
+            patch.object(app_module.downloader, 'download_video', side_effect=fake_download),
+            patch.object(app_module, 'storage_backend', storage),
+        ):
+            response = self.client.post('/api/download', json={
+                'original_url': YOUTUBE_URL,
+            })
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual('https://signed.example/video', response.get_json()['download_url'])
+        self.assertEqual(600, response.get_json()['expires_in'])
+        self.assertFalse(published_path.exists())
+
+    def test_r2_publication_failure_removes_local_file(self):
+        published_path = None
+
+        def fake_download(_url, filename, max_bytes=None):
+            nonlocal published_path
+            published_path = Path(filename)
+            published_path.write_bytes(b'video')
+            return published_path.name
+
+        storage = Mock()
+        storage.publish.side_effect = StoragePublishError('upload failed')
+        with (
+            patch.object(app_module.downloader, 'download_video', side_effect=fake_download),
+            patch.object(app_module, 'storage_backend', storage),
+        ):
+            response = self.client.post('/api/download', json={
+                'original_url': YOUTUBE_URL,
+            })
+
+        self.assertEqual(503, response.status_code)
+        self.assertFalse(published_path.exists())
 
     def test_parse_rejects_non_object_json(self):
         response = self.client.post('/api/parse', json=['not', 'an', 'object'])

@@ -16,7 +16,6 @@ import {
   MessageCircle,
   Share2,
   User,
-  Sparkles,
   AlertCircle
 } from 'lucide-react';
 import { ParsedMedia } from '@/types';
@@ -33,7 +32,6 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
   const [activeTab, setActiveTab] = useState<'video' | 'gallery' | 'audio' | 'meta' | 'json'>('video');
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [isServerDownloading, setIsServerDownloading] = useState(false);
-  const [serverDownloadUrl, setServerDownloadUrl] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const hasImages = data.images && data.images.length > 0;
@@ -49,13 +47,19 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
 
   const handleServerSideDownload = async () => {
     if (!data.original_url && !data.video_url) return;
+    const downloadWindow = window.open('about:blank', '_blank');
+    if (downloadWindow) downloadWindow.opener = null;
     setIsServerDownloading(true);
     setDownloadError(null);
     try {
       const res = await triggerServerDownload(data.original_url || data.video_url || '');
-      setServerDownloadUrl(res.download_url);
-      window.open(res.download_url, '_blank');
+      if (downloadWindow) {
+        downloadWindow.location.href = res.download_url;
+      } else {
+        window.location.href = res.download_url;
+      }
     } catch (err: any) {
+      downloadWindow?.close();
       setDownloadError(err.message || 'Server processing failed');
     } finally {
       setIsServerDownloading(false);
@@ -249,26 +253,13 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
 
               {/* Action Buttons */}
               <div className="space-y-2.5">
-                {data.video_url && (
-                  <a
-                    href={data.video_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    download={`${data.platform || 'video'}_${Date.now()}.mp4`}
-                    className="w-full btn-primary-pill text-center text-xs flex items-center justify-center gap-2 cursor-pointer shadow-md"
-                  >
-                    <Download className="w-4 h-4" />
-                    <span>{t.result.downloadMp4}</span>
-                  </a>
-                )}
-
                 <button
                   onClick={handleServerSideDownload}
                   disabled={isServerDownloading}
-                  className="w-full btn-secondary-pill text-xs flex items-center justify-center gap-2 transition disabled:opacity-50"
+                  className="w-full btn-primary-pill text-xs flex items-center justify-center gap-2 transition disabled:opacity-50"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400" />
-                  <span>{isServerDownloading ? t.result.serverProcessing : t.result.serverDownload}</span>
+                  <Download className="w-4 h-4" />
+                  <span>{isServerDownloading ? t.result.serverProcessing : t.result.downloadMp4}</span>
                 </button>
 
                 {downloadError && (

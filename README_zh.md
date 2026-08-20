@@ -269,6 +269,23 @@ GUNICORN_THREADS=8
 LOG_LEVEL=INFO
 ```
 
+下载完成的文件默认使用本地存储。生产环境可将所有经服务器处理的
+视频发布到私有 Cloudflare R2 bucket，并返回短期有效的签名链接：
+
+```bash
+STORAGE_BACKEND=r2
+R2_ACCOUNT_ID=你的账户ID
+R2_BUCKET_NAME=omnimedia-downloads
+R2_ACCESS_KEY_ID=仅限该bucket的访问密钥
+R2_SECRET_ACCESS_KEY=仅限该bucket的秘密密钥
+R2_PRESIGNED_URL_SECONDS=600
+R2_OBJECT_PREFIX=downloads
+```
+
+R2 凭证只能保存在后端。yt-dlp 和 ffmpeg 下载或合并视频时，Railway
+仍需临时磁盘空间；发布到 R2 后会删除临时文件。如需自动清理 R2
+对象，请为对应对象前缀配置生命周期规则。
+
 本地运行时会在检测到 Chrome 用户配置后自动使用浏览器 cookies。服务器部署时默认不会尝试读取不存在的浏览器配置；如公开内容确实需要 cookies，可设置 `YTDLP_COOKIE_FILE=/path/to/cookies.txt`。也可以通过 `YTDLP_COOKIES_FROM_BROWSER=chrome` 显式选择浏览器，或设置为 `off` 禁用自动检测。
 
 在 Railway 等只通过可信反向代理访问的环境中，可设置 `TRUST_PROXY=true`，让限流正确识别客户端地址并识别 HTTPS。请勿在应用还能被客户端直接访问时启用此选项。

@@ -32,6 +32,19 @@ const api = evaluateCommonJs(
   },
 );
 
+const resultCardSource = fs.readFileSync(
+  new URL('../frontend/src/components/ResultCard.tsx', import.meta.url),
+  'utf8',
+);
+const batchCenterSource = fs.readFileSync(
+  new URL('../frontend/src/components/BatchCenter.tsx', import.meta.url),
+  'utf8',
+);
+assert.doesNotMatch(resultCardSource, /href=\{data\.video_url\}/);
+assert.doesNotMatch(batchCenterSource, /window\.open\(task\.result\.video_url/);
+assert.match(resultCardSource, /triggerServerDownload/);
+assert.match(batchCenterSource, /triggerServerDownload/);
+
 const platformCases = new Map([
   ['https://www.youtube.com/watch?v=abc', 'youtube'],
   ['https://www.pinterest.co.uk/pin/123', 'pinterest'],
