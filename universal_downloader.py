@@ -234,6 +234,10 @@ class UniversalDownloader:
         self.download_dir = download_dir
         self.connect_timeout = _env_timeout('HTTP_CONNECT_TIMEOUT', 10)
         self.read_timeout = _env_timeout('HTTP_READ_TIMEOUT', 30)
+        self.douyin_parse_timeout = (
+            min(self.connect_timeout, 5.0),
+            min(self.read_timeout, 10.0),
+        )
         self.download_timeout = _env_timeout('DOWNLOAD_HTTP_TIMEOUT', 300)
         os.makedirs(self.download_dir, exist_ok=True)
 
@@ -358,7 +362,7 @@ class UniversalDownloader:
                 resp = session.get(
                     url,
                     allow_redirects=True,
-                    timeout=self.http_timeout,
+                    timeout=self.douyin_parse_timeout,
                 )
             else:
                 resp = requests.get(
@@ -367,7 +371,7 @@ class UniversalDownloader:
                     headers={
                         'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)'
                     },
-                    timeout=self.http_timeout,
+                    timeout=self.douyin_parse_timeout,
                 )
             resp.raise_for_status()
             final_url = str(resp.url)
@@ -400,9 +404,23 @@ class UniversalDownloader:
         logger.info('[Douyin] Parsing video %s', video_id)
         
         try:
-            signed_detail = self._get_douyin_signed_detail(video_id)
-            if signed_detail:
-                return self._douyin_detail_to_video_info(video_id, signed_detail)
+            try:
+                signed_detail = self._get_douyin_signed_detail(video_id)
+                if signed_detail:
+                    signed_info = self._douyin_detail_to_video_info(
+                        video_id,
+                        signed_detail,
+                    )
+                    if signed_info.get('success'):
+                        return signed_info
+                    logger.warning(
+                        '[Douyin] Signed detail did not include a playable video'
+                    )
+            except Exception as exc:
+                logger.warning(
+                    '[Douyin] Signed detail handling failed (%s)',
+                    type(exc).__name__,
+                )
 
             # 访问移动端页面
             if _has_curl_cffi:
@@ -421,13 +439,13 @@ class UniversalDownloader:
                 mobile_resp = session.get(
                     mobile_url,
                     headers=headers,
-                    timeout=self.http_timeout,
+                    timeout=self.douyin_parse_timeout,
                 )
             else:
                 mobile_resp = requests.get(
                     mobile_url,
                     headers=headers,
-                    timeout=self.http_timeout,
+                    timeout=self.douyin_parse_timeout,
                 )
             mobile_resp.raise_for_status()
             
@@ -546,7 +564,7 @@ class UniversalDownloader:
                     'User-Agent': desktop_user_agent,
                     'Content-Type': 'application/json; charset=utf-8',
                 },
-                timeout=self.http_timeout,
+                timeout=self.douyin_parse_timeout,
             )
             registered.raise_for_status()
             ttwid = registered.cookies.get('ttwid')
@@ -605,7 +623,7 @@ class UniversalDownloader:
                     'Referer': 'https://www.douyin.com/',
                     'Cookie': f'ttwid={ttwid}; s_v_web_id={s_v_web_id};',
                 },
-                timeout=self.http_timeout,
+                timeout=self.douyin_parse_timeout,
             )
             response.raise_for_status()
             payload = response.json()

@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 import universal_downloader as downloader_module
 from app import app
+from douyin_signer import ABogus, BrowserFingerprintGenerator
 from universal_downloader import UniversalDownloader
 
 
@@ -160,6 +161,138 @@ class PlatformSupportTests(unittest.TestCase):
             '?video_id=video-resource-id&ratio=1080p&line=0',
             result['video_url'],
         )
+
+    def test_douyin_guest_request_is_signed_and_always_closes_session(self):
+        class Response:
+            def __init__(self, *, cookies=None, payload=None):
+                self.cookies = cookies or {}
+                self._payload = payload or {}
+
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return self._payload
+
+        class Session:
+            def __init__(self):
+                self.post_call = None
+                self.get_call = None
+                self.closed = False
+
+            def post(self, url, **kwargs):
+                self.post_call = (url, kwargs)
+                return Response(cookies={'ttwid': 'guest-cookie'})
+
+            def get(self, url, **kwargs):
+                self.get_call = (url, kwargs)
+                return Response(payload={
+                    'aweme_detail': {'aweme_id': '7674193013408681279'},
+                })
+
+            def close(self):
+                self.closed = True
+
+        class Signer:
+            def __init__(self, *, fp, user_agent):
+                self.fp = fp
+                self.user_agent = user_agent
+
+            def generate_abogus(self, params, body):
+                return (f'{params}&a_bogus=test-signature', '', '', body)
+
+        session = Session()
+        with (
+            patch.object(downloader_module.requests, 'Session', return_value=session),
+            patch.object(downloader_module, 'ABogus', Signer),
+            patch.object(
+                downloader_module.BrowserFingerprintGenerator,
+                'generate_fingerprint',
+                return_value='test-fingerprint',
+            ),
+        ):
+            detail = self.downloader._get_douyin_signed_detail(
+                '7674193013408681279'
+            )
+
+        self.assertEqual('7674193013408681279', detail['aweme_id'])
+        self.assertIn('/ttwid/union/register/', session.post_call[0])
+        self.assertEqual(
+            (5.0, 10.0),
+            session.post_call[1]['timeout'],
+        )
+        self.assertIn('aweme_id=7674193013408681279', session.get_call[0])
+        self.assertIn('a_bogus=test-signature', session.get_call[0])
+        self.assertIn('ttwid=guest-cookie', session.get_call[1]['headers']['Cookie'])
+        self.assertIn('s_v_web_id=verify_', session.get_call[1]['headers']['Cookie'])
+        self.assertEqual(
+            (5.0, 10.0),
+            session.get_call[1]['timeout'],
+        )
+        self.assertTrue(session.closed)
+
+    def test_douyin_signed_failure_falls_back_to_the_mobile_page(self):
+        class MobileResponse:
+            text = (
+                '<script>{"desc":"Fallback","nickname":"Creator",'
+                '"play_addr":{"url_list":["https://cdn.example/play/video.mp4"]},'
+                '"cover":{"url_list":["https://cdn.example/cover.jpg"]},'
+                '"duration":1000}</script>'
+            )
+
+            def raise_for_status(self):
+                return None
+
+        for signed_result in (
+            {'aweme_id': '7674193013408681279', 'video': {}},
+            IndexError('signer failed'),
+        ):
+            with self.subTest(signed_result=type(signed_result).__name__):
+                signed_patch = (
+                    patch.object(
+                        self.downloader,
+                        '_get_douyin_signed_detail',
+                        side_effect=signed_result,
+                    )
+                    if isinstance(signed_result, Exception)
+                    else patch.object(
+                        self.downloader,
+                        '_get_douyin_signed_detail',
+                        return_value=signed_result,
+                    )
+                )
+                with (
+                    signed_patch,
+                    patch.object(downloader_module, '_has_curl_cffi', False),
+                    patch.object(
+                        downloader_module.requests,
+                        'get',
+                        return_value=MobileResponse(),
+                    ),
+                ):
+                    result = self.downloader._get_douyin_video_info(
+                        'https://www.douyin.com/video/7674193013408681279'
+                    )
+
+                self.assertTrue(result['success'])
+                self.assertEqual('Fallback', result['title'])
+                self.assertEqual(
+                    'https://cdn.example/play/video.mp4',
+                    result['video_url'],
+                )
+
+    def test_douyin_signer_generates_the_expected_query_contract(self):
+        fingerprint = BrowserFingerprintGenerator.generate_fingerprint('Edge')
+        generated = ABogus(
+            fp=fingerprint,
+            user_agent='Mozilla/5.0 test',
+        ).generate_abogus('aid=6383&aweme_id=7674193013408681279', '')
+
+        self.assertTrue(fingerprint)
+        self.assertEqual(4, len(generated))
+        self.assertIn('aid=6383&aweme_id=7674193013408681279', generated[0])
+        self.assertIn('&a_bogus=', generated[0])
+        self.assertTrue(generated[1])
 
     def test_process_url_passes_the_clean_url_to_yt_dlp(self):
         info = {
