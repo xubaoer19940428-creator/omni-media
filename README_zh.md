@@ -114,13 +114,13 @@ python app.py
 浏览器打开 <http://localhost:7860>。Windows 用户可使用
 `venv\Scripts\activate` 激活虚拟环境。
 
-可选的资源限制、存储、CORS、Cookie 和代理设置请查看
-[`.env.example`](.env.example)。
+可选配置请查看 [`.env.example`](.env.example)。
 
 ## API 示例
 
 Web 界面使用相同的 API。下面的示例假设本地服务运行在
-`http://localhost:7860`。
+`http://localhost:7860`。请将示例 URL 替换为自己拥有或已获授权使用的
+公开链接。
 
 ### 解析单个链接
 

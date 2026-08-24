@@ -115,13 +115,13 @@ python app.py
 Open <http://localhost:7860>. Windows users can activate the environment with
 `venv\Scripts\activate`.
 
-For optional limits, storage, CORS, cookies, and proxy settings, see
-[`.env.example`](.env.example).
+For optional configuration, see [`.env.example`](.env.example).
 
 ## API examples
 
 The browser interface uses the same API. All examples below assume a local
-server at `http://localhost:7860`.
+server at `http://localhost:7860`. Replace the example URL with a public link
+that you own or are authorized to use.
 
 ### Parse one link
 
