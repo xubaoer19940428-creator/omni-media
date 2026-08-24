@@ -1,5 +1,5 @@
 <div align="center">
-  <a href="https://omni-media-production.up.railway.app/">
+  <a href="https://useomnimedia.com/">
     <img src="./frontend/public/icon.svg" width="96" alt="OmniMedia 标志">
   </a>
 
@@ -13,7 +13,7 @@
   </p>
 
   <p>
-    <a href="https://omni-media-production.up.railway.app/"><strong>在线体验</strong></a>
+    <a href="https://useomnimedia.com/"><strong>在线体验</strong></a>
     ·
     <a href="#快速开始">快速开始</a>
     ·
@@ -76,7 +76,7 @@ OmniMedia 面向公开且无需登录的媒体。付费、私密、需要登录�
 
 ## 立即体验
 
-打开[在线体验站](https://omni-media-production.up.railway.app/)，将支持的
+打开[在线体验站](https://useomnimedia.com/)，将支持的
 链接或分享文本粘贴到解析工作台即可。
 
 ### 抖音分享文本

@@ -4,6 +4,10 @@ import { LanguageProvider } from '@/lib/i18n';
 import { ThemeProvider } from '@/lib/theme';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://useomnimedia.com'),
+  alternates: {
+    canonical: '/',
+  },
   title: 'OmniMedia — Universal Social Media API & Developer Extraction Platform',
   description:
     'A unified REST API for parsing public media links from Douyin, TikTok, Xiaohongshu, Instagram, Bilibili, YouTube, Twitter/X, and 15 more platforms.',
@@ -25,7 +29,7 @@ export const metadata: Metadata = {
     description:
       'Parse public media links across 22 platforms with normalized JSON responses and server-side downloads.',
     type: 'website',
-    url: 'https://omni-media-production.up.railway.app',
+    url: 'https://useomnimedia.com',
   },
 };
 

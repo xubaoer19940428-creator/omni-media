@@ -1,5 +1,5 @@
 <div align="center">
-  <a href="https://omni-media-production.up.railway.app/">
+  <a href="https://useomnimedia.com/">
     <img src="./frontend/public/icon.svg" width="96" alt="OmniMedia logo">
   </a>
 
@@ -13,7 +13,7 @@
   </p>
 
   <p>
-    <a href="https://omni-media-production.up.railway.app/"><strong>Live Demo</strong></a>
+    <a href="https://useomnimedia.com/"><strong>Live Demo</strong></a>
     ·
     <a href="#quick-start">Quick Start</a>
     ·
@@ -77,7 +77,7 @@ also change without notice.
 
 ## Try it
 
-Open the [live demo](https://omni-media-production.up.railway.app/), then paste
+Open the [live demo](https://useomnimedia.com/), then paste
 any supported link or share text into the workbench.
 
 ### Douyin share text
