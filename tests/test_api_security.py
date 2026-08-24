@@ -165,6 +165,90 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertEqual('https://cdn.example/video.mp4', data['video_url'])
         self.assertEqual(4, data['views'])
 
+    def test_request_id_is_generated_or_accepts_a_safe_caller_value(self):
+        generated = self.client.get('/api/health')
+        supplied = self.client.get(
+            '/api/health',
+            headers={'X-Request-ID': 'client_request-123'},
+        )
+        rejected = self.client.get(
+            '/api/health',
+            headers={'X-Request-ID': 'unsafe request id'},
+        )
+
+        self.assertRegex(generated.headers['X-Request-ID'], r'^[0-9a-f]{32}$')
+        self.assertEqual('client_request-123', supplied.headers['X-Request-ID'])
+        self.assertNotEqual('unsafe request id', rejected.headers['X-Request-ID'])
+        self.assertIn(
+            'X-Request-ID',
+            generated.headers['Access-Control-Expose-Headers'],
+        )
+
+    def test_parse_timing_log_omits_source_and_media_urls(self):
+        sensitive_source = f'{YOUTUBE_URL}&signature=do-not-log'
+        sensitive_media = 'https://cdn.example/video.mp4?token=do-not-log'
+        parsed = {
+            'success': True,
+            'platform': 'youtube',
+            'video_info': {'video_url': sensitive_media},
+        }
+        with (
+            patch.object(app_module.downloader, 'process_url', return_value=parsed),
+            self.assertLogs(level='INFO') as captured,
+        ):
+            response = self.client.post('/api/parse', json={'url': sensitive_source})
+
+        logs = '\n'.join(captured.output)
+        self.assertEqual(200, response.status_code)
+        self.assertIn('stage=parse', logs)
+        self.assertIn('stage=request_total', logs)
+        self.assertIn('platform=youtube', logs)
+        self.assertNotIn(sensitive_source, logs)
+        self.assertNotIn(sensitive_media, logs)
+
+    def test_parse_and_batch_timing_logs_survive_unexpected_failures(self):
+        with (
+            patch.object(app_module, '_parse_media', side_effect=RuntimeError('boom')),
+            self.assertLogs(level='INFO') as parse_logs,
+            self.assertRaises(RuntimeError),
+        ):
+            self.client.post('/api/parse', json={'url': YOUTUBE_URL})
+
+        with (
+            patch.object(app_module, '_parse_media', side_effect=RuntimeError('boom')),
+            self.assertLogs(level='INFO') as batch_logs,
+            self.assertRaises(RuntimeError),
+        ):
+            self.client.post('/api/batch-parse', json={'urls': [YOUTUBE_URL]})
+
+        self.assertIn('stage=parse', '\n'.join(parse_logs.output))
+        self.assertIn('status=failed', '\n'.join(parse_logs.output))
+        self.assertIn('stage=batch_parse', '\n'.join(batch_logs.output))
+        self.assertIn('status=failed', '\n'.join(batch_logs.output))
+
+    def test_storage_timing_log_survives_unexpected_backend_failure(self):
+        def fake_download(_url, filename, max_bytes=None):
+            path = Path(filename)
+            path.write_bytes(b'video')
+            return path.name
+
+        storage = Mock(name='r2')
+        storage.name = 'r2'
+        storage.publish.side_effect = RuntimeError('boom')
+        with (
+            patch.object(app_module.downloader, 'download_video', side_effect=fake_download),
+            patch.object(app_module, 'storage_backend', storage),
+            self.assertLogs(level='INFO') as captured,
+        ):
+            response = self.client.post('/api/download', json={
+                'original_url': YOUTUBE_URL,
+            })
+
+        logs = '\n'.join(captured.output)
+        self.assertEqual(500, response.status_code)
+        self.assertIn('stage=storage_publish', logs)
+        self.assertIn('status=failed', logs)
+
     def test_batch_parse_is_bounded_and_preserves_results(self):
         urls = [YOUTUBE_URL, 'https://example.com/video']
         parsed = {

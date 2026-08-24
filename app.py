@@ -16,7 +16,7 @@ import time
 import uuid
 
 import requests
-from flask import Flask, render_template, request, jsonify, send_from_directory, Response
+from flask import Flask, Response, g, jsonify, render_template, request, send_from_directory
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from storage import StoragePublishError, create_storage_backend
@@ -121,6 +121,7 @@ ALLOWED_IMAGE_CONTENT_TYPES = {
     'image/png',
     'image/webp',
 }
+REQUEST_ID_RE = re.compile(r'^[A-Za-z0-9_-]{8,64}$')
 
 _download_slots = threading.BoundedSemaphore(MAX_CONCURRENT_DOWNLOADS)
 _parse_slots = threading.BoundedSemaphore(MAX_CONCURRENT_PARSES)
@@ -153,6 +154,19 @@ def _cors_origin():
     if origin and ('*' in CORS_ALLOWED_ORIGINS or origin in CORS_ALLOWED_ORIGINS):
         return origin
     return None
+
+
+def _operation_timing(stage, started_at, **fields):
+    details = ' '.join(
+        f'{key}={value}' for key, value in fields.items() if value is not None
+    )
+    logging.info(
+        'operation_timing request_id=%s stage=%s duration_ms=%.1f%s',
+        g.request_id,
+        stage,
+        (time.monotonic() - started_at) * 1000,
+        f' {details}' if details else '',
+    )
 
 
 def _normalize_parse_result(result, original_url):
@@ -437,6 +451,17 @@ def _fetch_proxy_image(image_url):
 
 
 @app.before_request
+def begin_request_observation():
+    supplied_request_id = request.headers.get('X-Request-ID', '')
+    g.request_id = (
+        supplied_request_id
+        if REQUEST_ID_RE.fullmatch(supplied_request_id)
+        else uuid.uuid4().hex
+    )
+    g.request_started_at = time.monotonic()
+
+
+@app.before_request
 def handle_preflight():
     if request.method == 'OPTIONS' and request.path.startswith('/api/'):
         response = Response(status=204)
@@ -445,7 +470,8 @@ def handle_preflight():
             response.headers['Access-Control-Allow-Origin'] = allowed_origin
             response.headers['Vary'] = 'Origin'
         response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, X-Request-ID'
+        response.headers['Access-Control-Expose-Headers'] = 'X-Request-ID'
         response.headers['Access-Control-Max-Age'] = '86400'
         return response
 
@@ -457,7 +483,9 @@ def add_security_headers(response):
         response.headers['Access-Control-Allow-Origin'] = allowed_origin
         response.headers['Vary'] = 'Origin'
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, X-Request-ID'
+    response.headers['Access-Control-Expose-Headers'] = 'X-Request-ID'
+    response.headers['X-Request-ID'] = g.request_id
     response.headers.setdefault('X-Content-Type-Options', 'nosniff')
     response.headers.setdefault('Referrer-Policy', 'no-referrer')
     response.headers.setdefault('X-Frame-Options', 'SAMEORIGIN')
@@ -486,6 +514,14 @@ def add_security_headers(response):
         )
     if request.path.startswith('/api/'):
         response.headers.setdefault('Cache-Control', 'no-store')
+    if request.path.startswith('/api/') or request.path.startswith('/download/'):
+        _operation_timing(
+            'request_total',
+            g.request_started_at,
+            method=request.method,
+            endpoint=request.url_rule.rule if request.url_rule else 'unmatched',
+            status=response.status_code,
+        )
     return response
 
 
@@ -538,7 +574,18 @@ def parse_url():
     if data is None:
         return jsonify({'error': 'A JSON object is required'}), 400
 
-    result, status_code = _parse_media(data.get('url', ''))
+    started_at = time.monotonic()
+    try:
+        result, status_code = _parse_media(data.get('url', ''))
+    except Exception:
+        _operation_timing('parse', started_at, status='failed')
+        raise
+    _operation_timing(
+        'parse',
+        started_at,
+        platform=result.get('platform_key') or result.get('platform'),
+        status=status_code,
+    )
     return jsonify(result), status_code
 
 
@@ -562,10 +609,21 @@ def batch_parse_urls():
         }), 400
 
     workers = min(MAX_CONCURRENT_PARSES, len(urls))
-    with ThreadPoolExecutor(max_workers=workers) as executor:
-        parsed = list(executor.map(_parse_media, urls))
+    started_at = time.monotonic()
+    try:
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            parsed = list(executor.map(_parse_media, urls))
+    except Exception:
+        _operation_timing(
+            'batch_parse',
+            started_at,
+            count=len(urls),
+            status='failed',
+        )
+        raise
 
     results = [result for result, _status_code in parsed]
+    _operation_timing('batch_parse', started_at, count=len(results), status=200)
     return jsonify({
         'success': True,
         'total': len(results),
@@ -617,10 +675,26 @@ def download_video():
         return jsonify({'error': 'The download could not be prepared'}), 500
 
     try:
-        downloaded_file = downloader.download_video(
-            original_url,
-            str(requested_path),
-            max_bytes=MAX_DOWNLOAD_BYTES,
+        source_started_at = time.monotonic()
+        try:
+            downloaded_file = downloader.download_video(
+                original_url,
+                str(requested_path),
+                max_bytes=MAX_DOWNLOAD_BYTES,
+            )
+        except Exception:
+            _operation_timing(
+                'source_download',
+                source_started_at,
+                platform=platform_key,
+                status='failed',
+            )
+            raise
+        _operation_timing(
+            'source_download',
+            source_started_at,
+            platform=platform_key,
+            status='success' if downloaded_file else 'failed',
         )
         if not downloaded_file:
             _remove_download_stem(download_stem)
@@ -639,7 +713,25 @@ def download_video():
             logging.warning('Downloader returned an unsafe or oversized file')
             return jsonify({'error': 'The downloaded file could not be accepted'}), 500
 
-        published = storage_backend.publish(completed_path, completed_path.name)
+        publish_started_at = time.monotonic()
+        try:
+            published = storage_backend.publish(completed_path, completed_path.name)
+        except Exception:
+            _operation_timing(
+                'storage_publish',
+                publish_started_at,
+                platform=platform_key,
+                backend=storage_backend.name,
+                status='failed',
+            )
+            raise
+        _operation_timing(
+            'storage_publish',
+            publish_started_at,
+            platform=platform_key,
+            backend=storage_backend.name,
+            status='success',
+        )
         response = {
             'success': True,
             'filename': published.filename,

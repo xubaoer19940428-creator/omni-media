@@ -1,356 +1,177 @@
-# 🎬 OmniMedia — 多平台视频下载与本地归档工具
-
 <div align="center">
+  <a href="https://omni-media-production.up.railway.app/">
+    <img src="./frontend/public/icon.svg" width="96" alt="OmniMedia 标志">
+  </a>
 
-[ English ](README.md) | [ 简体中文 ](README_zh.md)
+  <h1>OmniMedia</h1>
 
+  <p><strong>在一个地方解析、预览并下载 22 个社交平台的公开媒体。</strong></p>
+
+  <p>
+    粘贴链接或 App 中复制的完整分享文本，即可查看统一格式的媒体信息、
+    批量处理链接，并通过简洁的双语界面下载支持的视频。
+  </p>
+
+  <p>
+    <a href="https://omni-media-production.up.railway.app/"><strong>在线体验</strong></a>
+    ·
+    <a href="#快速开始">快速开始</a>
+    ·
+    <a href="#api-示例">API 示例</a>
+    ·
+    <a href="README.md">English</a>
+  </p>
+
+  <p>
+    <img src="https://img.shields.io/badge/支持平台-22-5b5bd6?style=flat-square" alt="支持 22 个平台">
+    <img src="https://img.shields.io/badge/Python-3.10+-3776ab?style=flat-square&logo=python&logoColor=white" alt="Python 3.10+">
+    <img src="https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js" alt="Next.js 16">
+    <a href="LICENSE"><img src="https://img.shields.io/badge/许可证-MIT-green?style=flat-square" alt="MIT 许可证"></a>
+  </p>
 </div>
 
-**OmniMedia** 是一个功能强大、轻量级的多平台音视频下载与本地归档工具，正式识别并处理 **22 个主流平台**的公开链接。
+## 可以做什么
 
-<div align="center">
+- 粘贴公开帖子链接，或直接粘贴从 App 复制的完整分享文本。
+- 将不同平台的媒体信息解析成统一、易用的结果。
+- 在浏览器中直接预览可播放的视频和封面。
+- 在批量中心一次加入最多 40 个链接，并保持结果顺序。
+- 通过服务端下载支持的媒体，减少源站临时链接失效带来的影响。
+- 支持简体中文与英文、浅色与深色主题，并适配桌面和移动设备。
 
-![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python&logoColor=white)
-![Flask](https://img.shields.io/badge/Flask-Web%20App-green?logo=flask&logoColor=white)
-![yt-dlp](https://img.shields.io/badge/yt--dlp-Powered-red?logo=youtube&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-yellow)
+## 支持平台
 
-</div>
+| | | | |
+| --- | --- | --- | --- |
+| TikTok | 抖音 | Instagram | Telegram |
+| YouTube | Twitter / X | Facebook | Bilibili |
+| 微博 | Reddit | Vimeo | Dailymotion |
+| Twitch | Pinterest | Tumblr | Rumble |
+| 小红书 | AcFun | 优酷 | 爱奇艺 |
+| 腾讯视频 | 西瓜视频 | | |
 
-## ✨ 功能特性
+OmniMedia 面向公开且无需登录的媒体。付费、私密、需要登录、地区限制、
+已删除或受 DRM 保护的内容可能无法使用，本项目也不会尝试绕过这些限制。
+平台规则和页面结构随时可能发生变化。
 
-- 🌐 **多平台支持** - 一站式识别 22 个主流视频平台
-- 🔗 **智能解析** - 支持各种分享链接格式，直接粘贴分享文本即可
-- 🎬 **无水印下载** - 获取高质量无水印视频（抖音去 Logo）
-- 📊 **信息提取** - 获取视频标题、作者、时长、点赞等数据
-- 🎨 **现代界面** - 精密工具台风格的响应式 Web 界面
-- ⚡ **快速处理** - 高效的视频解析和下载
-- 📱 **移动适配** - 完美支持手机和桌面设备
-- 🖼️ **图片代理** - 解决 Instagram 等平台封面图跨域加载问题
+## 立即体验
 
-## 🌍 支持平台
+打开[在线体验站](https://omni-media-production.up.railway.app/)，将支持的
+链接或分享文本粘贴到解析工作台即可。
 
-| 平台         | 解析 | 下载 | 无水印 | 备注                 |
-| ------------ | :--: | :--: | :----: | -------------------- |
-| 🎶 抖音      |  ✅  |  ✅  |   ✅   | 支持直接粘贴分享文本 |
-| 🎵 TikTok    |  ✅  |  ✅  |   ✅   | 支持完整链接和短链接 |
-| ✈️ Telegram  |  ✅  |  ✅  |   -    | 支持公开频道视频帖子 |
-| 📸 Instagram |  ✅  |  ✅  |   -    | 支持 Post 和 Reel    |
-| 🎬 YouTube   |  ✅  |  ✅  |   -    | 支持视频和 Shorts    |
-| 🐦 Twitter/X |  ✅  |  ✅  |   -    | 支持推文视频         |
-| 📘 Facebook  |  ✅  |  ✅  |   -    | 支持公开视频         |
-| 📺 B站       |  ✅  |  ✅  |   -    | 支持普通视频         |
-| 🔴 微博      |  ✅  |  ✅  |   -    | 支持视频微博         |
-| 🤖 Reddit    |  ✅  |  ✅  |   -    | 支持公开帖子视频     |
-| 🎞️ Vimeo    |  ✅  |  ✅  |   -    | 支持公开独立视频     |
-| ▶️ Dailymotion | ✅ | ✅ | - | 支持公开视频 |
-| 🟣 Twitch    |  ✅  |  ✅  |   -    | 支持直播、VOD、Clip  |
-| 📌 Pinterest |  ✅  |  ✅  |   -    | 支持公开视频 Pin     |
-| 📝 Tumblr    |  ✅  |  ✅  |   -    | 支持公开帖子视频     |
-| 🟢 Rumble    |  ✅  |  ✅  |   -    | 支持公开视频         |
-| 📕 小红书    |  ✅  |  ✅  |   -    | 支持公开笔记视频     |
-| 📺 AcFun     |  ✅  |  ✅  |   -    | 支持视频和番剧       |
-| 🎬 优酷      |  ✅  |  ✅  |   -    | 支持公开视频         |
-| 📽️ 爱奇艺   |  ✅  |  ✅  |   -    | 支持公开视频         |
-| 🐧 腾讯视频  |  ✅  |  ✅  |   -    | 支持 v.qq.com 视频   |
-| 🍉 西瓜视频  |  ✅  |  ✅  |   -    | 支持公开视频         |
+### 抖音分享文本
 
-*付费、私密、登录后、地区限制或 DRM 保护内容不保证可解析，也不会尝试绕过访问限制。*
+```text
+7.43 pda:/ 从抖音复制的完整文案... https://v.douyin.com/xxxxx/ 复制此链接...
+```
 
-## 🚀 快速开始
+### 普通链接和短链接
 
-### 环境要求
+```text
+https://www.tiktok.com/@creator/video/1234567890
+https://www.youtube.com/watch?v=xxxxxxxxxxx
+https://www.instagram.com/reel/xxxxxxxxxxx/
+https://www.bilibili.com/video/BVxxxxxxxxxx
+```
 
-- Python 3.10+（推荐使用与 Docker 镜像一致的 Python 3.12）
-- pip
+### 批量输入
 
-### 安装步骤
+在批量中心每行粘贴一个链接。Web 界面一次最多接收 40 个链接，并以有界
+批次依次处理。
 
-1. **克隆项目**
+## 快速开始
 
-   ```bash
-   git clone https://github.com/xubaoer19940428-creator/omni-media.git
-   cd omni-media
-   ```
+### Docker
 
-2. **创建虚拟环境（推荐）**
-
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate  # macOS/Linux
-   # 或 .\venv\Scripts\activate  # Windows
-   ```
-
-3. **安装依赖**
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **运行应用**
-
-   ```bash
-   python app.py
-   ```
-
-5. **访问应用**
-   打开浏览器访问 `http://localhost:7860`
-
-### 一键启动（macOS/Linux）
+使用 Docker 可以最简单地运行完整 Web 应用：
 
 ```bash
-./start.sh
+git clone https://github.com/xubaoer19940428-creator/omni-media.git
+cd omni-media
+docker build -t omnimedia .
+docker run --rm -p 7860:7860 omnimedia
 ```
 
-### 一键启动（Windows）
+浏览器打开 <http://localhost:7860>。
+
+### 从源码运行
+
+需要准备 Python 3.10+、Node.js 22+、pnpm 和 ffmpeg。
 
 ```bash
-start.bat
+git clone https://github.com/xubaoer19940428-creator/omni-media.git
+cd omni-media
+
+corepack enable
+cd frontend && pnpm install && pnpm run build && cd ..
+
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python app.py
 ```
 
-## 📖 使用说明
+浏览器打开 <http://localhost:7860>。Windows 用户可使用
+`venv\Scripts\activate` 激活虚拟环境。
 
-### 基本使用
+可选的资源限制、存储、CORS、Cookie 和代理设置请查看
+[`.env.example`](.env.example)。
 
-1. **复制视频链接** — 在任意支持的平台复制视频分享链接
-2. **粘贴并解析** — 将链接（或完整分享文本）粘贴到输入框，点击"解析"
-3. **查看视频信息** — 系统显示封面、标题、作者、统计数据
-4. **下载视频** — 点击"下载无水印视频"进行下载
+## API 示例
 
-### 支持的链接格式
+Web 界面使用相同的 API。下面的示例假设本地服务运行在
+`http://localhost:7860`。
 
-**抖音** — 直接粘贴分享文本即可：
-
-```
-2.84 04/14 Vlp:/ P@X.ZZ 标题... https://v.douyin.com/xxxxx/ 复制此链接...
-```
-
-**TikTok：**
-
-```
-https://www.tiktok.com/@username/video/1234567890
-https://vm.tiktok.com/xxxxx/
-```
-
-**Telegram（公开频道帖子）：**
-
-```
-https://t.me/channel_name/12345
-https://t.me/s/channel_name/12345
-```
-
-*私密群组、私聊以及需要登录才能查看的内容不受支持。*
-
-**YouTube：**
-
-```
-https://www.youtube.com/watch?v=xxxxx
-https://youtu.be/xxxxx
-https://www.youtube.com/shorts/xxxxx
-```
-
-**Instagram / Twitter / Facebook / B站 / 微博** — 直接粘贴视频链接即可。
-
-## 🛠️ 技术架构
-
-### 后端
-
-| 技术              | 用途                         |
-| ----------------- | ---------------------------- |
-| **Flask**         | Web 框架                     |
-| **yt-dlp**        | 多平台视频解析/下载引擎      |
-| **curl_cffi**     | 浏览器兼容请求与抖音页面访问 |
-| **requests**      | HTTP 请求 / 图片代理         |
-
-### 前端
-
-| 技术                | 用途               |
-| ------------------- | ------------------ |
-| **Font Awesome**    | 图标库             |
-| **原生 JavaScript** | 交互逻辑           |
-| **CSS3 动画**       | 加载动画和过渡效果 |
-
-### 核心模块
-
-```
-omni-media/
-├── app.py                    # Flask 应用主文件，API 路由
-├── universal_downloader.py   # 🌐 通用下载器（多平台核心）
-├── requirements.txt          # Python 依赖
-├── README.md                 # 项目说明（英文，默认主页）
-├── README_zh.md              # 项目说明（中文）
-├── start.sh / start.bat      # 一键启动脚本
-├── templates/
-│   └── index.html            # 主页面模板
-├── static/
-│   ├── css/
-│   │   └── style.css         # 样式文件
-│   └── js/
-│       └── app.js            # 前端交互逻辑
-└── downloads/                # 下载文件目录（自动创建）
-```
-
-## 🔍 API 接口
-
-### 解析视频链接
-
-```http
-POST /api/parse
-Content-Type: application/json
-
-{
-    "url": "视频链接或分享文本"
-}
-```
-
-**响应示例：**
-
-```json
-{
-  "success": true,
-  "platform": "douyin",
-  "platform_name": "抖音",
-  "video_id": "7589158631908658458",
-  "video_info": {
-    "title": "视频标题...",
-    "author": "作者名",
-    "video_url": "https://...",
-    "cover_url": "https://...",
-    "duration": 233,
-    "like_count": 44150,
-    "comment_count": 4466,
-    "view_count": 8241
-  },
-  "has_download_url": true
-}
-```
-
-### 下载视频
-
-```http
-POST /api/download
-Content-Type: application/json
-
-{
-    "video_id": "视频ID",
-    "original_url": "原始链接",
-    "platform": "平台标识"
-}
-```
-
-### 图片代理
-
-```http
-GET /api/proxy-image?url=图片URL
-```
-
-解决 Instagram 等平台封面图的跨域加载问题。
-
-### 获取支持平台列表
-
-```http
-GET /api/platforms
-```
-
-## 🔧 配置说明
-
-应用默认监听 `7860` 端口，常用配置可以通过环境变量覆盖：
+### 解析单个链接
 
 ```bash
-PORT=7860
-DOWNLOAD_DIR=downloads
-MAX_DOWNLOAD_BYTES=536870912
-DOWNLOAD_TTL_SECONDS=3600
-CLEANUP_INTERVAL_SECONDS=60
-HTTP_CONNECT_TIMEOUT=10
-HTTP_READ_TIMEOUT=30
-DOWNLOAD_HTTP_TIMEOUT=300
-GUNICORN_THREADS=8
-LOG_LEVEL=INFO
+curl -X POST http://localhost:7860/api/parse \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://www.youtube.com/watch?v=xxxxxxxxxxx"}'
 ```
 
-下载完成的文件默认使用本地存储。生产环境可将所有经服务器处理的
-视频发布到私有 Cloudflare R2 bucket，并返回短期有效的签名链接：
+### 批量解析
+
+API 每次请求最多接收 10 个链接。
 
 ```bash
-STORAGE_BACKEND=r2
-R2_ACCOUNT_ID=你的账户ID
-R2_BUCKET_NAME=omnimedia-downloads
-R2_ACCESS_KEY_ID=仅限该bucket的访问密钥
-R2_SECRET_ACCESS_KEY=仅限该bucket的秘密密钥
-R2_PRESIGNED_URL_SECONDS=600
-R2_OBJECT_PREFIX=downloads
+curl -X POST http://localhost:7860/api/batch-parse \
+  -H "Content-Type: application/json" \
+  -d '{"urls":["https://v.douyin.com/xxxxx/","https://www.tiktok.com/@creator/video/1234567890"]}'
 ```
 
-R2 凭证只能保存在后端。yt-dlp 和 ffmpeg 下载或合并视频时，Railway
-仍需临时磁盘空间；发布到 R2 后会删除临时文件。如需自动清理 R2
-对象，请为对应对象前缀配置生命周期规则。
+### 下载支持的媒体
 
-本地运行时会在检测到 Chrome 用户配置后自动使用浏览器 cookies。服务器部署时默认不会尝试读取不存在的浏览器配置；如公开内容确实需要 cookies，可设置 `YTDLP_COOKIE_FILE=/path/to/cookies.txt`。也可以通过 `YTDLP_COOKIES_FROM_BROWSER=chrome` 显式选择浏览器，或设置为 `off` 禁用自动检测。
-
-在 Railway 等只通过可信反向代理访问的环境中，可设置 `TRUST_PROXY=true`，让限流正确识别客户端地址并识别 HTTPS。请勿在应用还能被客户端直接访问时启用此选项。
-
-## 🐛 常见问题
-
-### Q: 抖音解析失败？
-
-**A:** 工具使用移动端页面解析方式。如果失败，请确认依赖已经完整安装：
+使用解析流程返回的原始公开链接：
 
 ```bash
-pip install curl_cffi
+curl -X POST http://localhost:7860/api/download \
+  -H "Content-Type: application/json" \
+  -d '{"original_url":"https://www.youtube.com/watch?v=xxxxxxxxxxx"}'
 ```
 
-### Q: 抖音下载很慢？
+响应中会包含 `download_url`。根据部署方式，它可能是应用内的相对地址，
+也可能是短期有效的完整地址。
 
-**A:** 无水印版视频是高清原画，文件较大（可达几百MB），下载需要一定时间，这是正常的。
+其他常用接口：
 
-### Q: TikTok 短链接解析失败？
+- `GET /api/health` — 服务健康状态
+- `GET /api/platforms` — 支持平台列表
+- `GET /api/proxy-image?url=...` — 有大小限制的封面图片代理
 
-**A:** TikTok 反爬虫机制较严格，建议使用完整链接格式（`https://www.tiktok.com/@username/video/xxx`）。
+## 合理使用
 
-### Q: Instagram 封面图不显示？
+请仅下载自己拥有或已获得授权的内容。使用者有责任遵守平台条款、版权规则、
+隐私法律和当地法规。本项目用于合法的互操作、个人工具、研究与开发，不代表
+使用者自动获得复制或再次分发第三方内容的权利。
 
-**A:** 工具内置了图片代理服务，会自动通过服务端代理加载封面图。
+## 参与贡献
 
-### Q: YouTube 视频无法下载？
+欢迎提交 Issue 和 Pull Request。平台经常更新，一个有效的错误报告最好包含
+平台名称、可公开访问的示例链接、错误信息和发生时间。请勿提交 Cookie、凭证、
+签名下载地址或其他秘密信息。
 
-**A:** 先按项目锁定的兼容版本重新安装依赖：
+## 许可证
 
-```bash
-pip install --upgrade -r requirements.txt
-```
-
-### Q: 如何部署到服务器？
-
-**A:** 推荐使用 Gunicorn 部署：
-
-```bash
-pip install gunicorn
-gunicorn -w 1 --threads 8 -b 0.0.0.0:7860 app:app
-```
-
-## 🛡️ 注意事项
-
-1. ⚖️ **合法使用** — 请遵守相关法律法规，仅用于个人学习和研究
-2. ©️ **版权尊重** — 尊重原创作者的版权，不要用于商业用途
-3. 🌐 **网络环境** — 确保网络连接稳定，部分平台可能需要特殊网络环境
-4. 💾 **存储空间** — 注意磁盘空间，及时清理下载文件
-5. 🔄 **保持更新** — 定期更新 yt-dlp 以确保各平台兼容性
-
-## 🤝 贡献指南
-
-欢迎提交 Issue 和 Pull Request！
-
-1. Fork 项目
-2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 打开 Pull Request
-
-## 📄 许可证
-
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
-
----
-
-**免责声明**: 本工具仅供学习和研究使用。使用者需自行承担使用风险，开发者不对因使用本工具而产生的任何法律责任负责。请尊重内容创作者的权益。
+OmniMedia 使用 [MIT License](LICENSE) 发布。第三方组件及其声明请查看
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。

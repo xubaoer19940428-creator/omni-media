@@ -1,358 +1,181 @@
-# 🎬 OmniMedia — Multi-Platform Video Downloader & Archiver
-
 <div align="center">
+  <a href="https://omni-media-production.up.railway.app/">
+    <img src="./frontend/public/icon.svg" width="96" alt="OmniMedia logo">
+  </a>
 
-[ English ](README.md) | [ 简体中文 ](README_zh.md)
+  <h1>OmniMedia</h1>
 
+  <p><strong>Parse, preview, and download public media from 22 social platforms in one place.</strong></p>
+
+  <p>
+    Paste a link or complete app share text, inspect normalized media metadata,
+    process batches, and download supported videos from a clean bilingual web interface.
+  </p>
+
+  <p>
+    <a href="https://omni-media-production.up.railway.app/"><strong>Live Demo</strong></a>
+    ·
+    <a href="#quick-start">Quick Start</a>
+    ·
+    <a href="#api-examples">API Examples</a>
+    ·
+    <a href="README_zh.md">简体中文</a>
+  </p>
+
+  <p>
+    <img src="https://img.shields.io/badge/platforms-22-5b5bd6?style=flat-square" alt="22 supported platforms">
+    <img src="https://img.shields.io/badge/Python-3.10+-3776ab?style=flat-square&logo=python&logoColor=white" alt="Python 3.10+">
+    <img src="https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js" alt="Next.js 16">
+    <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT license"></a>
+  </p>
 </div>
 
-**OmniMedia** is a powerful, lightweight multi-platform video downloader and archival tool that seamlessly recognizes and processes public links across **22 mainstream platforms**.
+## What you can do
 
-<div align="center">
+- Paste a public post URL or the complete share text copied from an app.
+- Parse media metadata into one consistent result format.
+- Preview playable videos and covers directly in the browser.
+- Queue up to 40 links in the web interface while preserving result order.
+- Download supported media through the server instead of relying on fragile source links.
+- Switch between English and Simplified Chinese, light and dark themes, on desktop or mobile.
 
-![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python&logoColor=white)
-![Flask](https://img.shields.io/badge/Flask-Web%20App-green?logo=flask&logoColor=white)
-![yt-dlp](https://img.shields.io/badge/yt--dlp-Powered-red?logo=youtube&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-yellow)
+## Supported platforms
 
-</div>
+| | | | |
+| --- | --- | --- | --- |
+| TikTok | Douyin | Instagram | Telegram |
+| YouTube | Twitter / X | Facebook | Bilibili |
+| Weibo | Reddit | Vimeo | Dailymotion |
+| Twitch | Pinterest | Tumblr | Rumble |
+| Xiaohongshu | AcFun | Youku | iQIYI |
+| Tencent Video | Xigua Video | | |
 
-## ✨ Features
+OmniMedia works with public, login-free media. Paid, private, login-required,
+geo-restricted, deleted, or DRM-protected content may not be available, and the
+project does not attempt to bypass those restrictions. Platform behavior can
+also change without notice.
 
-- 🌐 **Multi-Platform Support** — One-stop recognition for 22 mainstream video platforms
-- 🔗 **Smart Parsing** — Supports various share link formats; paste raw share text directly
-- 🎬 **Watermark-Free Download** — Extract high-quality watermark-free videos (Douyin logo removal)
-- 📊 **Metadata Extraction** — Retrieve title, author, duration, likes, comments, and view counts
-- 🎨 **Modern Interface** — Precision workbench style responsive web UI
-- ⚡ **High Performance** — Fast and efficient video parsing and downloading
-- 📱 **Mobile Friendly** — Fully responsive for mobile and desktop screens
-- 🖼️ **Image Proxy** — Resolves CORS image loading issues for Instagram and other platforms
+## Try it
 
-## 🌍 Supported Platforms
+Open the [live demo](https://omni-media-production.up.railway.app/), then paste
+any supported link or share text into the workbench.
 
-| Platform             | Parse | Download | No Watermark | Note                                      |
-| :------------------- | :---: | :------: | :----------: | :---------------------------------------- |
-| 🎶 Douyin            |  ✅   |    ✅    |      ✅      | Supports pasting full share text directly |
-| 🎵 TikTok            |  ✅   |    ✅    |      ✅      | Supports full URLs and short links        |
-| ✈️ Telegram          |  ✅   |    ✅    |      -       | Supports public channel video posts       |
-| 📸 Instagram         |  ✅   |    ✅    |      -       | Supports Posts and Reels                  |
-| 🎬 YouTube           |  ✅   |    ✅    |      -       | Supports standard Videos and Shorts       |
-| 🐦 Twitter/X         |  ✅   |    ✅    |      -       | Supports tweet videos                     |
-| 📘 Facebook          |  ✅   |    ✅    |      -       | Supports public videos                    |
-| 📺 Bilibili          |  ✅   |    ✅    |      -       | Supports standard public videos           |
-| 🔴 Weibo             |  ✅   |    ✅    |      -       | Supports video posts                      |
-| 🤖 Reddit            |  ✅   |    ✅    |      -       | Supports public post videos               |
-| 🎞️ Vimeo             |  ✅   |    ✅    |      -       | Supports public standalone videos         |
-| ▶️ Dailymotion       |  ✅   |    ✅    |      -       | Supports public videos                    |
-| 🟣 Twitch            |  ✅   |    ✅    |      -       | Supports Live streams, VODs, and Clips    |
-| 📌 Pinterest         |  ✅   |    ✅    |      -       | Supports public video Pins                |
-| 📝 Tumblr            |  ✅   |    ✅    |      -       | Supports public post videos               |
-| 🟢 Rumble            |  ✅   |    ✅    |      -       | Supports public videos                    |
-| 📕 Xiaohongshu (RED) |  ✅   |    ✅    |      -       | Supports public video notes               |
-| 📺 AcFun             |  ✅   |    ✅    |      -       | Supports public videos and bangumi        |
-| 🎬 Youku             |  ✅   |    ✅    |      -       | Supports public videos                    |
-| 📽️ iQIYI             |  ✅   |    ✅    |      -       | Supports public videos                    |
-| 🐧 Tencent Video     |  ✅   |    ✅    |      -       | Supports v.qq.com public videos           |
-| 🍉 Xigua Video       |  ✅   |    ✅    |      -       | Supports public videos                    |
+### Douyin share text
 
-_Paid, private, login-required, geo-restricted, or DRM-protected content is not guaranteed to be parsed and this tool will not attempt to bypass access restrictions._
+```text
+7.43 pda:/ A copied Douyin caption... https://v.douyin.com/xxxxx/ Copy this link...
+```
 
-## 🚀 Quick Start
+### Standard and short links
 
-### Requirements
+```text
+https://www.tiktok.com/@creator/video/1234567890
+https://www.youtube.com/watch?v=xxxxxxxxxxx
+https://www.instagram.com/reel/xxxxxxxxxxx/
+https://www.bilibili.com/video/BVxxxxxxxxxx
+```
 
-- Python 3.10+ (Python 3.12 matching Docker image is recommended)
-- pip
+### Batch input
 
-### Installation Steps
+Paste one link per line in the Batch Center. The web interface accepts up to 40
+links at a time and processes them in bounded groups.
 
-1. **Clone the repository**
+## Quick start
 
-    ```bash
-    git clone https://github.com/xubaoer19940428-creator/omni-media.git
-    cd omni-media
-    ```
+### Docker
 
-2. **Create virtual environment (recommended)**
-
-    ```bash
-    python3 -m venv venv
-    source venv/bin/activate  # macOS/Linux
-    # or .\venv\Scripts\activate  # Windows
-    ```
-
-3. **Install dependencies**
-
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-4. **Run the application**
-
-    ```bash
-    python app.py
-    ```
-
-5. **Open in browser**
-   Navigate to `http://localhost:7860`
-
-### One-Click Launch (macOS/Linux)
+Docker is the simplest way to run the complete web application:
 
 ```bash
-./start.sh
+git clone https://github.com/xubaoer19940428-creator/omni-media.git
+cd omni-media
+docker build -t omnimedia .
+docker run --rm -p 7860:7860 omnimedia
 ```
 
-### One-Click Launch (Windows)
+Open <http://localhost:7860>.
+
+### Run from source
+
+Requirements: Python 3.10+, Node.js 22+, pnpm, and ffmpeg.
 
 ```bash
-start.bat
+git clone https://github.com/xubaoer19940428-creator/omni-media.git
+cd omni-media
+
+corepack enable
+cd frontend && pnpm install && pnpm run build && cd ..
+
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python app.py
 ```
 
-## 📖 Usage Guide
+Open <http://localhost:7860>. Windows users can activate the environment with
+`venv\Scripts\activate`.
 
-### Basic Usage
+For optional limits, storage, CORS, cookies, and proxy settings, see
+[`.env.example`](.env.example).
 
-1. **Copy video link** — Copy share link from any supported platform.
-2. **Paste & Parse** — Paste the URL (or full share text) into the input box and click "Parse".
-3. **Inspect video metadata** — View cover image, title, author, and statistics.
-4. **Download video** — Click "Download Watermark-Free Video" to save the file.
+## API examples
 
-### Supported URL Formats
+The browser interface uses the same API. All examples below assume a local
+server at `http://localhost:7860`.
 
-**Douyin** — Paste the raw share text directly:
-
-```
-2.84 04/14 Vlp:/ P@X.ZZ Title... https://v.douyin.com/xxxxx/ Copy this link...
-```
-
-**TikTok:**
-
-```
-https://www.tiktok.com/@username/video/1234567890
-https://vm.tiktok.com/xxxxx/
-```
-
-**Telegram (Public channel posts):**
-
-```
-https://t.me/channel_name/12345
-https://t.me/s/channel_name/12345
-```
-
-_Private groups, secret chats, and login-restricted posts are not supported._
-
-**YouTube:**
-
-```
-https://www.youtube.com/watch?v=xxxxx
-https://youtu.be/xxxxx
-https://www.youtube.com/shorts/xxxxx
-```
-
-**Instagram / Twitter / Facebook / Bilibili / Weibo** — Paste the video URL directly.
-
-## 🛠️ Architecture & Tech Stack
-
-### Backend
-
-| Technology    | Purpose                                                       |
-| ------------- | ------------------------------------------------------------- |
-| **Flask**     | Web framework and REST APIs                                   |
-| **yt-dlp**    | Multi-platform video parsing and downloading engine           |
-| **curl_cffi** | Browser-impersonated requests and Douyin mobile page scraping |
-| **requests**  | General HTTP requests / Image proxying                        |
-
-### Frontend
-
-| Technology             | Purpose                                   |
-| ---------------------- | ----------------------------------------- |
-| **Font Awesome**       | Iconography                               |
-| **Vanilla JavaScript** | Client-side interaction logic             |
-| **CSS3 Animations**    | Responsive layout and loading transitions |
-
-### Directory Structure
-
-```
-omni-media/
-├── app.py                    # Flask application entry point & API routes
-├── universal_downloader.py   # 🌐 Universal downloader core (multi-platform)
-├── requirements.txt          # Python dependencies
-├── README.md                 # Project documentation (English, Default)
-├── README_zh.md              # Project documentation (Chinese)
-├── start.sh / start.bat      # One-click start scripts
-├── templates/
-│   └── index.html            # Main HTML template
-├── static/
-│   ├── css/
-│   │   └── style.css         # UI styles
-│   └── js/
-│       └── app.js            # Frontend JavaScript logic
-└── downloads/                # Downloaded files cache directory (auto-created)
-```
-
-## 🔍 API Endpoints
-
-### Parse Video URL
-
-```http
-POST /api/parse
-Content-Type: application/json
-
-{
-    "url": "Video link or raw share text"
-}
-```
-
-**Sample Response:**
-
-```json
-{
-	"success": true,
-	"platform": "douyin",
-	"platform_name": "抖音",
-	"video_id": "7589158631908658458",
-	"video_info": {
-		"title": "Video title...",
-		"author": "Author name",
-		"video_url": "https://...",
-		"cover_url": "https://...",
-		"duration": 233,
-		"like_count": 44150,
-		"comment_count": 4466,
-		"view_count": 8241
-	},
-	"has_download_url": true
-}
-```
-
-### Download Video
-
-```http
-POST /api/download
-Content-Type: application/json
-
-{
-    "video_id": "video_id",
-    "original_url": "original_url",
-    "platform": "platform_name"
-}
-```
-
-### Image Proxy
-
-```http
-GET /api/proxy-image?url=IMAGE_URL
-```
-
-Resolves CORS and referrer blocking for cover images (e.g. Instagram).
-
-### List Supported Platforms
-
-```http
-GET /api/platforms
-```
-
-## 🔧 Configuration
-
-The application listens on port `7860` by default. You can override settings via environment variables:
+### Parse one link
 
 ```bash
-PORT=7860
-DOWNLOAD_DIR=downloads
-MAX_DOWNLOAD_BYTES=536870912
-DOWNLOAD_TTL_SECONDS=3600
-CLEANUP_INTERVAL_SECONDS=60
-HTTP_CONNECT_TIMEOUT=10
-HTTP_READ_TIMEOUT=30
-DOWNLOAD_HTTP_TIMEOUT=300
-GUNICORN_THREADS=8
-LOG_LEVEL=INFO
+curl -X POST http://localhost:7860/api/parse \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://www.youtube.com/watch?v=xxxxxxxxxxx"}'
 ```
 
-Completed downloads use local storage by default. Production deployments can
-publish every server-processed video to a private Cloudflare R2 bucket and
-return a short-lived signed URL:
+### Parse a batch
+
+The API accepts up to 10 URLs per request.
 
 ```bash
-STORAGE_BACKEND=r2
-R2_ACCOUNT_ID=your-account-id
-R2_BUCKET_NAME=omnimedia-downloads
-R2_ACCESS_KEY_ID=your-bucket-scoped-access-key
-R2_SECRET_ACCESS_KEY=your-bucket-scoped-secret
-R2_PRESIGNED_URL_SECONDS=600
-R2_OBJECT_PREFIX=downloads
+curl -X POST http://localhost:7860/api/batch-parse \
+  -H "Content-Type: application/json" \
+  -d '{"urls":["https://v.douyin.com/xxxxx/","https://www.tiktok.com/@creator/video/1234567890"]}'
 ```
 
-Keep R2 credentials on the backend only. Railway still needs temporary disk
-space while yt-dlp and ffmpeg download or merge a video; the temporary file is
-removed after R2 publication. Configure a bucket lifecycle rule for the object
-prefix if downloads should expire automatically.
+### Download supported media
 
-When running locally, the downloader automatically loads cookies from your local Chrome profile if detected. In server environments, it will not look for non-existent local browser profiles; if cookies are required for public content, set `YTDLP_COOKIE_FILE=/path/to/cookies.txt`. You can also explicitly specify `YTDLP_COOKIES_FROM_BROWSER=chrome` or set it to `off` to disable auto-detection.
-
-In reverse proxy environments such as Railway, set `TRUST_PROXY=true` to let rate-limiting correctly identify client IP addresses and detect HTTPS. Do not enable this if clients connect directly to the application.
-
-## 🐛 FAQ
-
-### Q: Douyin parsing fails?
-
-**A:** The parser utilizes mobile endpoint extraction. Ensure the required dependency is installed:
+Use the original public URL returned by the parse flow:
 
 ```bash
-pip install curl_cffi
+curl -X POST http://localhost:7860/api/download \
+  -H "Content-Type: application/json" \
+  -d '{"original_url":"https://www.youtube.com/watch?v=xxxxxxxxxxx"}'
 ```
 
-### Q: Douyin download is slow?
+The response contains a `download_url`. Depending on the deployment, it can be
+a local application route or a short-lived absolute URL.
 
-**A:** The watermark-free video is original high-definition source media and files can be several hundred megabytes. Download time depends on network bandwidth.
+Other useful endpoints:
 
-### Q: TikTok short links fail to parse?
+- `GET /api/health` — service health
+- `GET /api/platforms` — supported platform registry
+- `GET /api/proxy-image?url=...` — bounded cover-image proxy
 
-**A:** TikTok implements strict anti-bot measures. We recommend using standard URLs (`https://www.tiktok.com/@username/video/xxx`).
+## Responsible use
 
-### Q: Instagram cover images do not load?
+Only download content that you own or are authorized to use. You are
+responsible for complying with platform terms, copyright rules, privacy laws,
+and local regulations. This project is intended for lawful interoperability,
+personal tooling, research, and development; it does not provide a right to
+copy or redistribute third-party content.
 
-**A:** The application has a built-in image proxy service that bypasses cross-origin and referer restrictions automatically.
+## Contributing
 
-### Q: YouTube videos cannot be downloaded?
+Issues and pull requests are welcome. Platform sites change frequently, so a
+useful bug report should include the platform, a public example URL, the error
+message, and the time the failure occurred. Never include cookies, credentials,
+signed download URLs, or other secrets.
 
-**A:** Reinstall dependencies matching the pinned versions in `requirements.txt`:
+## License
 
-```bash
-pip install --upgrade -r requirements.txt
-```
-
-### Q: How to deploy on a production server?
-
-**A:** Gunicorn is recommended:
-
-```bash
-pip install gunicorn
-gunicorn -w 1 --threads 8 -b 0.0.0.0:7860 app:app
-```
-
-## 🛡️ Notes & Compliance
-
-1. ⚖️ **Legal Use** — Please comply with applicable laws and regulations; use only for personal learning and research.
-2. ©️ **Copyright Respect** — Respect original creators' copyright. Do not use for commercial purposes.
-3. 🌐 **Network Environment** — Ensure stable network connectivity; some platforms may require specific network access.
-4. 💾 **Disk Management** — Monitor disk space and clean downloaded files periodically.
-5. 🔄 **Stay Updated** — Regularly update `yt-dlp` to ensure ongoing compatibility with platform changes.
-
-## 🤝 Contributing
-
-Issues and Pull Requests are welcome!
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-**Disclaimer**: This tool is intended for educational and research purposes only. Users assume full responsibility for their usage. The developers bear no liability for any legal issues arising from the use of this tool. Please respect the rights of content creators.
+OmniMedia is released under the [MIT License](LICENSE). Third-party components
+and their notices are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
