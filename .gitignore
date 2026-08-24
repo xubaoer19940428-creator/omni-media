@@ -4,6 +4,7 @@
 downloads/
 test_downloads/
 *.mp4
+!.github/assets/omnimedia-demo.mp4
 *.mov
 *.mkv
 *.avi

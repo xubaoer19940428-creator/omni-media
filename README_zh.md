@@ -30,6 +30,26 @@
   </p>
 </div>
 
+## 产品演示
+
+<div align="center">
+  <a href="./.github/assets/omnimedia-demo.mp4">
+    <img src="./.github/assets/omnimedia-hero.webp" alt="OmniMedia 首页" width="100%">
+  </a>
+  <p><a href="./.github/assets/omnimedia-demo.mp4"><strong>观看 12 秒产品演示 →</strong></a></p>
+</div>
+
+<table>
+  <tr>
+    <td width="50%"><img src="./.github/assets/omnimedia-workbench.webp" alt="OmniMedia 解析工作台"></td>
+    <td width="50%"><img src="./.github/assets/omnimedia-result.webp" alt="OmniMedia 媒体解析结果"></td>
+  </tr>
+  <tr>
+    <td align="center">统一解析工作台</td>
+    <td align="center">媒体预览与标准化信息</td>
+  </tr>
+</table>
+
 ## 可以做什么
 
 - 粘贴公开帖子链接，或直接粘贴从 App 复制的完整分享文本。

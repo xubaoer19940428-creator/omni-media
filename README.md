@@ -30,6 +30,26 @@
   </p>
 </div>
 
+## Product tour
+
+<div align="center">
+  <a href="./.github/assets/omnimedia-demo.mp4">
+    <img src="./.github/assets/omnimedia-hero.webp" alt="OmniMedia home page" width="100%">
+  </a>
+  <p><a href="./.github/assets/omnimedia-demo.mp4"><strong>Watch the 12-second demo →</strong></a></p>
+</div>
+
+<table>
+  <tr>
+    <td width="50%"><img src="./.github/assets/omnimedia-workbench.webp" alt="OmniMedia parsing workbench"></td>
+    <td width="50%"><img src="./.github/assets/omnimedia-result.webp" alt="OmniMedia parsed media result"></td>
+  </tr>
+  <tr>
+    <td align="center">Unified parsing workbench</td>
+    <td align="center">Media preview and normalized metadata</td>
+  </tr>
+</table>
+
 ## What you can do
 
 - Paste a public post URL or the complete share text copied from an app.
