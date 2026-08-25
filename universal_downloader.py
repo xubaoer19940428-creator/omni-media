@@ -35,11 +35,6 @@ except ImportError:
     BrowserFingerprintGenerator = None
     _has_douyin_signer = False
 
-try:
-    import telegram_client
-except ImportError:  # pragma: no cover - optional deployment feature
-    telegram_client = None
-
 
 logger = logging.getLogger(__name__)
 
@@ -344,13 +339,12 @@ class UniversalDownloader:
             flags=re.IGNORECASE,
         )
         # yt-dlp's Telegram extractor uses t.me and the non-preview post path.
-        if not (telegram_client and telegram_client.is_configured()):
-            url = re.sub(
-                r'^https?://(?:www\.)?telegram\.me/',
-                'https://t.me/',
-                url,
-                flags=re.IGNORECASE,
-            )
+        url = re.sub(
+            r'^https?://(?:www\.)?telegram\.me/',
+            'https://t.me/',
+            url,
+            flags=re.IGNORECASE,
+        )
         url = re.sub(
             r'^(https?://(?:www\.)?t\.me)/s/',
             r'\1/',
@@ -704,18 +698,6 @@ class UniversalDownloader:
             return self._error_response("Please provide a video link")
         
         platform_key, platform_name = self.detect_platform(url)
-
-        # Public Telegram web previews omit large media. When an operator has
-        # explicitly configured a user-authorized MTProto session, use it for
-        # metadata instead of exposing or guessing a Telegram file URL.
-        if platform_key == 'telegram' and telegram_client and telegram_client.is_configured():
-            try:
-                return telegram_client.get_video_info(url)
-            except telegram_client.TelegramMediaError:
-                logger.warning('[Telegram] MTProto metadata request was unavailable')
-                return self._error_response(
-                    'Telegram could not parse this public video'
-                )
         
         ydl_opts = {
             'quiet': True,
@@ -869,19 +851,6 @@ class UniversalDownloader:
             filepath = filepath + '.mp4'
 
         base_path = os.path.splitext(filepath)[0]
-
-        if platform_key == 'telegram' and telegram_client and telegram_client.is_configured():
-            try:
-                downloaded = telegram_client.download_video(url, filepath, max_bytes)
-                return os.path.basename(downloaded)
-            except telegram_client.TelegramMediaError:
-                cleanup_path = Path(filepath)
-                try:
-                    cleanup_path.unlink(missing_ok=True)
-                except OSError:
-                    pass
-                logger.warning('[Telegram] MTProto download was unavailable')
-                return None
 
         def cleanup_partial_files() -> None:
             import glob

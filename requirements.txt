@@ -5,4 +5,3 @@ curl-cffi==0.16.0
 yt-dlp==2026.7.4
 boto3==1.43.75
 gmssl==3.2.2
-telethon==1.44.0
