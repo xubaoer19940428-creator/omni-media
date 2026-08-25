@@ -139,6 +139,87 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertEqual(200, second.status_code)
         self.assertEqual(429, third.status_code)
 
+    def test_profile_parse_returns_bounded_profile_page(self):
+        parsed = {
+            'success': True,
+            'platform': 'youtube',
+            'profile': {'name': 'Example creator'},
+            'items': [{'original_url': YOUTUBE_URL}],
+            'count': 1,
+            'has_more': False,
+            'next_cursor': None,
+        }
+        with patch.object(
+            app_module.downloader,
+            'get_profile_info',
+            return_value=parsed,
+        ) as get_profile_info:
+            response = self.client.post('/api/profile/parse', json={
+                'url': 'https://www.youtube.com/@example/videos',
+                'limit': 6,
+                'cursor': 12,
+            })
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual('Example creator', response.get_json()['profile']['name'])
+        get_profile_info.assert_called_once_with(
+            'https://www.youtube.com/@example/videos',
+            limit=6,
+            cursor=12,
+        )
+
+    def test_profile_parse_hides_unexpected_failures_behind_json(self):
+        with patch.object(
+            app_module.downloader,
+            'get_profile_info',
+            side_effect=RuntimeError('sensitive upstream detail'),
+        ):
+            response = self.client.post('/api/profile/parse', json={
+                'url': 'https://www.youtube.com/@example/videos',
+            })
+
+        self.assertEqual(500, response.status_code)
+        self.assertEqual('application/json', response.content_type)
+        self.assertNotIn('sensitive', response.get_data(as_text=True))
+
+    def test_profile_parse_stops_pagination_at_cursor_cap(self):
+        parsed = {
+            'success': True,
+            'platform': 'youtube',
+            'items': [{'original_url': YOUTUBE_URL}],
+            'count': 1,
+            'has_more': True,
+            'next_cursor': '1212',
+        }
+        with patch.object(
+            app_module.downloader,
+            'get_profile_info',
+            return_value=parsed,
+        ):
+            response = self.client.post('/api/profile/parse', json={
+                'url': 'https://www.youtube.com/@example/videos',
+                'cursor': 1200,
+            })
+
+        self.assertEqual(200, response.status_code)
+        self.assertFalse(response.get_json()['has_more'])
+        self.assertIsNone(response.get_json()['next_cursor'])
+
+    def test_profile_parse_rejects_invalid_limits_and_unsupported_hosts(self):
+        cases = [
+            ({'url': 'https://www.youtube.com/@example', 'limit': 13}, 'maximum'),
+            ({'url': 'https://www.youtube.com/@example', 'limit': True}, 'positive integer'),
+            ({'url': 'https://www.youtube.com/@example', 'cursor': -1}, 'non-negative'),
+            ({'url': 'https://www.youtube.com/@example', 'cursor': 1201}, 'cannot exceed'),
+            ({'url': 'https://example.com/@creator'}, 'not supported'),
+            ({'url': YOUTUBE_URL}, 'profile url'),
+        ]
+        for payload, expected_error in cases:
+            with self.subTest(payload=payload):
+                response = self.client.post('/api/profile/parse', json=payload)
+                self.assertEqual(400, response.status_code)
+                self.assertIn(expected_error, response.get_json()['error'].lower())
+
     def test_parse_response_exposes_flat_frontend_contract(self):
         parsed = {
             'success': True,

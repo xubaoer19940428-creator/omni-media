@@ -58,6 +58,7 @@ MAX_PROXY_IMAGE_BYTES = _env_int('MAX_PROXY_IMAGE_BYTES', 8 * 1024 * 1024)
 MAX_PROXY_REDIRECTS = _env_int('MAX_PROXY_REDIRECTS', 3)
 DOWNLOAD_RATE_LIMIT = _env_int('DOWNLOAD_RATE_LIMIT', 4)
 PARSE_RATE_LIMIT = _env_int('PARSE_RATE_LIMIT', 20)
+PROFILE_RATE_LIMIT = _env_int('PROFILE_RATE_LIMIT', 8)
 FILE_RATE_LIMIT = _env_int('FILE_RATE_LIMIT', 60)
 CLEANUP_RATE_LIMIT = _env_int('CLEANUP_RATE_LIMIT', 30)
 PROXY_RATE_LIMIT = _env_int('PROXY_RATE_LIMIT', 60)
@@ -67,6 +68,8 @@ MAX_CONCURRENT_PARSES = _env_int('MAX_CONCURRENT_PARSES', 4)
 # The public API contract is intentionally capped at ten URLs per request.
 # Operators may lower this value, but cannot raise it through configuration.
 MAX_BATCH_SIZE = min(_env_int('MAX_BATCH_SIZE', 10), 10)
+MAX_PROFILE_ITEMS = min(_env_int('MAX_PROFILE_ITEMS', 12), 12)
+MAX_PROFILE_CURSOR = min(_env_int('MAX_PROFILE_CURSOR', 1200), 1200)
 MAX_RATE_LIMIT_CLIENTS = _env_int('MAX_RATE_LIMIT_CLIENTS', 10_000)
 BATCH_RATE_LIMIT = _env_int('BATCH_RATE_LIMIT', 4)
 
@@ -239,6 +242,62 @@ def _parse_media(share_url):
         }, 500
     finally:
         _parse_slots.release()
+
+
+def _parse_profile(profile_url, limit, cursor):
+    if not isinstance(profile_url, str) or not profile_url.strip():
+        return {'success': False, 'error': 'Please provide a public creator profile URL'}, 400
+    if len(profile_url) > 4096:
+        return {'success': False, 'error': 'The profile URL is too long'}, 400
+
+    clean_url = downloader.extract_url_from_text(profile_url)
+    platform_key, _platform_name = downloader.detect_platform(clean_url)
+    if platform_key in ('unknown', 'other'):
+        return {'success': False, 'error': 'This platform is not supported'}, 400
+    if not downloader.is_profile_url(clean_url):
+        return {
+            'success': False,
+            'error': 'Please provide a creator profile URL, not a post or playlist URL',
+        }, 400
+
+    if not isinstance(limit, int) or isinstance(limit, bool) or limit < 1:
+        return {'success': False, 'error': 'limit must be a positive integer'}, 400
+    if limit > MAX_PROFILE_ITEMS:
+        return {
+            'success': False,
+            'error': f'A maximum of {MAX_PROFILE_ITEMS} profile items is allowed per request',
+        }, 400
+    if not isinstance(cursor, int) or isinstance(cursor, bool) or cursor < 0:
+        return {'success': False, 'error': 'cursor must be a non-negative integer'}, 400
+    if cursor > MAX_PROFILE_CURSOR:
+        return {
+            'success': False,
+            'error': f'cursor cannot exceed {MAX_PROFILE_CURSOR}',
+        }, 400
+
+    if not _parse_slots.acquire(blocking=False):
+        return {
+            'success': False,
+            'error': 'The parsing service is busy. Please try again shortly',
+        }, 429
+    try:
+        result = downloader.get_profile_info(clean_url, limit=limit, cursor=cursor)
+    except Exception:
+        logging.exception('Unexpected profile parse endpoint failure')
+        return {
+            'success': False,
+            'error': 'The profile parsing service encountered an error',
+            'original_url': clean_url,
+        }, 500
+    finally:
+        _parse_slots.release()
+
+    if not result.get('success'):
+        return {**result, 'original_url': clean_url}, 422
+    next_cursor = result.get('next_cursor')
+    if next_cursor is not None and int(next_cursor) > MAX_PROFILE_CURSOR:
+        result = {**result, 'has_more': False, 'next_cursor': None}
+    return result, 200
 
 
 def _rate_limit_response(scope, limit):
@@ -584,6 +643,33 @@ def parse_url():
         'parse',
         started_at,
         platform=result.get('platform_key') or result.get('platform'),
+        status=status_code,
+    )
+    return jsonify(result), status_code
+
+
+@app.route('/api/profile/parse', methods=['POST'])
+def parse_profile_url():
+    """Parse a bounded page of public media from a creator profile."""
+    limited = _rate_limit_response('profile-parse', PROFILE_RATE_LIMIT)
+    if limited:
+        return limited
+
+    data = _json_object()
+    if data is None:
+        return jsonify({'error': 'A JSON object is required'}), 400
+
+    started_at = time.monotonic()
+    result, status_code = _parse_profile(
+        data.get('url', ''),
+        data.get('limit', 12),
+        data.get('cursor', 0),
+    )
+    _operation_timing(
+        'profile_parse',
+        started_at,
+        platform=result.get('platform_key') or result.get('platform'),
+        count=result.get('count'),
         status=status_code,
     )
     return jsonify(result), status_code

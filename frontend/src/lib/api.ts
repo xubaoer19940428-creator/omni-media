@@ -1,4 +1,4 @@
-import { ParsedMedia, PlatformKey } from '@/types';
+import { ParsedMedia, PlatformKey, ProfileParseResponse } from '@/types';
 import { SUPPORTED_PLATFORMS } from './constants';
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
@@ -63,11 +63,34 @@ export async function parseMediaUrl(rawUrl: string): Promise<ParsedMedia> {
     body: JSON.stringify({ url }),
   });
 
-  const data = await res.json();
+  const data = await res.json().catch(() => ({}));
   if (!res.ok || !data.success) {
     throw new Error(data.error || 'Parsing failed. Please check the URL or server status.');
   }
 
+  return data;
+}
+
+/** Parse a bounded page of public posts from a creator profile URL. */
+export async function parseProfileUrl(
+  rawUrl: string,
+  limit = 12,
+  cursor = 0,
+): Promise<ProfileParseResponse> {
+  const { url } = extractUrlFromText(rawUrl);
+  if (!url) {
+    throw new Error('No valid profile URL detected. Please check your input.');
+  }
+
+  const res = await fetch(`${API_BASE_URL}/api/profile/parse`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url, limit, cursor }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.success) {
+    throw new Error(data.error || 'Profile parsing failed. Please check the URL or server status.');
+  }
   return data;
 }
 

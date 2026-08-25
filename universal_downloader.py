@@ -316,6 +316,58 @@ class UniversalDownloader:
             }
             for key, info in self.PLATFORMS.items()
         ]
+
+    def is_profile_url(self, url: str) -> bool:
+        """Accept only explicit, known creator-profile URL shapes."""
+        extracted_url = self.extract_url_from_text(url)
+        platform_key, _ = self.detect_platform(extracted_url)
+        if platform_key in ('unknown', 'other'):
+            return False
+
+        parsed = urlparse(extracted_url)
+        hostname = (parsed.hostname or '').lower().rstrip('.')
+        path = parsed.path.lower().rstrip('/')
+        query = parsed.query.lower()
+
+        if platform_key == 'tumblr' and hostname not in ('tumblr.com', 'www.tumblr.com'):
+            return path in ('', '/')
+        if platform_key == 'facebook' and path == '/profile.php':
+            return bool(re.search(r'(?:^|&)id=\d+(?:&|$)', query))
+        if platform_key == 'facebook' and path in {
+            '/photo.php', '/story.php', '/video.php', '/watch', '/reel', '/videos',
+        }:
+            return False
+        if platform_key == 'youku' and path == '/profile/index':
+            return bool(re.search(r'(?:^|&)uid=[^&]+', query))
+
+        profile_shapes = {
+            'tiktok': r'/@[^/]+',
+            'douyin': r'/user/[^/]+',
+            'instagram': r'/(?!p$|reel$|tv$|stories$|explore$)[a-z0-9._]+',
+            'youtube': r'/(?:@[^/]+|channel/[^/]+|c/[^/]+|user/[^/]+)(?:/videos)?',
+            'twitter': r'/(?!i(?:/|$)|home(?:/|$)|explore(?:/|$)|search(?:/|$)|settings(?:/|$))[a-z0-9_]+',
+            'bilibili': r'/\d+(?:/video)?',
+            'xiaohongshu': r'/user/profile/[^/]+',
+            'weibo': r'/(?:u/)?[a-z0-9._-]+',
+            'reddit': r'/user/[^/]+',
+            'facebook': r'/(?!watch$|reel$|videos$)[a-z0-9._-]+',
+            'telegram': r'/[^/]+',
+            'pinterest': r'/[^/]+(?:/_(?:created|saved))?',
+            'vimeo': r'/(?:user\d+|[a-z][a-z0-9_-]+)',
+            'dailymotion': r'/user/[^/]+',
+            'twitch': r'/(?!videos$|directory$|downloads$|settings$)[a-z0-9_]+',
+            'tumblr': r'/[^/]+',
+            'rumble': r'/(?:c|user)/[^/]+',
+            'acfun': r'/u/[^/]+',
+            'youku': r'/u/[^/]+',
+            'iqiyi': r'/u/[^/]+',
+            'tencent_video': r'/biu/u/[^/]+',
+            'ixigua': r'/home/[^/]+',
+        }
+        shape = profile_shapes.get(platform_key)
+        if platform_key == 'bilibili' and hostname != 'space.bilibili.com':
+            return False
+        return bool(shape and re.fullmatch(shape, path, re.IGNORECASE))
     
     def extract_url_from_text(self, text: str) -> str:
         """
@@ -763,6 +815,142 @@ class UniversalDownloader:
                 return self._error_response(
                     "Parsing failed. The platform may be temporarily unavailable"
                 )
+
+    def get_profile_info(
+        self,
+        url: str,
+        limit: int = 12,
+        cursor: int = 0,
+    ) -> Dict[str, Any]:
+        """Return a bounded page of public media from a creator profile."""
+        if not yt_dlp:
+            return self._error_response("yt-dlp is not installed")
+
+        extracted_url = self.extract_url_from_text(url)
+        platform_key, platform_name = self.detect_platform(extracted_url)
+        if platform_key in ('unknown', 'other'):
+            return self._error_response("This platform is not supported")
+        if not self.is_profile_url(extracted_url):
+            return self._error_response("Please provide a creator profile URL, not a post or playlist URL")
+
+        requested_count = limit + 1
+        ydl_opts = {
+            'quiet': True,
+            'no_warnings': True,
+            'extract_flat': 'in_playlist',
+            'skip_download': True,
+            'lazy_playlist': False,
+            'playliststart': cursor + 1,
+            'playlistend': cursor + requested_count,
+            'socket_timeout': self.read_timeout,
+            'extractor_retries': 3,
+            'http_headers': {
+                'User-Agent': (
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                    'AppleWebKit/537.36 (KHTML, like Gecko) '
+                    'Chrome/120.0.0.0 Safari/537.36'
+                ),
+                'Accept-Language': 'en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7',
+            },
+        }
+        ydl_opts.update(self._cookie_options(platform_key))
+
+        try:
+            logger.info('[%s] Parsing public creator profile', platform_name)
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(extracted_url, download=False)
+
+            raw_entries = list((info or {}).get('entries') or [])
+            if not raw_entries:
+                return self._error_response(
+                    "This URL is not a public creator profile, or the profile has no accessible posts"
+                )
+
+            page_entries = raw_entries[:limit]
+            items = []
+            for entry in page_entries:
+                if not isinstance(entry, dict):
+                    continue
+                item_url = entry.get('webpage_url') or entry.get('url') or ''
+                item_platform, _ = self.detect_platform(item_url)
+                if item_platform != platform_key:
+                    continue
+
+                items.append({
+                    'success': True,
+                    'platform': platform_key,
+                    'platform_key': platform_key,
+                    'video_id': entry.get('id', ''),
+                    'original_url': item_url,
+                    'title': (
+                        entry.get('title')
+                        or entry.get('description')
+                        or 'Untitled media'
+                    )[:200],
+                    'author': (
+                        entry.get('uploader')
+                        or entry.get('channel')
+                        or entry.get('creator')
+                        or ''
+                    ),
+                    'cover_url': entry.get('thumbnail', ''),
+                    'duration': entry.get('duration') or 0,
+                    'views': entry.get('view_count') or 0,
+                    'likes': entry.get('like_count') or 0,
+                    'comments': entry.get('comment_count') or 0,
+                    'created_at': entry.get('timestamp') or entry.get('upload_date'),
+                })
+
+            if not items:
+                return self._error_response(
+                    "The profile did not expose any supported public media links"
+                )
+
+            profile_name = (
+                info.get('uploader')
+                or info.get('channel')
+                or info.get('creator')
+                or info.get('title')
+                or platform_name
+            )
+            profile_handle = info.get('uploader_id') or info.get('channel_id') or ''
+            has_more = len(raw_entries) > limit
+
+            return {
+                'success': True,
+                'platform': platform_key,
+                'platform_key': platform_key,
+                'platform_name': platform_name,
+                'original_url': extracted_url,
+                'profile': {
+                    'id': profile_handle or info.get('id', ''),
+                    'name': profile_name,
+                    'handle': profile_handle,
+                    'avatar': info.get('thumbnail', ''),
+                    'description': info.get('description', ''),
+                    'url': extracted_url,
+                    'followers': info.get('channel_follower_count') or 0,
+                    'posts': info.get('playlist_count') or 0,
+                },
+                'items': items,
+                'count': len(items),
+                'has_more': has_more,
+                'next_cursor': str(cursor + limit) if has_more else None,
+            }
+        except Exception as exc:
+            error_msg = str(exc).lower()
+            logger.warning(
+                '[%s] Creator profile parsing failed (%s)',
+                platform_name,
+                type(exc).__name__,
+            )
+            if 'login' in error_msg or 'private' in error_msg:
+                return self._error_response(
+                    "This profile is private or requires an account to view"
+                )
+            return self._error_response(
+                "Profile parsing failed. The platform may not expose this public profile"
+            )
     
     def _extract_best_video_url(self, info: Dict) -> str:
         """从 yt-dlp 信息中提取最佳视频 URL"""

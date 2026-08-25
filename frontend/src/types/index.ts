@@ -43,6 +43,7 @@ export interface VideoFormat {
 
 export interface ParsedMedia {
   success: boolean;
+  video_id?: string;
   platform?: string;
   platform_key?: PlatformKey;
   original_url?: string;
@@ -66,6 +67,31 @@ export interface ParsedMedia {
   tags?: string[];
   created_at?: string | number;
   raw_data?: Record<string, unknown>;
+  error?: string;
+}
+
+export interface ProfileSummary {
+  id?: string;
+  name?: string;
+  handle?: string;
+  avatar?: string;
+  description?: string;
+  url?: string;
+  followers?: number;
+  posts?: number;
+}
+
+export interface ProfileParseResponse {
+  success: boolean;
+  platform?: PlatformKey | string;
+  platform_key?: PlatformKey;
+  platform_name?: string;
+  original_url?: string;
+  profile?: ProfileSummary;
+  items: ParsedMedia[];
+  count: number;
+  has_more: boolean;
+  next_cursor?: string | null;
   error?: string;
 }
 

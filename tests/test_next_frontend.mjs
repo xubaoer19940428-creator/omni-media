@@ -50,6 +50,10 @@ const workbenchSource = fs.readFileSync(
   new URL('../frontend/src/components/Workbench.tsx', import.meta.url),
   'utf8',
 );
+const profileResultSource = fs.readFileSync(
+  new URL('../frontend/src/components/ProfileResult.tsx', import.meta.url),
+  'utf8',
+);
 const homePageSource = fs.readFileSync(
   new URL('../frontend/src/app/page.tsx', import.meta.url),
   'utf8',
@@ -68,6 +72,12 @@ assert.match(i18nSource, /10 分钟有效/);
 assert.match(homePageSource, /URLSearchParams\(window\.location\.search\)/);
 assert.match(homePageSource, /get\('auto'\) === '1'/);
 assert.match(workbenchSource, /handleParse\(initialUrl\)/);
+assert.match(workbenchSource, /parseProfileUrl/);
+assert.match(workbenchSource, /t\.profile\.creatorMode/);
+assert.match(profileResultSource, /tikhub-card/);
+assert.match(profileResultSource, /dark:/);
+assert.match(i18nSource, /creatorMode: 'Creator profile'/);
+assert.match(i18nSource, /creatorMode: '个人主页'/);
 assert.match(nextConfigSource, /trailingSlash:\s*true/);
 
 const platformCases = new Map([
@@ -83,9 +93,27 @@ for (const [url, expected] of platformCases) {
 }
 
 const calls = [];
+const profileCalls = [];
 const originalFetch = globalThis.fetch;
-globalThis.fetch = async (_url, options) => {
-  const urls = JSON.parse(options.body).urls;
+globalThis.fetch = async (url, options) => {
+  const body = JSON.parse(options.body);
+  if (url.endsWith('/api/profile/parse')) {
+    profileCalls.push(body);
+    return {
+      ok: true,
+      async json() {
+        return {
+          success: true,
+          profile: { name: 'Example creator' },
+          items: [],
+          count: 0,
+          has_more: false,
+          next_cursor: null,
+        };
+      },
+    };
+  }
+  const urls = body.urls;
   calls.push(urls);
   return {
     ok: true,
@@ -99,6 +127,36 @@ globalThis.fetch = async (_url, options) => {
 };
 
 try {
+  const profile = await api.parseProfileUrl('https://www.youtube.com/@example', 6, 12);
+  assert.equal(profile.profile.name, 'Example creator');
+  assert.deepEqual(profileCalls, [{
+    url: 'https://www.youtube.com/@example',
+    limit: 6,
+    cursor: 12,
+  }]);
+
+  globalThis.fetch = async () => ({
+    ok: false,
+    async json() { throw new SyntaxError('not json'); },
+  });
+  await assert.rejects(
+    api.parseProfileUrl('https://www.youtube.com/@example'),
+    /profile parsing failed/i,
+  );
+  globalThis.fetch = async (_url, options) => {
+    const urls = JSON.parse(options.body).urls;
+    calls.push(urls);
+    return {
+      ok: true,
+      async json() {
+        return {
+          success: true,
+          results: urls.map((original_url) => ({ success: true, original_url })),
+        };
+      },
+    };
+  };
+
   const urls = Array.from({ length: 21 }, (_, index) =>
     `https://www.youtube.com/watch?v=${index}`,
   );
@@ -120,4 +178,4 @@ try {
   globalThis.fetch = originalFetch;
 }
 
-console.log(`Next frontend contract passed (${platformCases.size} domain cases, batch 10/10/1, queue cap 40).`);
+console.log(`Next frontend contract passed (${platformCases.size} domain cases, profile parse, batch 10/10/1, queue cap 40).`);

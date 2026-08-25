@@ -14,11 +14,12 @@ import {
   Sparkles,
   ShieldCheck
 } from 'lucide-react';
-import { ParsedMedia, PlatformKey } from '@/types';
-import { extractUrlFromText, parseMediaUrl } from '@/lib/api';
+import { ParsedMedia, PlatformKey, ProfileParseResponse } from '@/types';
+import { extractUrlFromText, parseMediaUrl, parseProfileUrl } from '@/lib/api';
 import { DEMO_LINKS, SUPPORTED_PLATFORMS } from '@/lib/constants';
 import { useTranslation } from '@/lib/i18n';
 import { ResultCard } from './ResultCard';
+import { ProfileResult } from './ProfileResult';
 import { PlatformIcon } from './PlatformIcons';
 import gsap from 'gsap';
 
@@ -37,6 +38,9 @@ export const Workbench: React.FC<WorkbenchProps> = ({ initialUrl = '', autoParse
   const [result, setResult] = useState<ParsedMedia | null>(null);
   const [history, setHistory] = useState<ParsedMedia[]>([]);
   const [showDemoDropdown, setShowDemoDropdown] = useState(false);
+  const [mode, setMode] = useState<'media' | 'profile'>('media');
+  const [profileResult, setProfileResult] = useState<ProfileParseResponse | null>(null);
+  const [profileLoadingMore, setProfileLoadingMore] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -69,14 +73,14 @@ export const Workbench: React.FC<WorkbenchProps> = ({ initialUrl = '', autoParse
 
   // Animate result card reveal with GSAP
   useEffect(() => {
-    if (result && resultRef.current) {
+    if ((result || profileResult) && resultRef.current) {
       gsap.fromTo(
         resultRef.current,
         { opacity: 0, y: 30, scale: 0.98 },
         { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: 'power3.out' }
       );
     }
-  }, [result]);
+  }, [result, profileResult]);
 
   // Animate dropdown with GSAP
   useEffect(() => {
@@ -133,11 +137,42 @@ export const Workbench: React.FC<WorkbenchProps> = ({ initialUrl = '', autoParse
     }
   };
 
+  const handleProfileParse = async (urlToParse?: string, cursor = 0, append = false) => {
+    const target = urlToParse || inputText;
+    if (!target.trim()) {
+      setError(t.profile.noUrlError);
+      return;
+    }
+
+    if (append) setProfileLoadingMore(true);
+    else setLoading(true);
+    setError(null);
+    try {
+      const data = await parseProfileUrl(target, 12, cursor);
+      setProfileResult((current) => append && current
+        ? { ...data, items: [...current.items, ...data.items] }
+        : data);
+    } catch (err: any) {
+      setError(err.message || 'Profile parsing failed');
+    } finally {
+      if (append) setProfileLoadingMore(false);
+      else setLoading(false);
+    }
+  };
+
+  const handleModeChange = (nextMode: 'media' | 'profile') => {
+    setMode(nextMode);
+    setError(null);
+    setResult(null);
+    setProfileResult(null);
+    setShowDemoDropdown(false);
+  };
+
   useEffect(() => {
-    if (!autoParse || !initialUrl || autoParsedUrlRef.current === initialUrl) return;
+    if (!autoParse || !initialUrl || mode !== 'media' || autoParsedUrlRef.current === initialUrl) return;
     autoParsedUrlRef.current = initialUrl;
     void handleParse(initialUrl);
-  }, [autoParse, initialUrl]);
+  }, [autoParse, initialUrl, mode]);
 
   const platformInfo = SUPPORTED_PLATFORMS.find(p => p.key === detectedPlatform);
 
@@ -179,6 +214,7 @@ export const Workbench: React.FC<WorkbenchProps> = ({ initialUrl = '', autoParse
                   <button
                     key={idx}
                     onClick={() => {
+                      handleModeChange('media');
                       setInputText(demo.url);
                       setShowDemoDropdown(false);
                     }}
@@ -199,7 +235,25 @@ export const Workbench: React.FC<WorkbenchProps> = ({ initialUrl = '', autoParse
         <div className="p-5 sm:p-7 space-y-4">
           <div className="flex items-center justify-between text-xs">
             <div className="flex items-center gap-2">
-              <span className="text-slate-800 dark:text-slate-300 font-semibold">{t.workbench.title}</span>
+              <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-950/80">
+                <button
+                  type="button"
+                  onClick={() => handleModeChange('media')}
+                  aria-pressed={mode === 'media'}
+                  className={`rounded-md px-2.5 py-1.5 text-[10px] font-semibold transition ${mode === 'media' ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'}`}
+                >
+                  {t.profile.singleMode}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleModeChange('profile')}
+                  aria-pressed={mode === 'profile'}
+                  className={`rounded-md px-2.5 py-1.5 text-[10px] font-semibold transition ${mode === 'profile' ? 'bg-white text-blue-700 shadow-sm dark:bg-slate-900 dark:text-cyan-300' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'}`}
+                >
+                  {t.profile.creatorMode}
+                </button>
+              </div>
+              <span className="hidden text-slate-800 dark:text-slate-300 font-semibold sm:inline">{mode === 'profile' ? t.profile.title : t.workbench.title}</span>
               {platformInfo && (
                 <span
                   className="px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 border animate-in fade-in bg-white dark:bg-slate-900 shadow-sm"
@@ -225,10 +279,10 @@ export const Workbench: React.FC<WorkbenchProps> = ({ initialUrl = '', autoParse
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                  handleParse();
+                  mode === 'profile' ? handleProfileParse() : handleParse();
                 }
               }}
-              placeholder={t.workbench.placeholder}
+              placeholder={mode === 'profile' ? t.profile.placeholder : t.workbench.placeholder}
               className="w-full h-28 sm:h-24 p-4 bg-transparent text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 resize-none outline-none font-mono"
             />
 
@@ -259,18 +313,18 @@ export const Workbench: React.FC<WorkbenchProps> = ({ initialUrl = '', autoParse
 
               {/* Submit Button */}
               <button
-                onClick={() => handleParse()}
-                disabled={loading || !inputText.trim()}
+                onClick={() => mode === 'profile' ? handleProfileParse() : handleParse()}
+                disabled={loading || profileLoadingMore || !inputText.trim()}
                 className="btn-gradient-pill text-xs flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>{t.workbench.extracting}</span>
+                    <span>{mode === 'profile' ? t.profile.parsing : t.workbench.extracting}</span>
                   </>
                 ) : (
                   <>
-                    <span>{t.workbench.extractMedia}</span>
+                    <span>{mode === 'profile' ? t.profile.parse : t.workbench.extractMedia}</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -280,7 +334,7 @@ export const Workbench: React.FC<WorkbenchProps> = ({ initialUrl = '', autoParse
 
           <div className="flex items-start gap-2.5 rounded-xl border border-blue-200/80 bg-blue-50/70 px-3.5 py-3 text-[11px] leading-relaxed text-slate-600 dark:border-cyan-500/20 dark:bg-cyan-500/[0.06] dark:text-slate-400">
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-blue-600 dark:text-cyan-400" />
-            <p>{t.workbench.storagePolicy}</p>
+            <p>{mode === 'profile' ? t.profile.policy : t.workbench.storagePolicy}</p>
           </div>
 
           {/* Clean URL Output */}
@@ -304,14 +358,37 @@ export const Workbench: React.FC<WorkbenchProps> = ({ initialUrl = '', autoParse
       </div>
 
       {/* Result Section with GSAP reveal */}
-      {result && (
+      {result && mode === 'media' && (
         <div ref={resultRef}>
           <ResultCard data={result} onClear={() => setResult(null)} />
         </div>
       )}
 
+      {profileResult && mode === 'profile' && (
+        <div ref={resultRef}>
+          <ProfileResult
+            data={profileResult}
+            loadingMore={profileLoadingMore}
+            onParseItem={(url) => {
+              setMode('media');
+              setInputText(url);
+              void handleParse(url);
+            }}
+            onLoadMore={() => {
+              if (profileResult.next_cursor) {
+                void handleProfileParse(
+                  profileResult.original_url || inputText,
+                  Number(profileResult.next_cursor),
+                  true,
+                );
+              }
+            }}
+          />
+        </div>
+      )}
+
       {/* Recent History Grid */}
-      {history.length > 0 && !result && (
+      {history.length > 0 && !result && !profileResult && (
         <div className="space-y-3 pt-4">
           <div className="flex items-center justify-between text-xs text-slate-500 px-1">
             <div className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-300">
