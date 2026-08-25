@@ -3,6 +3,7 @@
 使用 yt-dlp 实现，支持 Instagram、YouTube、Twitter/X、Facebook 等 1000+ 平台
 抖音使用 curl_cffi 模拟浏览器访问移动端页面
 """
+import json
 import logging
 import os
 import random
@@ -387,6 +388,213 @@ class UniversalDownloader:
             key=lambda item: (item.get('width') or 0) * (item.get('height') or 0),
         )
         return best['url']
+
+    @staticmethod
+    def _tiktok_profile_from_html(page_html: str) -> Dict[str, Any]:
+        """Extract public creator metadata embedded in a TikTok profile page."""
+        match = re.search(
+            r'<script[^>]+id=["\']__UNIVERSAL_DATA_FOR_REHYDRATION__["\'][^>]*>'
+            r'(.*?)</script>',
+            page_html,
+            re.DOTALL | re.IGNORECASE,
+        )
+        if not match:
+            return {}
+
+        try:
+            payload = json.loads(match.group(1))
+            detail = (
+                payload.get('__DEFAULT_SCOPE__', {})
+                .get('webapp.user-detail', {})
+                .get('userInfo', {})
+            )
+            user = detail.get('user') or {}
+            stats = detail.get('statsV2') or detail.get('stats') or {}
+        except (AttributeError, TypeError, ValueError):
+            return {}
+        if not isinstance(user, dict) or not user.get('uniqueId'):
+            return {}
+
+        def count(field: str) -> int:
+            try:
+                return max(0, int(stats.get(field) or 0))
+            except (TypeError, ValueError):
+                return 0
+
+        website = (user.get('bioLink') or {}).get('link') or ''
+        if not isinstance(website, str) or not re.match(r'^https?://', website):
+            website = ''
+
+        return {
+            'id': user.get('id') or '',
+            'name': user.get('nickname') or user.get('uniqueId') or '',
+            'handle': user.get('uniqueId') or '',
+            'avatar': (
+                user.get('avatarLarger')
+                or user.get('avatarMedium')
+                or user.get('avatarThumb')
+                or ''
+            ),
+            'description': user.get('signature') or '',
+            'website': website,
+            'followers': count('followerCount'),
+            'following': count('followingCount'),
+            'likes': count('heartCount'),
+            'posts': count('videoCount'),
+            'friends': count('friendCount'),
+            'verified': bool(user.get('verified')),
+        }
+
+    def _get_tiktok_profile_metadata(self, profile_url: str) -> Dict[str, Any]:
+        """Fetch TikTok's public page because yt-dlp omits profile-level stats."""
+        parsed = urlparse(profile_url)
+        username_match = re.fullmatch(
+            r'/@([a-z0-9._]+)',
+            parsed.path.rstrip('/'),
+            re.IGNORECASE,
+        )
+        if not username_match:
+            return {}
+
+        canonical_url = f'https://www.tiktok.com/@{username_match.group(1)}'
+        headers = {
+            'User-Agent': (
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                'AppleWebKit/537.36 (KHTML, like Gecko) '
+                'Chrome/120.0.0.0 Safari/537.36'
+            ),
+            'Accept-Language': 'en-US,en;q=0.9',
+        }
+        try:
+            if _has_curl_cffi:
+                session = cffi_requests.Session(impersonate='chrome120')
+                response = session.get(
+                    canonical_url,
+                    headers=headers,
+                    timeout=min(self.read_timeout, 8),
+                )
+            else:
+                response = requests.get(
+                    canonical_url,
+                    headers=headers,
+                    timeout=min(self.read_timeout, 8),
+                )
+            response.raise_for_status()
+            return self._tiktok_profile_from_html(response.text)
+        except Exception as exc:
+            logger.warning(
+                '[TikTok] Public profile metadata was unavailable (%s)',
+                type(exc).__name__,
+            )
+            return {}
+
+    def _get_platform_profile_metadata(
+        self,
+        platform_key: str,
+        profile_url: str,
+    ) -> Dict[str, Any]:
+        """Route optional profile enrichment without coupling the response to one site."""
+        enrichers = {
+            'tiktok': self._get_tiktok_profile_metadata,
+        }
+        enricher = enrichers.get(platform_key)
+        return enricher(profile_url) if enricher else {}
+
+    @staticmethod
+    def _merge_profile_enrichment(
+        profile: Dict[str, Any],
+        enrichment: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """Merge only meaningful enrichment so partial pages cannot erase metadata."""
+        merged = {**profile}
+        for field, value in enrichment.items():
+            if field == 'verified':
+                if value:
+                    merged[field] = True
+            elif isinstance(value, str):
+                if value.strip():
+                    merged[field] = value
+            elif isinstance(value, (int, float)) and not isinstance(value, bool):
+                if value > 0:
+                    merged[field] = value
+        return merged
+
+    @staticmethod
+    def _normalized_profile_summary(
+        info: Dict[str, Any],
+        platform_key: str,
+        platform_name: str,
+        profile_url: str,
+    ) -> Dict[str, Any]:
+        """Map extractor-specific profile metadata onto the shared API contract."""
+        def first_text(*fields: str) -> str:
+            for field in fields:
+                value = info.get(field)
+                if isinstance(value, str) and value.strip():
+                    return value.strip()
+            return ''
+
+        def first_count(*fields: str) -> int:
+            for field in fields:
+                value = info.get(field)
+                if value is None or isinstance(value, bool):
+                    continue
+                try:
+                    return max(0, int(value))
+                except (TypeError, ValueError):
+                    continue
+            return 0
+
+        parsed_path = urlparse(profile_url).path.rstrip('/')
+        url_handle = ''
+        if platform_key in {'tiktok', 'youtube'}:
+            handle_match = re.search(r'/(@[^/]+)', parsed_path)
+            if handle_match:
+                url_handle = handle_match.group(1).lstrip('@')
+        elif platform_key in {'instagram', 'twitter'}:
+            url_handle = parsed_path.lstrip('/').split('/', 1)[0]
+
+        name = first_text('uploader', 'channel', 'creator', 'playlist_uploader', 'title')
+        website = first_text('website', 'external_url', 'bio_url')
+        if website and not re.match(r'^https?://', website, re.IGNORECASE):
+            website = ''
+        return {
+            'id': first_text('uploader_id', 'channel_id', 'creator_id', 'id'),
+            'name': name or platform_name,
+            'handle': (
+                url_handle
+                or first_text('uploader_id', 'channel_id', 'creator_id')
+            ),
+            'avatar': UniversalDownloader._best_thumbnail(info),
+            'description': first_text(
+                'description',
+                'channel_description',
+                'uploader_description',
+                'bio',
+            ),
+            'url': profile_url,
+            'website': website,
+            'followers': first_count(
+                'channel_follower_count',
+                'follower_count',
+                'followers',
+                'subscriber_count',
+            ),
+            'following': first_count('following_count', 'following'),
+            'likes': first_count(
+                'total_like_count',
+                'heart_count',
+                'likes_count',
+            ),
+            'posts': first_count(
+                'playlist_count',
+                'video_count',
+                'media_count',
+                'post_count',
+            ),
+            'friends': first_count('friend_count', 'friends_count'),
+            'verified': bool(info.get('is_verified') or info.get('verified')),
+        }
     
     def extract_url_from_text(self, text: str) -> str:
         """
@@ -925,15 +1133,20 @@ class UniversalDownloader:
                     "The profile did not expose any supported public media links"
                 )
 
-            profile_name = (
-                info.get('uploader')
-                or info.get('channel')
-                or info.get('creator')
-                or info.get('title')
-                or platform_name
-            )
-            profile_handle = info.get('uploader_id') or info.get('channel_id') or ''
             has_more = len(raw_entries) > limit
+
+            profile = self._normalized_profile_summary(
+                info,
+                platform_key,
+                platform_name,
+                extracted_url,
+            )
+            enrichment = self._get_platform_profile_metadata(
+                platform_key,
+                extracted_url,
+            ) if cursor == 0 else {}
+            profile = self._merge_profile_enrichment(profile, enrichment)
+            profile['url'] = extracted_url
 
             return {
                 'success': True,
@@ -941,16 +1154,7 @@ class UniversalDownloader:
                 'platform_key': platform_key,
                 'platform_name': platform_name,
                 'original_url': extracted_url,
-                'profile': {
-                    'id': profile_handle or info.get('id', ''),
-                    'name': profile_name,
-                    'handle': profile_handle,
-                    'avatar': self._best_thumbnail(info),
-                    'description': info.get('description', ''),
-                    'url': extracted_url,
-                    'followers': info.get('channel_follower_count') or 0,
-                    'posts': info.get('playlist_count') or 0,
-                },
+                'profile': profile,
                 'items': items,
                 'count': len(items),
                 'has_more': has_more,

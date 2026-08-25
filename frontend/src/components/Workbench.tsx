@@ -150,7 +150,11 @@ export const Workbench: React.FC<WorkbenchProps> = ({ initialUrl = '', autoParse
     try {
       const data = await parseProfileUrl(target, 12, cursor);
       setProfileResult((current) => append && current
-        ? { ...data, items: [...current.items, ...data.items] }
+        ? {
+            ...data,
+            profile: current.profile || data.profile,
+            items: [...current.items, ...data.items],
+          }
         : data);
     } catch (err: any) {
       setError(err.message || 'Profile parsing failed');

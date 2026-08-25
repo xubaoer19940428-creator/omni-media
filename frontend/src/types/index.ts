@@ -77,8 +77,13 @@ export interface ProfileSummary {
   avatar?: string;
   description?: string;
   url?: string;
+  website?: string;
   followers?: number;
+  following?: number;
+  likes?: number;
   posts?: number;
+  friends?: number;
+  verified?: boolean;
 }
 
 export interface ProfileParseResponse {
