@@ -471,6 +471,12 @@ class ApiSecurityTests(unittest.TestCase):
             "script-src 'self' 'sha256-test-inline-script-hash='",
             response.headers['Content-Security-Policy'],
         )
+        csp = response.headers['Content-Security-Policy']
+        script_src = csp.split('script-src ', 1)[1].split(';', 1)[0]
+        connect_src = csp.split('connect-src ', 1)[1].split(';', 1)[0]
+        self.assertIn('https://www.googletagmanager.com', script_src)
+        self.assertIn('https://www.google-analytics.com', connect_src)
+        self.assertIn('https://analytics.google.com', connect_src)
         self.assertEqual(
             'max-age=31536000',
             response.headers['Strict-Transport-Security'],

@@ -499,11 +499,11 @@ def add_security_headers(response):
     response.headers.setdefault(
         'Content-Security-Policy',
         "default-src 'self'; "
-        f"script-src {script_sources}; "
+        f"script-src {script_sources} https://www.googletagmanager.com; "
         "style-src 'self' 'unsafe-inline'; "
         "img-src 'self' data: blob: https:; "
         "media-src 'self' blob: https:; "
-        "connect-src 'self'; "
+        "connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com https://analytics.google.com; "
         "font-src 'self' data:; object-src 'none'; base-uri 'self'; "
         "frame-ancestors 'self'; form-action 'self'",
     )

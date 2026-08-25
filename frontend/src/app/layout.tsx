@@ -33,6 +33,8 @@ export const metadata: Metadata = {
   },
 };
 
+const GA_MEASUREMENT_ID = 'G-6LCMTWDMHX';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -55,6 +57,27 @@ export default function RootLayout({
                   document.documentElement.setAttribute('data-theme', 'light');
                 }
               } catch (e) {}
+            `,
+          }}
+        />
+        <script
+          async
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              if (window.location.hostname === 'useomnimedia.com') {
+                gtag('config', '${GA_MEASUREMENT_ID}', { send_page_view: false });
+                gtag('event', 'page_view', {
+                  page_title: document.title,
+                  page_path: window.location.pathname,
+                  page_location: window.location.origin + window.location.pathname
+                });
+              }
             `,
           }}
         />
