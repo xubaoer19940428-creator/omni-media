@@ -1003,6 +1003,11 @@ class UniversalDownloader:
                 info = ydl.extract_info(url, download=False)
                 
                 if not info:
+                    if platform_key == 'telegram':
+                        return self._error_response(
+                            "Telegram 网页端未提供该视频的下载地址"
+                            "（较大的媒体文件会受限），请在 Telegram 中打开。"
+                        )
                     return self._error_response("Could not retrieve video information")
                 
                 # 提取视频 URL

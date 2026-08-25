@@ -3,7 +3,7 @@ import re
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import universal_downloader as downloader_module
 from app import app
@@ -382,6 +382,24 @@ class PlatformSupportTests(unittest.TestCase):
             'Parsing failed. The platform may be temporarily unavailable',
             result['error'],
         )
+
+    def test_telegram_large_media_has_an_actionable_error(self):
+        fake_ydl = MagicMock()
+        fake_ydl.__enter__.return_value.extract_info.return_value = None
+        fake_ydl.__exit__.return_value = None
+
+        with patch.object(
+            downloader_module.yt_dlp,
+            'YoutubeDL',
+            return_value=fake_ydl,
+        ):
+            result = self.downloader.get_video_info(
+                'https://t.me/public_channel/12345'
+            )
+
+        self.assertFalse(result['success'])
+        self.assertIn('Telegram 网页端未提供', result['error'])
+        self.assertIn('请在 Telegram 中打开', result['error'])
 
     def test_real_subdomains_and_trailing_dot_are_accepted(self):
         accepted = {
