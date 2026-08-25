@@ -137,6 +137,16 @@ Open <http://localhost:7860>. Windows users can activate the environment with
 
 For optional configuration, see [`.env.example`](.env.example).
 
+### Optional Telegram large-media fallback
+
+Telegram's public web preview may hide large files with `Media is too big`.
+Operators can enable an optional MTProto fallback for public username-based
+posts only. Create a dedicated Telegram account and API application, run
+`python scripts/create_telegram_session.py` locally, then store
+`TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, and `TELEGRAM_SESSION` as deployment
+secrets. Never commit or share the generated session. Private `/c/` links and
+invite links are rejected even when the fallback is enabled.
+
 ## API examples
 
 The browser interface uses the same API. All examples below assume a local

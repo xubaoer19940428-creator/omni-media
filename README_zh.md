@@ -136,6 +136,15 @@ python app.py
 
 可选配置请查看 [`.env.example`](.env.example)。
 
+### 可选 Telegram 大文件回退
+
+Telegram 公开网页可能用 `Media is too big` 隐藏大文件。部署者可以为仅含
+公开用户名的帖子启用可选 MTProto 回退：使用专用 Telegram 账号创建 API
+应用，在本地运行 `python scripts/create_telegram_session.py`，然后将
+`TELEGRAM_API_ID`、`TELEGRAM_API_HASH` 和 `TELEGRAM_SESSION` 保存为部署
+密钥。不得提交或分享生成的会话。即使启用回退，私有 `/c/` 链接和邀请
+链接仍会被拒绝。
+
 ## API 示例
 
 Web 界面使用相同的 API。下面的示例假设本地服务运行在
