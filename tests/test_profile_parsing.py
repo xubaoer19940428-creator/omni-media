@@ -64,6 +64,16 @@ class EmptyProfileYoutubeDL(FakeProfileYoutubeDL):
 
 
 class ProfileParsingTests(unittest.TestCase):
+    def test_best_thumbnail_uses_largest_array_candidate(self):
+        result = UniversalDownloader._best_thumbnail({
+            'thumbnail': None,
+            'thumbnails': [
+                {'url': 'https://images.example/small.jpg', 'width': 320, 'height': 180},
+                {'url': 'https://images.example/large.jpg', 'width': 1280, 'height': 720},
+            ],
+        })
+        self.assertEqual('https://images.example/large.jpg', result)
+
     def test_profile_url_classifier_rejects_media_and_playlist_urls(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             downloader = UniversalDownloader(temp_dir)

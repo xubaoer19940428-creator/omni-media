@@ -368,6 +368,25 @@ class UniversalDownloader:
         if platform_key == 'bilibili' and hostname != 'space.bilibili.com':
             return False
         return bool(shape and re.fullmatch(shape, path, re.IGNORECASE))
+
+    @staticmethod
+    def _best_thumbnail(info: Dict[str, Any]) -> str:
+        """Prefer the largest usable thumbnail from yt-dlp metadata."""
+        thumbnail = info.get('thumbnail')
+        if isinstance(thumbnail, str) and thumbnail:
+            return thumbnail
+
+        candidates = [
+            item for item in (info.get('thumbnails') or [])
+            if isinstance(item, dict) and isinstance(item.get('url'), str)
+        ]
+        if not candidates:
+            return ''
+        best = max(
+            candidates,
+            key=lambda item: (item.get('width') or 0) * (item.get('height') or 0),
+        )
+        return best['url']
     
     def extract_url_from_text(self, text: str) -> str:
         """
@@ -893,7 +912,7 @@ class UniversalDownloader:
                         or entry.get('creator')
                         or ''
                     ),
-                    'cover_url': entry.get('thumbnail', ''),
+                    'cover_url': self._best_thumbnail(entry),
                     'duration': entry.get('duration') or 0,
                     'views': entry.get('view_count') or 0,
                     'likes': entry.get('like_count') or 0,
@@ -926,7 +945,7 @@ class UniversalDownloader:
                     'id': profile_handle or info.get('id', ''),
                     'name': profile_name,
                     'handle': profile_handle,
-                    'avatar': info.get('thumbnail', ''),
+                    'avatar': self._best_thumbnail(info),
                     'description': info.get('description', ''),
                     'url': extracted_url,
                     'followers': info.get('channel_follower_count') or 0,
