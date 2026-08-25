@@ -361,6 +361,23 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertEqual(404, escaped_status)
         self.assertNotIn(b'private', escaped_data)
 
+    def test_frontend_privacy_route_serves_trailing_slash_export(self):
+        with tempfile.TemporaryDirectory() as frontend_dir:
+            frontend_path = Path(frontend_dir)
+            privacy_dir = frontend_path / 'privacy' / 'extension'
+            privacy_dir.mkdir(parents=True)
+            (privacy_dir / 'index.html').write_text('privacy', encoding='utf-8')
+
+            with patch.object(app_module, 'FRONTEND_DIR', frontend_path.resolve()):
+                response = self.client.get('/privacy/extension/')
+
+            status = response.status_code
+            body = response.get_data()
+            response.close()
+
+        self.assertEqual(200, status)
+        self.assertIn(b'privacy', body)
+
     def test_download_rejects_unsupported_url_before_downloading(self):
         with patch.object(app_module.downloader, 'download_video') as download_video:
             response = self.client.post('/api/download', json={

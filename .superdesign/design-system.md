@@ -1,50 +1,73 @@
-# QuickClean design system
+# OmniMedia browser extension design system
 
-## Product
+## Product and job
 
-QuickClean is a focused, single-purpose utility for pasting a public video URL, checking its metadata, and downloading the available source file. The interface should feel trustworthy, fast, and technically competent rather than promotional or “AI magical.”
+OmniMedia is a focused browser extension for pasting a public-media URL or a complete copied share message, detecting one of the explicitly supported 22 platforms, parsing normalized public metadata, and handing secure download work to the full OmniMedia web app. Pasted input is the primary workflow. Reading the active tab is an optional convenience action, never the only input method.
 
-## Target visual direction
+## Popup canvas and structure
 
-Use a refined light editorial-tool aesthetic inspired by precision instruments and contemporary publishing software.
+- Fixed browser popup canvas: 400px wide, designed to fit comfortably around 600–640px tall without horizontal scrolling.
+- Compact branded top bar: exact OmniMedia logo, wordmark, health status, language and theme controls.
+- Dominant input workbench: a labeled multiline textarea for a URL or complete share text, platform detection feedback, optional “Use current tab” action, and one clear “Parse media” primary action.
+- Progressive states below the workbench: loading, concise error, unsupported input, and a result card with cover, platform, title, author, duration, secure-download handoff, and web-app action.
+- Compact privacy footer.
 
-- Canvas: warm paper white `#F4F1EA`
-- Primary ink: `#161914`
-- Muted ink: `#667067`
-- Hairline: `#D7D8CF`
-- Panel: `#FCFBF7`
-- Signal green: `#C8F169`
-- Signal blue: `#B9D9FF`
-- Error: `#C24A36`
-- Display type: `DM Sans`, strongly weighted and tightly tracked
-- Body type: `DM Sans`
-- Monospace labels: `IBM Plex Mono`
-- Radius: 18px for main cards, 12px for controls, pill radius only for compact status tags
-- Shadows: restrained, offset instrument-like shadows; avoid glowing glass effects
-- Spacing: generous 8px rhythm, with 24–40px section gaps
+## Visual direction
 
-## Layout
+Refined technical instrument with editorial clarity: compact, dense enough to feel capable, but calm and immediately understandable. It should resemble a polished Vercel/Linear-class utility, not a generic dashboard or a miniature landing page.
 
-Desktop uses a slim top bar, a centered typographic masthead, a dominant command-bar URL input, and an instrument-panel result below. A compact compatibility rail and three-step workflow complete the page. Mobile collapses every panel into a single column with full-width actions.
+### Light theme
 
-## Components
+- Page: `#fafbfc`
+- Surface: `#ffffff`
+- Muted surface: `#f8fafc`
+- Ink: `#0f172a`
+- Secondary: `#475569`
+- Muted: `#94a3b8`
+- Hairline: `#e2e8f0`
+- Primary: `#2563eb`
+- Secondary accent: `#4f46e5`
+- Signal cyan: `#00c8d7`
+- Success: `#16a34a`
 
-- Primary action: ink background, white text, signal-green icon tile or accent
-- Secondary action: transparent or panel background with a crisp 1px border
-- Input: large, calm, high contrast, with a monospace URL affordance
-- Platform chips: compact monochrome chips with one accent state
-- Result media: 16:10 preview, editorial metadata hierarchy, compact numeric stats
-- Status: concise language; no false claims about encryption, AI reconstruction, or cloud engines
+### Dark theme
 
-## Motion
+- Page: `#07090e`
+- Surface: `#0c1018`
+- Muted surface: `#080c12`
+- Ink: `#f8fafc`
+- Secondary: `#94a3b8`
+- Muted: `#64748b`
+- Hairline: `rgba(255,255,255,.09)`
+- Primary: `#00c8d7`
+- Secondary accent: `#6366f1`
+- Success: `#4ade80`
 
-Use one orchestrated entrance with subtle stagger. Hover movement stays within 2–3px. Respect `prefers-reduced-motion`. Loading uses a purposeful linear sweep, not decorative spinning everywhere.
+## Typography and components
 
-## Constraints
+- UI type: native system UI stack for extension reliability and zero remote fonts.
+- Technical labels and detected URLs: native monospace stack.
+- Strong type hierarchy using weight and tracking rather than oversized text.
+- Main card radius: 16px; controls: 10–12px; compact pills only for statuses.
+- Fine borders and controlled shadows; no decorative glassmorphism, purple hero gradient, or empty marketing art.
+- Primary action: blue-to-indigo in light mode, cyan-to-indigo in dark mode, high-contrast white label.
+- Secondary actions: outlined or muted-surface buttons with clear icons.
+- Textarea: 96–112px tall, high contrast, visible focus ring, no hidden label.
+- Result preview: approximately 112x74px, compact two-line title and single-line metadata.
 
-- Preserve all existing element IDs required by `static/js/app.js`.
-- Preserve all parse, download, copy, cleanup, error, and loading flows.
-- Keep all product interface copy in English.
-- Use Bootstrap only as the existing structural dependency; custom CSS owns the visual system.
-- Do not add a JavaScript framework or build step.
-- Use only fonts, colors, spacing, and component styles defined here.
+## Interaction and accessibility
+
+- Pasting or typing updates platform detection immediately using the first HTTP(S) URL found in the text.
+- “Use current tab” populates the textarea and never auto-sends the URL.
+- Parse stays disabled until a valid supported URL is detected.
+- Loading and error states use `aria-live`; buttons remain keyboard accessible with clear focus rings.
+- Respect `prefers-reduced-motion`; movement stays within 1–2px.
+- English is the default and all visible copy has Simplified Chinese parity.
+
+## Hard constraints
+
+- Preserve the explicit 22-platform security boundary.
+- Preserve Manifest V3 and the existing minimal `activeTab`, `storage`, and `https://useomnimedia.com/*` permissions.
+- Do not add content scripts, background workers, clipboard permission, analytics, or remote executable code.
+- Use the exact supplied OmniMedia logo; never invent or substitute the mark.
+- Use only the fonts, colors, spacing, and component styles defined here.

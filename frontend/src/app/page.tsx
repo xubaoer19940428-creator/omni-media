@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { HeroSection } from '@/components/HeroSection';
 import { PlatformMarquee } from '@/components/PlatformMarquee';
@@ -17,8 +17,18 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState<'workbench' | 'batch' | 'playground' | 'platforms'>('workbench');
   const [isDocsOpen, setIsDocsOpen] = useState(false);
   const [workbenchUrl, setWorkbenchUrl] = useState('');
+  const [autoParseUrl, setAutoParseUrl] = useState(false);
+
+  useEffect(() => {
+    const initialUrl = new URLSearchParams(window.location.search).get('url');
+    if (initialUrl) {
+      setWorkbenchUrl(initialUrl);
+      setAutoParseUrl(new URLSearchParams(window.location.search).get('auto') === '1');
+    }
+  }, []);
 
   const handleTestUrlInWorkbench = (url: string) => {
+    setAutoParseUrl(false);
     setWorkbenchUrl(url);
     setActiveTab('workbench');
     window.scrollTo({ top: 400, behavior: 'smooth' });
@@ -54,7 +64,7 @@ export default function HomePage() {
         {/* Dynamic Tab Switcher Content */}
         {activeTab === 'workbench' && (
           <div className="space-y-12">
-            <Workbench initialUrl={workbenchUrl} />
+            <Workbench initialUrl={workbenchUrl} autoParse={autoParseUrl} />
             <McpBentoSection
               onExplorePlayground={() => setActiveTab('playground')}
             />

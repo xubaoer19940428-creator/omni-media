@@ -50,6 +50,14 @@ const workbenchSource = fs.readFileSync(
   new URL('../frontend/src/components/Workbench.tsx', import.meta.url),
   'utf8',
 );
+const homePageSource = fs.readFileSync(
+  new URL('../frontend/src/app/page.tsx', import.meta.url),
+  'utf8',
+);
+const nextConfigSource = fs.readFileSync(
+  new URL('../frontend/next.config.mjs', import.meta.url),
+  'utf8',
+);
 const i18nSource = fs.readFileSync(
   new URL('../frontend/src/lib/i18n.tsx', import.meta.url),
   'utf8',
@@ -57,6 +65,10 @@ const i18nSource = fs.readFileSync(
 assert.match(workbenchSource, /t\.workbench\.storagePolicy/);
 assert.match(i18nSource, /512 MB/);
 assert.match(i18nSource, /10 分钟有效/);
+assert.match(homePageSource, /URLSearchParams\(window\.location\.search\)/);
+assert.match(homePageSource, /get\('auto'\) === '1'/);
+assert.match(workbenchSource, /handleParse\(initialUrl\)/);
+assert.match(nextConfigSource, /trailingSlash:\s*true/);
 
 const platformCases = new Map([
   ['https://www.youtube.com/watch?v=abc', 'youtube'],

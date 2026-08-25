@@ -1,0 +1,11 @@
+{
+  "extensionName": {
+    "message": "OmniMedia — 媒体链接解析"
+  },
+  "extensionDescription": {
+    "message": "粘贴并解析 22 个已支持平台的公开媒体链接，然后继续安全下载。"
+  },
+  "actionTitle": {
+    "message": "使用 OmniMedia 粘贴并解析公开媒体链接"
+  }
+}

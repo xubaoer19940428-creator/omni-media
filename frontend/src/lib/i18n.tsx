@@ -138,6 +138,36 @@ export const translations = {
       copy: 'Copy',
       corsPolicy: 'Same-origin by default; configurable trusted origins',
     },
+    extensionPrivacy: {
+      eyebrow: 'BROWSER EXTENSION',
+      title: 'OmniMedia Extension Privacy Policy',
+      updated: 'Last updated: August 25, 2026',
+      intro: 'This policy explains how the OmniMedia browser extension handles information when you use its single purpose: parsing a public media link that you explicitly choose.',
+      scopeTitle: 'What the extension accesses',
+      scopeBody: 'The extension accepts a link or complete share text that you paste into its input and extracts the first HTTP(S) URL locally. It reads the active tab URL only when you click Use current tab. It does not read page content, browsing history, cookies, passwords, personal messages, or clipboard data, and it does not inject scripts into websites.',
+      sentTitle: 'Information sent to OmniMedia',
+      sentItems: [
+        'When you click Parse, the public URL extracted from your input is sent to useomnimedia.com to identify the platform and retrieve public media metadata. The surrounding share text is not sent.',
+        'When you continue to a secure download, the full OmniMedia website opens with that public URL prefilled. The extension does not call the download endpoint. If you start a download on the website, completed files are stored temporarily in a private Cloudflare R2 bucket and are made available through a short-lived signed URL.',
+        'Like most internet services, the hosting infrastructure receives network information such as an IP address and request timing. OmniMedia uses it for security, rate limiting, reliability, and abuse prevention.'
+      ],
+      localTitle: 'Information stored locally',
+      localBody: 'Your language and light/dark theme preferences are stored in the browser extension storage on your device. They are not used for advertising or cross-site tracking.',
+      retentionTitle: 'Retention and sharing',
+      retentionBody: 'Temporary processed downloads are normally removed after about one day; signed download links normally expire after 10 minutes. OmniMedia does not sell personal information or use extension data for advertising. Railway and Cloudflare process limited information only as infrastructure providers needed to operate the service.',
+      permissionsTitle: 'Why the extension requests permissions',
+      permissionsItems: [
+        'activeTab: read the current tab URL only when you click Use current tab.',
+        'storage: remember language and theme preferences on your device.',
+        'useomnimedia.com access: call the OmniMedia parse, health, and cover-image proxy APIs. Secure downloads continue in the full OmniMedia website.'
+      ],
+      controlTitle: 'Your choices',
+      controlBody: 'Do not click Parse if you do not want the extracted public URL sent to OmniMedia. Pasted text is not stored by the extension. You can remove locally stored preferences by uninstalling the extension or using the browser\'s extension storage reset/remove controls.',
+      contactTitle: 'Questions',
+      contactBody: 'For privacy questions, open an issue in the OmniMedia GitHub repository.',
+      contactLink: 'Contact through GitHub',
+      back: 'Back to OmniMedia',
+    },
     // Footer
     footer: {
       subtitle: 'Universal Social Media API & Developer Extraction Platform',
@@ -281,6 +311,36 @@ export const translations = {
       copied: '已复制',
       copy: '复制',
       corsPolicy: '默认仅同源，可配置可信跨域来源',
+    },
+    extensionPrivacy: {
+      eyebrow: '浏览器扩展',
+      title: 'OmniMedia 浏览器扩展隐私政策',
+      updated: '最后更新：2026 年 8 月 25 日',
+      intro: '本政策说明 OmniMedia 浏览器扩展在完成其单一用途时如何处理信息：解析由你明确选择的公开媒体链接。',
+      scopeTitle: '扩展会访问什么',
+      scopeBody: '扩展接受你粘贴到输入框中的链接或完整分享文本，并在本地提取第一个 HTTP(S) 链接。只有在你点击“使用当前标签页”时，它才会读取当前标签页 URL。扩展不读取页面正文、浏览历史、Cookie、密码、私人消息或剪贴板数据，也不会向网站注入脚本。',
+      sentTitle: '会发送给 OmniMedia 的信息',
+      sentItems: [
+        '当你点击“解析”时，从输入中提取的公开 URL 会发送到 useomnimedia.com，用于识别平台并获取公开媒体信息。周围的分享文本不会被发送。',
+        '当你继续安全下载时，完整 OmniMedia 网页会打开并预填该公开 URL。扩展本身不会调用下载接口；如果你在网页中开始下载，完成的文件会临时存放在私有 Cloudflare R2 存储桶中，并通过短时有效的签名链接提供。',
+        '与多数互联网服务一样，托管基础设施会接收 IP 地址和请求时间等网络信息。OmniMedia 仅将其用于安全、限频、可靠性和防止滥用。'
+      ],
+      localTitle: '本地存储的信息',
+      localBody: '语言和明暗主题偏好会保存在你设备上的浏览器扩展存储中。这些信息不会用于广告或跨站跟踪。',
+      retentionTitle: '保留与共享',
+      retentionBody: '临时处理的下载文件通常在约一天后删除，签名下载链接通常在 10 分钟后过期。OmniMedia 不出售个人信息，也不将扩展数据用于广告。Railway 和 Cloudflare 仅作为运行服务所必需的基础设施提供商处理有限信息。',
+      permissionsTitle: '权限用途',
+      permissionsItems: [
+        'activeTab：只有在你点击“使用当前标签页”时读取当前标签页 URL。',
+        'storage：在设备上记住语言和主题偏好。',
+        'useomnimedia.com 访问权限：调用 OmniMedia 的解析、健康检查和封面图代理 API。安全下载会在完整 OmniMedia 网站中继续。'
+      ],
+      controlTitle: '你的选择',
+      controlBody: '如果不希望将提取出的公开 URL 发送给 OmniMedia，请不要点击“解析”。扩展不会保存粘贴的文本。卸载扩展，或使用浏览器的扩展存储重置/删除功能，即可删除本地偏好。',
+      contactTitle: '问题与联系',
+      contactBody: '如有隐私相关问题，请在 OmniMedia GitHub 仓库提交 Issue。',
+      contactLink: '通过 GitHub 联系',
+      back: '返回 OmniMedia',
     },
     // Footer
     footer: {

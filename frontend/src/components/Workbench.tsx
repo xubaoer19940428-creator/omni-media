@@ -24,9 +24,10 @@ import gsap from 'gsap';
 
 interface WorkbenchProps {
   initialUrl?: string;
+  autoParse?: boolean;
 }
 
-export const Workbench: React.FC<WorkbenchProps> = ({ initialUrl = '' }) => {
+export const Workbench: React.FC<WorkbenchProps> = ({ initialUrl = '', autoParse = false }) => {
   const { t } = useTranslation();
   const [inputText, setInputText] = useState(initialUrl);
   const [detectedPlatform, setDetectedPlatform] = useState<PlatformKey>('unknown');
@@ -40,6 +41,7 @@ export const Workbench: React.FC<WorkbenchProps> = ({ initialUrl = '' }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const autoParsedUrlRef = useRef('');
 
   // Auto-detect platform as user types or pastes
   useEffect(() => {
@@ -47,6 +49,13 @@ export const Workbench: React.FC<WorkbenchProps> = ({ initialUrl = '' }) => {
     setCleanUrl(url);
     setDetectedPlatform(platformKey);
   }, [inputText]);
+
+  // Keep an extension-provided query URL in sync after the static page hydrates.
+  useEffect(() => {
+    if (initialUrl && initialUrl !== inputText) {
+      setInputText(initialUrl);
+    }
+  }, [initialUrl]);
 
   // Load history from localStorage
   useEffect(() => {
@@ -123,6 +132,12 @@ export const Workbench: React.FC<WorkbenchProps> = ({ initialUrl = '' }) => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!autoParse || !initialUrl || autoParsedUrlRef.current === initialUrl) return;
+    autoParsedUrlRef.current = initialUrl;
+    void handleParse(initialUrl);
+  }, [autoParse, initialUrl]);
 
   const platformInfo = SUPPORTED_PLATFORMS.find(p => p.key === detectedPlatform);
 
