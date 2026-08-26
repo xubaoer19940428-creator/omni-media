@@ -54,9 +54,11 @@
 
 - Paste a public post URL or the complete share text copied from an app.
 - Parse media metadata into one consistent result format.
+- Switch to creator-profile mode to browse public posts and profile metadata.
 - Preview playable videos and covers directly in the browser.
 - Queue up to 40 links in the web interface while preserving result order.
 - Download supported media through the server instead of relying on fragile source links.
+- Use the Chrome/Edge extension to parse the current tab or a pasted link from the toolbar.
 - Switch between English and Simplified Chinese, light and dark themes, on desktop or mobile.
 
 ## Supported platforms
@@ -73,7 +75,8 @@
 OmniMedia works with public, login-free media. Paid, private, login-required,
 geo-restricted, deleted, or DRM-protected content may not be available, and the
 project does not attempt to bypass those restrictions. Platform behavior can
-also change without notice.
+also change without notice. Telegram's public web page may omit the download
+address for larger media; when that happens, open the post in Telegram instead.
 
 ## Try it
 
@@ -99,6 +102,21 @@ https://www.bilibili.com/video/BVxxxxxxxxxx
 
 Paste one link per line in the Batch Center. The web interface accepts up to 40
 links at a time and processes them in bounded groups.
+
+### Creator profiles
+
+Switch the workbench to **Creator profile**, then paste a supported public
+profile URL. OmniMedia shows the creator's available avatar, bio, verification
+and public statistics together with a paginated media grid. Each request returns
+up to 12 public posts; private and login-only profiles are not supported.
+
+### Browser extension
+
+The included Chrome/Edge Manifest V3 extension can parse a pasted public link or
+the active tab URL, then hand downloads off to the full OmniMedia workbench. It
+does not read page content, browsing history, cookies, credentials, personal
+messages, or clipboard data. See [browser-extension/README.md](browser-extension/README.md)
+for local installation and packaging instructions.
 
 ## Quick start
 
@@ -161,6 +179,17 @@ curl -X POST http://localhost:7860/api/batch-parse \
   -d '{"urls":["https://v.douyin.com/xxxxx/","https://www.tiktok.com/@creator/video/1234567890"]}'
 ```
 
+### Parse a creator profile
+
+The profile endpoint returns up to 12 public posts per request. Pass the returned
+`next_cursor` as `cursor` to load the next page when `has_more` is true.
+
+```bash
+curl -X POST http://localhost:7860/api/profile/parse \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://www.tiktok.com/@creator","limit":12,"cursor":0}'
+```
+
 ### Download supported media
 
 Use the original public URL returned by the parse flow:
@@ -187,6 +216,11 @@ responsible for complying with platform terms, copyright rules, privacy laws,
 and local regulations. This project is intended for lawful interoperability,
 personal tooling, research, and development; it does not provide a right to
 copy or redistribute third-party content.
+
+The production website records aggregate, query-free page-view analytics to
+improve reliability and product usability. Analytics are enabled only on
+`useomnimedia.com`; the browser extension contains no analytics or cross-site
+tracking.
 
 ## Contributing
 
