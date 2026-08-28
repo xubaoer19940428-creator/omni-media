@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   },
   title: 'OmniMedia — Universal Social Media API & Developer Extraction Platform',
   description:
-    'A unified REST API for parsing public media links from Douyin, TikTok, Xiaohongshu, Instagram, Bilibili, YouTube, Twitter/X, and 15 more platforms.',
+    'A unified REST API for parsing public media links from Douyin, TikTok, Xiaohongshu, Instagram, Bilibili, YouTube, Twitter/X, and 23 more platforms.',
   keywords: [
     'TikTok download API',
     'Douyin download API',

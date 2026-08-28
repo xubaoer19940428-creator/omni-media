@@ -27,7 +27,7 @@ export const translations = {
       statWatermark: 'Core API Endpoints',
       statLatency: 'URLs per Request',
       statAvailability: 'Response Format',
-      morePlatforms: '+12 more',
+      morePlatforms: '+20 more',
     },
     // Workbench
     workbench: {
@@ -223,7 +223,7 @@ export const translations = {
       statWatermark: '核心 API 接口',
       statLatency: '单请求链接数',
       statAvailability: '响应格式',
-      morePlatforms: '+12 更多平台',
+      morePlatforms: '+20 更多平台',
     },
     // Workbench
     workbench: {
