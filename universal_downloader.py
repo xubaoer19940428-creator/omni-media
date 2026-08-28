@@ -229,6 +229,65 @@ class UniversalDownloader:
             ],
             'icon': '🍉',
         },
+        'soundcloud': {
+            'name': 'SoundCloud',
+            'patterns': [
+                r'soundcloud\.com',
+                r'on\.soundcloud\.com',
+            ],
+            'icon': 'S',
+        },
+        'vk': {
+            'name': 'VK',
+            'patterns': [
+                r'vk\.com',
+                r'vkvideo\.ru',
+            ],
+            'icon': 'VK',
+        },
+        'niconico': {
+            'name': 'Niconico',
+            'patterns': [
+                r'nicovideo\.jp',
+                r'niconico\.jp',
+            ],
+            'icon': 'N',
+        },
+        'streamable': {
+            'name': 'Streamable',
+            'patterns': [
+                r'streamable\.com',
+            ],
+            'icon': '▶',
+        },
+        'loom': {
+            'name': 'Loom',
+            'patterns': [
+                r'loom\.com',
+            ],
+            'icon': 'L',
+        },
+        'kick': {
+            'name': 'Kick',
+            'patterns': [
+                r'kick\.com',
+            ],
+            'icon': 'K',
+        },
+        'bitchute': {
+            'name': 'BitChute',
+            'patterns': [
+                r'bitchute\.com',
+            ],
+            'icon': 'B',
+        },
+        'mixcloud': {
+            'name': 'Mixcloud',
+            'patterns': [
+                r'mixcloud\.com',
+            ],
+            'icon': 'M',
+        },
     }
     
     def __init__(self, download_dir: str = "downloads") -> None:

@@ -23,7 +23,7 @@ To load an unpacked build:
 1. Open `chrome://extensions` or `edge://extensions`.
 2. Enable Developer mode.
 3. Choose **Load unpacked** and select this `browser-extension/` directory.
-4. Open a public page on one of the 22 supported platforms and click the OmniMedia toolbar button.
+4. Open a public page on one of the 30 supported platforms and click the OmniMedia toolbar button.
 
 ## Release process
 

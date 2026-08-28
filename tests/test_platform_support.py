@@ -34,6 +34,14 @@ REPRESENTATIVE_URLS = {
     'iqiyi': 'https://www.iqiyi.com/v_19rrn9q7l4.html',
     'tencent_video': 'https://v.qq.com/x/page/a1234567890.html',
     'ixigua': 'https://www.ixigua.com/1234567890123456789',
+    'soundcloud': 'https://soundcloud.com/artist/track',
+    'vk': 'https://vk.com/video-1_1',
+    'niconico': 'https://www.nicovideo.jp/watch/sm9',
+    'streamable': 'https://streamable.com/abcd',
+    'loom': 'https://www.loom.com/share/00000000000000000000000000000000',
+    'kick': 'https://kick.com/example?clip=abc',
+    'bitchute': 'https://www.bitchute.com/video/abcdefghijk',
+    'mixcloud': 'https://www.mixcloud.com/example/show/test/',
 }
 
 
@@ -45,9 +53,9 @@ class PlatformSupportTests(unittest.TestCase):
     def tearDown(self):
         self.temp_dir.cleanup()
 
-    def test_exactly_22_platforms_are_exposed(self):
+    def test_exactly_30_platforms_are_exposed(self):
         platforms = self.downloader.get_supported_platforms()
-        self.assertEqual(22, len(platforms))
+        self.assertEqual(30, len(platforms))
         self.assertEqual(list(REPRESENTATIVE_URLS), [item['key'] for item in platforms])
 
     def test_every_representative_url_maps_to_its_platform(self):
@@ -417,14 +425,14 @@ class PlatformSupportTests(unittest.TestCase):
         client = app.test_client()
         response = client.get('/api/platforms')
         self.assertEqual(200, response.status_code)
-        self.assertEqual(22, len(response.get_json()['platforms']))
+        self.assertEqual(30, len(response.get_json()['platforms']))
 
         page_response = client.get('/')
         page = page_response.get_data(as_text=True)
         page_response.close()
         if 'class="platform-chip"' in page:
-            self.assertEqual(22, len(re.findall(r'class="platform-chip"', page)))
-            self.assertIn('22 platforms supported', page)
+            self.assertEqual(30, len(re.findall(r'class="platform-chip"', page)))
+            self.assertIn('30 platforms supported', page)
         else:
             self.assertIn('OmniMedia', page)
 
@@ -434,7 +442,7 @@ class PlatformSupportTests(unittest.TestCase):
         ).read_text(encoding='utf-8')
         frontend_keys = re.findall(r"^\s+key: '([^']+)'", constants, re.MULTILINE)
 
-        self.assertEqual(22, len(frontend_keys))
+        self.assertEqual(30, len(frontend_keys))
         self.assertEqual(set(REPRESENTATIVE_URLS), set(frontend_keys))
         self.assertNotIn("'t.co'", constants)
 

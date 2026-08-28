@@ -16,12 +16,13 @@ test('production API origin is HTTPS', () => {
   assert.equal(API_ORIGIN, 'https://useomnimedia.com');
 });
 
-test('registry contains the explicit 22-platform contract in backend order', () => {
+test('registry contains the explicit 30-platform contract in backend order', () => {
   assert.deepEqual(SUPPORTED_PLATFORMS.map(({ key }) => key), [
     'tiktok', 'douyin', 'instagram', 'telegram', 'youtube', 'twitter',
     'facebook', 'bilibili', 'weibo', 'reddit', 'vimeo', 'dailymotion',
     'twitch', 'pinterest', 'tumblr', 'rumble', 'xiaohongshu', 'acfun',
-    'youku', 'iqiyi', 'tencent_video', 'ixigua'
+    'youku', 'iqiyi', 'tencent_video', 'ixigua', 'soundcloud', 'vk',
+    'niconico', 'streamable', 'loom', 'kick', 'bitchute', 'mixcloud'
   ]);
 });
 

@@ -23,7 +23,15 @@ export const SUPPORTED_PLATFORMS = Object.freeze([
   { key: 'youku', name: 'Youku', domains: ['youku.com', 'tudou.com'] },
   { key: 'iqiyi', name: 'iQIYI', domains: ['iqiyi.com', 'iq.com', 'pps.tv'] },
   { key: 'tencent_video', name: 'Tencent Video', domains: ['v.qq.com'] },
-  { key: 'ixigua', name: 'Xigua Video', domains: ['ixigua.com'] }
+  { key: 'ixigua', name: 'Xigua Video', domains: ['ixigua.com'] },
+  { key: 'soundcloud', name: 'SoundCloud', domains: ['soundcloud.com', 'on.soundcloud.com'] },
+  { key: 'vk', name: 'VK', domains: ['vk.com', 'vkvideo.ru'] },
+  { key: 'niconico', name: 'Niconico', domains: ['nicovideo.jp', 'niconico.jp'] },
+  { key: 'streamable', name: 'Streamable', domains: ['streamable.com'] },
+  { key: 'loom', name: 'Loom', domains: ['loom.com'] },
+  { key: 'kick', name: 'Kick', domains: ['kick.com'] },
+  { key: 'bitchute', name: 'BitChute', domains: ['bitchute.com'] },
+  { key: 'mixcloud', name: 'Mixcloud', domains: ['mixcloud.com'] }
 ]);
 
 function isDomainMatch(hostname, domain) {

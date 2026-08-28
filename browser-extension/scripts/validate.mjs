@@ -13,7 +13,7 @@ assert.equal(manifest.version, '1.0.0');
 assert.deepEqual(manifest.permissions, ['activeTab', 'storage']);
 assert.deepEqual(manifest.host_permissions, [`${API_ORIGIN}/*`]);
 assert.equal(manifest.action.default_popup, 'popup.html');
-assert.equal(SUPPORTED_PLATFORMS.length, 22);
+assert.equal(SUPPORTED_PLATFORMS.length, 30);
 assert.ok(!manifest.background, 'The popup-only MVP must not include a persistent background worker');
 
 const runtimeFiles = [

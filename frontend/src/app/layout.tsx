@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'OmniMedia — Universal Social Media API & Developer Extraction Platform',
     description:
-      'Parse public media links across 22 platforms with normalized JSON responses and server-side downloads.',
+    'Parse public media links across 30 platforms with normalized JSON responses and server-side downloads.',
     type: 'website',
     url: 'https://useomnimedia.com',
   },

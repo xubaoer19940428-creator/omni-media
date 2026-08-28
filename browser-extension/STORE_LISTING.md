@@ -8,7 +8,7 @@ OmniMedia — Media Link Parser
 
 **Summary** (132 characters maximum)
 
-Parse public media links from 22 supported platforms and prepare secure, short-lived downloads with OmniMedia.
+Parse public media links from 30 supported platforms and prepare secure, short-lived downloads with OmniMedia.
 
 **Category**
 
@@ -26,7 +26,7 @@ Paste a link or copied share text from TikTok, Douyin, Instagram, YouTube, X, Bi
 
 Key features:
 
-- Explicit support for 22 public-media platforms
+- Explicit support for 30 public-media platforms
 - Link and complete share-text input
 - Optional current-tab URL fill
 - Normalized title, author, platform, cover, and duration metadata

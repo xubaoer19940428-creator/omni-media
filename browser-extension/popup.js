@@ -8,13 +8,13 @@ import {
 
 const translations = {
   en: {
-    live: 'Live', offline: 'Offline', inputLabel: 'Media link or share text', platformCount: '22 platforms',
+    live: 'Live', offline: 'Offline', inputLabel: 'Media link or share text', platformCount: '30 platforms',
     inputPlaceholder: 'Paste a link or share text…', clearInput: 'Clear input', waitingInput: 'Waiting for a supported link',
     useCurrentTab: 'Use current tab', currentTabAdded: 'Current tab added', currentTabUnavailable: 'Current tab is not a public web page',
     parseMedia: 'Parse media', parsing: 'Parsing public media', working: 'Working', publicSources: 'Public media sources',
     parsingDetail: 'Requesting normalized metadata from OmniMedia…', download: 'Continue secure download',
     openApp: 'Open web app', unsupportedTitle: 'This link is not supported',
-    unsupportedDetail: 'Use a public media link from one of OmniMedia’s 22 supported platforms.',
+    unsupportedDetail: 'Use a public media link from one of OmniMedia’s 30 supported platforms.',
     privacyNote: 'Sent only after you click Parse.', privacyPolicy: 'Privacy', detected: '{platform} detected',
     invalidInput: 'Paste a public link or complete share text from a supported platform.',
     errorTitle: 'Could not complete the request', networkError: 'OmniMedia could not be reached. Check your connection and try again.',
@@ -23,13 +23,13 @@ const translations = {
     downloadError: 'The web app could not be opened. Please try again.', untitled: 'Untitled media', unknownAuthor: 'Unknown author'
   },
   zh: {
-    live: '正常', offline: '离线', inputLabel: '媒体链接或完整分享文本', platformCount: '22 个平台',
+    live: '正常', offline: '离线', inputLabel: '媒体链接或完整分享文本', platformCount: '30 个平台',
     inputPlaceholder: '粘贴链接或完整分享文本…', clearInput: '清空输入', waitingInput: '等待输入支持平台的链接',
     useCurrentTab: '使用当前标签页', currentTabAdded: '已填入当前标签页', currentTabUnavailable: '当前标签页不是公开网页',
     parseMedia: '解析媒体', parsing: '正在解析公开媒体', working: '处理中', publicSources: '公开媒体来源',
     parsingDetail: '正在从 OmniMedia 获取标准化媒体信息…', download: '继续安全下载',
     openApp: '打开网页版', unsupportedTitle: '暂不支持此链接',
-    unsupportedDetail: '请使用 OmniMedia 已支持的 22 个平台之一的公开媒体链接。',
+    unsupportedDetail: '请使用 OmniMedia 已支持的 30 个平台之一的公开媒体链接。',
     privacyNote: '只有点击“解析”后才会发送。', privacyPolicy: '隐私', detected: '已识别 {platform}',
     invalidInput: '请粘贴支持平台的公开链接或完整分享文本。',
     errorTitle: '请求未能完成', networkError: '无法连接 OmniMedia，请检查网络后重试。',

@@ -131,7 +131,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectPlatform, onEx
       // Dynamic Number Counter Tweening
       const countObj = { pCount: 0, endpointCount: 0, batchSize: 0 };
       gsap.to(countObj, {
-        pCount: 22,
+        pCount: 30,
         endpointCount: 3,
         batchSize: 10,
         duration: 1.8,
@@ -234,7 +234,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectPlatform, onEx
                   : 'text-slate-800 dark:text-slate-200 opacity-40 blur-[1px]'
               }`}
             >
-              22 Platforms
+              30 Platforms
             </span>
           </div>
         </h1>
@@ -252,7 +252,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectPlatform, onEx
       <div ref={statsRef} className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3.5 max-w-3xl mx-auto px-4">
         <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/50 border border-slate-200/90 dark:border-slate-800 shadow-sm backdrop-blur-sm hover:border-blue-500/40 dark:hover:border-cyan-500/40 transition group hover:-translate-y-1">
           <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white font-mono">
-            <span ref={stat1Ref}>22</span>
+            <span ref={stat1Ref}>30</span>
           </div>
           <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">{t.hero.statPlatforms}</div>
         </div>

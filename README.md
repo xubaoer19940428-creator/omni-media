@@ -5,7 +5,7 @@
 
   <h1>OmniMedia</h1>
 
-  <p><strong>Parse, preview, and download public media from 22 social platforms in one place.</strong></p>
+  <p><strong>Parse, preview, and download public media from 30 social platforms in one place.</strong></p>
 
   <p>
     Paste a link or complete app share text, inspect normalized media metadata,
@@ -23,7 +23,7 @@
   </p>
 
   <p>
-    <img src="https://img.shields.io/badge/platforms-22-5b5bd6?style=flat-square" alt="22 supported platforms">
+    <img src="https://img.shields.io/badge/platforms-30-5b5bd6?style=flat-square" alt="30 supported platforms">
     <img src="https://img.shields.io/badge/Python-3.10+-3776ab?style=flat-square&logo=python&logoColor=white" alt="Python 3.10+">
     <img src="https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js" alt="Next.js 16">
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT license"></a>
@@ -71,6 +71,8 @@
 | Twitch | Pinterest | Tumblr | Rumble |
 | Xiaohongshu | AcFun | Youku | iQIYI |
 | Tencent Video | Xigua Video | | |
+| SoundCloud | VK | Niconico | Streamable |
+| Loom | Kick | BitChute | Mixcloud |
 
 OmniMedia works with public, login-free media. Paid, private, login-required,
 geo-restricted, deleted, or DRM-protected content may not be available, and the

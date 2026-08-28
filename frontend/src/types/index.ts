@@ -21,6 +21,14 @@ export type PlatformKey =
   | 'iqiyi'
   | 'tencent_video'
   | 'ixigua'
+  | 'soundcloud'
+  | 'vk'
+  | 'niconico'
+  | 'streamable'
+  | 'loom'
+  | 'kick'
+  | 'bitchute'
+  | 'mixcloud'
   | 'unknown';
 
 export interface AuthorInfo {
