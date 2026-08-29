@@ -45,6 +45,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onStartParsing, onSele
 
     if (!targetEl || !boxEl || !containerEl) return;
 
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     const paddingX = 14;
     const paddingY = 8;
 
@@ -55,7 +57,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onStartParsing, onSele
 
     // Smooth Glide with GSAP
     gsap.killTweensOf(boxEl);
-    gsap.to(boxEl, {
+    const vars = {
       x: targetLeft,
       y: targetTop,
       width: targetWidth,
@@ -63,7 +65,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onStartParsing, onSele
       opacity: 1,
       duration: 0.6,
       ease: 'power3.out',
-    });
+    };
+    if (reduceMotion) {
+      gsap.set(boxEl, vars);
+    } else {
+      gsap.to(boxEl, vars);
+    }
 
     focusIndexRef.current = index;
     setActiveFocusIndex(index);
@@ -273,7 +280,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onStartParsing, onSele
       <div className="mt-7 flex flex-col items-center justify-center gap-3 px-4 sm:flex-row">
         <a
           href="#workbench"
-          onClick={() => onStartParsing?.()}
+          onClick={(event) => {
+            event.preventDefault();
+            onStartParsing?.();
+            window.requestAnimationFrame(() => {
+              window.requestAnimationFrame(() => {
+                document.getElementById('workbench')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              });
+            });
+          }}
           className="btn-gradient-pill inline-flex w-full items-center justify-center gap-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-cyan-400 dark:focus-visible:ring-offset-slate-950 sm:w-auto"
         >
           {t.hero.primaryCta}

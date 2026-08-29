@@ -111,9 +111,11 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
         </div>
 
         {/* View Switcher Pills */}
-        <div className="flex max-w-full items-center gap-1 overflow-x-auto bg-slate-100 dark:bg-slate-900/90 p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-xs [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div role="tablist" aria-label="Media views" className="flex max-w-full items-center gap-1 overflow-x-auto bg-slate-100 dark:bg-slate-900/90 p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-xs [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <button
             onClick={() => setActiveTab('video')}
+            role="tab"
+            aria-selected={activeTab === 'video'}
             className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-lg transition font-medium ${
               activeTab === 'video'
                 ? 'bg-white dark:bg-slate-100 text-slate-900 dark:text-slate-950 font-semibold shadow-sm'
@@ -127,6 +129,8 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
           {hasImages && (
             <button
               onClick={() => setActiveTab('gallery')}
+              role="tab"
+              aria-selected={activeTab === 'gallery'}
               className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-lg transition font-medium ${
                 activeTab === 'gallery'
                   ? 'bg-white dark:bg-slate-100 text-slate-900 dark:text-slate-950 font-semibold shadow-sm'
@@ -141,6 +145,8 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
           {hasAudio && (
             <button
               onClick={() => setActiveTab('audio')}
+              role="tab"
+              aria-selected={activeTab === 'audio'}
               className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-lg transition font-medium ${
                 activeTab === 'audio'
                   ? 'bg-white dark:bg-slate-100 text-slate-900 dark:text-slate-950 font-semibold shadow-sm'
@@ -154,6 +160,8 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
 
           <button
             onClick={() => setActiveTab('meta')}
+            role="tab"
+            aria-selected={activeTab === 'meta'}
             className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-lg transition font-medium ${
               activeTab === 'meta'
                 ? 'bg-white dark:bg-slate-100 text-slate-900 dark:text-slate-950 font-semibold shadow-sm'
@@ -166,6 +174,8 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
 
           <button
             onClick={() => setActiveTab('json')}
+            role="tab"
+            aria-selected={activeTab === 'json'}
             className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-lg transition font-medium ${
               activeTab === 'json'
                 ? 'bg-white dark:bg-slate-100 text-slate-900 dark:text-slate-950 font-semibold shadow-sm'
@@ -179,7 +189,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
       </div>
 
       {/* Main Content Area */}
-      <div className="p-3 sm:p-6">
+      <div className="p-3 sm:p-6" role="tabpanel" aria-label={`${activeTab} view`}>
         {/* TAB 1: VIDEO */}
         {activeTab === 'video' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">

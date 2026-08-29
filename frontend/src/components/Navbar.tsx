@@ -83,14 +83,10 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenD
     >
       <div className="w-full max-w-[1400px] mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
         {/* Left: Official OmniMedia Geometric Vector Logo */}
-        <div
+        <button
           className="flex items-center gap-3 cursor-pointer group select-none shrink-0"
           onClick={() => setActiveTab('workbench')}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') setActiveTab('workbench');
-          }}
-          role="button"
-          tabIndex={0}
+          type="button"
           aria-label="Open workbench"
         >
           <div className="relative">
@@ -118,7 +114,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenD
               v2.0
             </span>
           </div>
-        </div>
+        </button>
 
         {/* Center: Gliding Pill Navigation Tabs */}
         <nav className="hidden md:flex items-center gap-0.5 lg:gap-1 bg-slate-100/90 dark:bg-slate-900/90 p-1 rounded-full border border-slate-200/90 dark:border-slate-800 shadow-inner backdrop-blur-xl shrink-0">
@@ -262,6 +258,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenD
             className="md:hidden p-2 rounded-full bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-cyan-400"
             aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
             aria-expanded={isMobileMenuOpen}
+            aria-controls="mobile-navigation"
           >
             {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </button>
@@ -280,7 +277,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenD
             href="https://github.com/xubaoer19940428-creator/omni-media"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 text-xs font-bold transition-all duration-200 shadow-md hover:scale-105 cursor-pointer"
+            className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 text-xs font-bold transition-all duration-200 shadow-md hover:scale-105 cursor-pointer"
           >
             <Github className="w-3.5 h-3.5" />
             <span className="hidden md:inline">GitHub</span>
@@ -288,7 +285,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenD
         </div>
       </div>
       {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-slate-200/80 dark:border-white/[0.08] bg-white/95 dark:bg-[#07090e]/95 backdrop-blur-2xl shadow-lg">
+        <div id="mobile-navigation" className="md:hidden border-t border-slate-200/80 dark:border-white/[0.08] bg-white/95 dark:bg-[#07090e]/95 backdrop-blur-2xl shadow-lg">
           <nav className="mx-auto max-w-[1400px] px-3 py-3 grid grid-cols-2 gap-2" aria-label="Mobile navigation">
             {([
               ['workbench', t.nav.workbench, Sparkles],
@@ -300,6 +297,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenD
                 key={tab}
                 type="button"
                 onClick={() => setActiveTab(tab)}
+                aria-pressed={activeTab === tab}
                 className={`flex items-center gap-2 rounded-xl px-3 py-3 text-left text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-cyan-400 ${activeTab === tab ? 'bg-blue-50 text-blue-700 dark:bg-cyan-500/10 dark:text-cyan-300' : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-900'}`}
               >
                 <Icon className="h-4 w-4 shrink-0" />
