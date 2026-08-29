@@ -5,7 +5,7 @@
 
   <h1>OmniMedia</h1>
 
-  <p><strong>Parse, preview, and download public media from 30 social platforms in one place.</strong></p>
+  <p><strong>Parse, preview, and download public media from 36 social platforms in one place.</strong></p>
 
   <p>
     Paste a link or complete app share text, inspect normalized media metadata,
@@ -23,7 +23,7 @@
   </p>
 
   <p>
-    <img src="https://img.shields.io/badge/platforms-30-5b5bd6?style=flat-square" alt="30 supported platforms">
+    <img src="https://img.shields.io/badge/platforms-36-5b5bd6?style=flat-square" alt="36 supported platforms">
     <img src="https://img.shields.io/badge/Python-3.10+-3776ab?style=flat-square&logo=python&logoColor=white" alt="Python 3.10+">
     <img src="https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js" alt="Next.js 16">
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT license"></a>
@@ -67,12 +67,13 @@
 | --- | --- | --- | --- |
 | TikTok | Douyin | Instagram | Telegram |
 | YouTube | Twitter / X | Facebook | Bilibili |
-| Weibo | Reddit | Vimeo | Dailymotion |
-| Twitch | Pinterest | Tumblr | Rumble |
-| Xiaohongshu | AcFun | Youku | iQIYI |
-| Tencent Video | Xigua Video | | |
+| Weibo | Reddit | Dailymotion | Twitch |
+| Pinterest | AcFun | Youku | Tencent Video |
 | SoundCloud | VK | Niconico | Streamable |
-| Loom | Kick | BitChute | Mixcloud |
+| Loom | Kick | BitChute | Bandcamp |
+| Odysee | Internet Archive | Imgur | LinkedIn |
+| Snapchat | PeerTube | Gab | Truth Social |
+| Medal.tv | RuTube | Coub | Odnoklassniki |
 
 OmniMedia works with public, login-free media. Paid, private, login-required,
 geo-restricted, deleted, or DRM-protected content may not be available, and the
@@ -157,6 +158,35 @@ Open <http://localhost:7860>. Windows users can activate the environment with
 
 For optional configuration, see [`.env.example`](.env.example).
 
+### Instagram login-required content
+
+The service intentionally supports public, login-free media by default. If
+Instagram reports `This content may be private, or Instagram may require an
+active Chrome login`, the parser did not receive a valid Instagram session (or
+the post is genuinely private).
+
+For a local run, sign in to Instagram in Chrome, fully quit Chrome, then set
+`YTDLP_COOKIES_FROM_BROWSER=auto` explicitly. The app will try Chrome cookies
+for Instagram. Browser-cookie forwarding is disabled by default because the
+API has no user authentication; only enable it on a private, trusted machine.
+If Chrome is still open or the app runs under another OS user, cookie access may
+fail; set `YTDLP_COOKIES_FROM_BROWSER=off` to disable it.
+
+For Docker, a remote server, or a service account, the host's Chrome profile is
+not available inside the container. Export a Netscape-format `cookies.txt`
+from a browser profile you control, mount it read-only, and set for example:
+
+```bash
+docker run --rm -p 7860:7860 \
+  -v "$PWD/cookies.txt:/run/secrets/omnimedia-cookies.txt:ro" \
+  -e YTDLP_COOKIE_FILE=/run/secrets/omnimedia-cookies.txt \
+  omnimedia
+```
+
+Treat this file like a password: never commit it, paste it into chat, or expose
+it in logs. Cookies only grant the access already held by that account, and
+private posts still require that account to be authorized to view them.
+
 ## API examples
 
 The browser interface uses the same API. All examples below assume a local
@@ -204,6 +234,11 @@ curl -X POST http://localhost:7860/api/download \
 
 The response contains a `download_url`. Depending on the deployment, it can be
 a local application route or a short-lived absolute URL.
+
+To request a format returned by the parse response, pass its `format_id` as
+`format_selector`. Video-only formats can be merged with audio using a selector
+such as `137+bestaudio/137`. To extract a 192 kbps MP3 instead, pass
+`"audio_only": true`; it cannot be combined with `format_selector`.
 
 Other useful endpoints:
 

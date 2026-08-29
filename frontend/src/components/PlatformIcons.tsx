@@ -112,12 +112,6 @@ export const DailymotionIcon: React.FC<IconProps> = ({ className = 'w-4 h-4', si
   </svg>
 );
 
-export const TumblrIcon: React.FC<IconProps> = ({ className = 'w-4 h-4', size, ...props }) => (
-  <svg viewBox="0 0 24 24" className={className} width={size} height={size} {...props}>
-    <path fill="#001935" d="M14.6 21c-4.2 0-6.1-2.1-6.1-5.7V9.4H6V6.2c2.8-1 4-3.2 4.2-5.2h3.3v4.7H18v3.7h-4.5v5.1c0 1.7.9 2.4 2.3 2.4.8 0 1.5-.2 2-.5V20c-.8.6-1.9 1-3.2 1z" />
-  </svg>
-);
-
 export const RumbleIcon: React.FC<IconProps> = ({ className = 'w-4 h-4', size, ...props }) => (
   <svg viewBox="0 0 24 24" className={className} width={size} height={size} {...props}>
     <path fill="#85c742" d="M5.2 3.5c-.8.5-1.2 1.4-1 2.4l2.5 13.2c.3 1.6 2.1 2.4 3.5 1.5l9.1-6.5c1.4-1 1.3-3.1-.2-4L7.5 3.4c-.7-.4-1.6-.4-2.3.1z" />
@@ -191,10 +185,6 @@ export const PlatformIcon: React.FC<{ platformKey: string; className?: string; s
       return <TikTokIcon className={className} size={size} style={{ color: '#00f2fe' }} />;
     case 'douyin':
       return <DouyinIcon className={className} size={size} style={{ color: '#fe2c55' }} />;
-    case 'xiaohongshu':
-    case 'red':
-    case 'rednote':
-      return <XiaohongshuIcon className={className} size={size} />;
     case 'instagram':
       return <InstagramIcon className={className} size={size} style={{ color: '#e1306c' }} />;
     case 'youtube':
@@ -218,26 +208,16 @@ export const PlatformIcon: React.FC<{ platformKey: string; className?: string; s
       return <ThreadsIcon className={className} size={size} style={{ color: '#101010' }} />;
     case 'pinterest':
       return <PinterestIcon className={className} size={size} style={{ color: '#bd081c' }} />;
-    case 'vimeo':
-      return <VimeoIcon className={className} size={size} style={{ color: '#1ab7ea' }} />;
     case 'dailymotion':
       return <DailymotionIcon className={className} size={size} />;
     case 'twitch':
       return <TwitchIcon className={className} size={size} style={{ color: '#9146ff' }} />;
-    case 'tumblr':
-      return <TumblrIcon className={className} size={size} />;
-    case 'rumble':
-      return <RumbleIcon className={className} size={size} />;
     case 'acfun':
       return <AcFunIcon className={className} size={size} />;
     case 'youku':
       return <YoukuIcon className={className} size={size} />;
-    case 'iqiyi':
-      return <IQIYIIcon className={className} size={size} />;
     case 'tencent_video':
       return <TencentVideoIcon className={className} size={size} />;
-    case 'ixigua':
-      return <XiguaIcon className={className} size={size} />;
     case 'soundcloud':
       return <BrandPathIcon color="#ff5500" className={className} size={size} path="M23.999 14.165c-.052 1.796-1.612 3.169-3.4 3.169h-8.18a.68.68 0 0 1-.675-.683V7.862a.747.747 0 0 1 .452-.724s.75-.513 2.333-.513a5.364 5.364 0 0 1 2.763.755 5.433 5.433 0 0 1 2.57 3.54c.282-.08.574-.121.868-.12.884 0 1.73.358 2.347.992s.948 1.49.922 2.373ZM10.721 8.421c.247 2.98.427 5.697 0 8.672a.264.264 0 0 1-.53 0c-.395-2.946-.22-5.718 0-8.672a.264.264 0 0 1 .53 0ZM9.072 9.448c.285 2.659.37 4.986-.006 7.655a.277.277 0 0 1-.55 0c-.331-2.63-.256-5.02 0-7.655a.277.277 0 0 1 .556 0Zm-1.663-.257c.27 2.726.39 5.171 0 7.904a.266.266 0 0 1-.532 0c-.38-2.69-.257-5.21 0-7.904a.266.266 0 0 1 .532 0Zm-1.647.77a26.108 26.108 0 0 1-.008 7.147.272.272 0 0 1-.542 0 27.955 27.955 0 0 1 0-7.147.275.275 0 0 1 .55 0Zm-1.67 1.769c.421 1.865.228 3.5-.029 5.388a.257.257 0 0 1-.514 0c-.21-1.858-.398-3.549 0-5.389a.272.272 0 0 1 .543 0Zm-1.655-.273c.388 1.897.26 3.508-.01 5.412-.026.28-.514.283-.54 0-.244-1.878-.347-3.54-.01-5.412a.283.283 0 0 1 .56 0Zm-1.668.911c.4 1.268.257 2.292-.026 3.572a.257.257 0 0 1-.514 0c-.241-1.262-.354-2.312-.023-3.572a.283.283 0 0 1 .563 0Z" />;
     case 'vk':
@@ -252,8 +232,12 @@ export const PlatformIcon: React.FC<{ platformKey: string; className?: string; s
       return <BrandPathIcon color="#53fc19" className={className} size={size} path="M1.333 0h8v5.333H12V2.667h2.667V0h8v8H20v2.667h-2.667v2.666H20V16h2.667v8h-8v-2.667H12v-2.666H9.333V24h-8Z" />;
     case 'bitchute':
       return <GenericPlatformIcon className={className} size={size} />;
-    case 'mixcloud':
-      return <BrandPathIcon color="#5000ff" className={className} size={size} path="M2.462 8.596l1.372 6.49h.319l1.372-6.49h2.462v6.808H6.742v-5.68l.232-.81h-.402l-1.43 6.49H2.854l-1.44-6.49h-.391l.222.81v5.68H0V8.596zM24 8.63v1.429L21.257 12 24 13.941v1.43l-3.235-2.329h-.348l-3.226 2.329v-1.43l2.734-1.94-2.733-1.942V8.63l3.225 2.338h.348zm-7.869 2.75v1.24H9.304v-1.24z" />;
+    case 'bandcamp':
+      return <BrandPathIcon color="#1da0c3" className={className} size={size} path="M1 19.5h14.4L23 4.5H8.6z" />;
+    case 'odysee':
+      return <BrandPathIcon color="#f57c00" className={className} size={size} path="M12 2.5 21.5 12 12 21.5 2.5 12 12 2.5zm0 4.1L6.6 12l5.4 5.4 5.4-5.4L12 6.6z" />;
+    case 'archive_org':
+      return <BrandPathIcon color="#e63946" className={className} size={size} path="M3 4h18v3H3V4zm2 5h14v11H5V9zm3 2v7h2v-7H8zm6 0v7h2v-7h-2z" />;
     default:
       return <GenericPlatformIcon className={className} size={size} />;
   }

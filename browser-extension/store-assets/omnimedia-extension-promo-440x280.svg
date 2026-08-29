@@ -22,7 +22,7 @@
     <text x="0" y="86" fill="#0f172a" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="25" font-weight="820" letter-spacing="-1.5">Omni<tspan fill="#2563eb">Media</tspan></text>
     <rect x="0" y="105" width="105" height="28" rx="14" fill="#fff" stroke="#dbe5f0"/>
     <circle cx="16" cy="119" r="4" fill="#16a34a"/>
-      <text x="29" y="123" fill="#475569" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="9" font-weight="750" letter-spacing="1">30 PLATFORMS</text>
+      <text x="29" y="123" fill="#475569" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="9" font-weight="750" letter-spacing="1">36 PLATFORMS</text>
   </g>
   <g transform="translate(196 27) rotate(1 108 112)" filter="url(#shadow)">
     <rect width="222" height="226" rx="17" fill="#fff" stroke="#dbe5f0"/>

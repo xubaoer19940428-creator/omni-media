@@ -110,7 +110,7 @@ def _frontend_script_hashes():
 FRONTEND_SCRIPT_HASHES = _frontend_script_hashes()
 
 DOWNLOAD_FILENAME_RE = re.compile(
-    r'^[a-z][a-z0-9_]{0,31}_[0-9a-f]{32}\.(?:mp4|webm|mkv|mov|m4a|m4v)$'
+    r'^[a-z][a-z0-9_]{0,31}_[0-9a-f]{32}\.(?:mp4|webm|mkv|mov|m4a|m4v|mp3)$'
 )
 ALLOWED_IMAGE_HOST_SUFFIXES = (
     'cdninstagram.com',
@@ -172,8 +172,47 @@ def _operation_timing(stage, started_at, **fields):
     )
 
 
+def _valid_format_selector(value):
+    if not isinstance(value, str) or not value or len(value) > 128:
+        return False
+    if not re.fullmatch(r'[A-Za-z0-9_+*/.,?()\[\]=:<>!^$~-]+', value):
+        return False
+    # Reject broad selectors (including variants such as all[ext=mp4]) that
+    # can make yt-dlp enumerate or download an unbounded set of formats.
+    if 'all' in value.lower() or ',' in value:
+        return False
+    branches = value.split('/')
+    return len(branches) <= 2 and all(branch.count('+') <= 1 for branch in branches)
+
+
 def _normalize_parse_result(result, original_url):
     """Expose a stable, flat API shape while retaining legacy video_info."""
+    def bounded_sources(value):
+        sources = []
+        for source in value[:24] if isinstance(value, list) else []:
+            if not isinstance(source, dict):
+                continue
+            normalized_source = {}
+            for key in (
+                'format_id', 'format_note', 'resolution', 'ext', 'filesize',
+                'url', 'width', 'height', 'vcodec', 'acodec',
+            ):
+                item = source.get(key)
+                if item in (None, ''):
+                    continue
+                if isinstance(item, str):
+                    item = item[:8192] if key == 'url' else item[:256]
+                normalized_source[key] = item
+            sources.append(normalized_source)
+        return sources
+
+    def bounded_strings(value, limit, item_limit):
+        return [
+            item[:item_limit]
+            for item in (value[:limit] if isinstance(value, list) else [])
+            if isinstance(item, str) and item
+        ]
+
     normalized = dict(result)
     normalized['original_url'] = downloader.extract_url_from_text(original_url)
 
@@ -181,16 +220,62 @@ def _normalize_parse_result(result, original_url):
     if not isinstance(video_info, dict):
         return normalized
 
+    author = video_info.get('author', '')
+    if isinstance(author, str):
+        author = author[:500]
+    elif isinstance(author, dict):
+        author = {
+            key: str(author[key])[:500]
+            for key in ('name', 'nickname', 'avatar', 'uid', 'url')
+            if author.get(key) not in (None, '')
+        }
+    else:
+        author = ''
+    safe_video_info = {
+        key: video_info.get(key, default)
+        for key, default in (
+            ('title', ''), ('video_url', ''), ('cover_url', ''), ('duration', 0),
+            ('like_count', 0), ('view_count', 0), ('comment_count', 0),
+            ('share_count', 0), ('media_type', 'video'),
+        )
+    }
+    safe_video_info.update({
+        'title': str(safe_video_info['title'])[:200],
+        'video_url': safe_video_info['video_url'][:8192] if isinstance(safe_video_info['video_url'], str) else '',
+        'cover_url': safe_video_info['cover_url'][:8192] if isinstance(safe_video_info['cover_url'], str) else '',
+        'author': author,
+        'description': str(video_info.get('description', ''))[:10_000],
+        'sources': bounded_sources(video_info.get('sources')),
+        'formats': bounded_sources(video_info.get('formats')),
+        'images': bounded_strings(video_info.get('images'), 40, 8192),
+        'audio_url': (
+            video_info.get('audio_url', '')[:8192]
+            if isinstance(video_info.get('audio_url', ''), str) else ''
+        ),
+        'audio_title': str(video_info.get('audio_title', ''))[:500],
+        'tags': bounded_strings(video_info.get('tags'), 100, 200),
+    })
+    normalized['video_info'] = safe_video_info
+
     normalized.update({
         'platform_key': result.get('platform'),
-        'title': video_info.get('title', ''),
-        'author': video_info.get('author', ''),
-        'video_url': video_info.get('video_url', ''),
-        'cover_url': video_info.get('cover_url', ''),
+        'title': safe_video_info['title'],
+        'author': safe_video_info['author'],
+        'video_url': safe_video_info['video_url'],
+        'cover_url': safe_video_info['cover_url'],
         'duration': video_info.get('duration', 0),
         'likes': video_info.get('like_count', 0),
         'views': video_info.get('view_count', 0),
         'comments': video_info.get('comment_count', 0),
+        'shares': video_info.get('share_count', video_info.get('shares', 0)),
+        'description': safe_video_info['description'],
+        'media_type': video_info.get('media_type', 'video'),
+        'sources': safe_video_info['sources'],
+        'formats': safe_video_info['formats'],
+        'images': safe_video_info['images'],
+        'audio_url': safe_video_info['audio_url'],
+        'audio_title': safe_video_info['audio_title'],
+        'tags': safe_video_info['tags'],
     })
     return normalized
 
@@ -737,6 +822,15 @@ def download_video():
     if platform_key in ('unknown', 'other'):
         return jsonify({'error': 'This platform is not supported'}), 400
 
+    if 'audio_only' in data and not isinstance(data['audio_only'], bool):
+        return jsonify({'error': 'audio_only must be a boolean'}), 400
+    audio_only = data.get('audio_only') is True
+    format_selector = data.get('format_selector')
+    if format_selector is not None and not _valid_format_selector(format_selector):
+        return jsonify({'error': 'Invalid format selector'}), 400
+    if audio_only and format_selector:
+        return jsonify({'error': 'Choose either audio-only or a video format'}), 400
+
     _maybe_remove_expired_downloads(force=True)
     try:
         free_disk_bytes = shutil.disk_usage(DOWNLOAD_DIR).free
@@ -754,7 +848,8 @@ def download_video():
         }), 429
 
     download_stem = f'{platform_key}_{uuid.uuid4().hex}'
-    requested_path = _safe_download_path(f'{download_stem}.mp4')
+    requested_extension = 'mp3' if audio_only else 'mp4'
+    requested_path = _safe_download_path(f'{download_stem}.{requested_extension}')
     if requested_path is None:
         _download_slots.release()
         logging.error('Could not create a safe download path')
@@ -763,10 +858,13 @@ def download_video():
     try:
         source_started_at = time.monotonic()
         try:
+            download_options = {'max_bytes': MAX_DOWNLOAD_BYTES}
+            if format_selector:
+                download_options['format_selector'] = format_selector
+            if audio_only:
+                download_options['audio_only'] = True
             downloaded_file = downloader.download_video(
-                original_url,
-                str(requested_path),
-                max_bytes=MAX_DOWNLOAD_BYTES,
+                original_url, str(requested_path), **download_options
             )
         except Exception:
             _operation_timing(
@@ -794,7 +892,11 @@ def download_video():
             return jsonify({'error': 'The downloaded file could not be accepted'}), 500
 
         completed_path = _safe_download_path(downloaded_file, require_exists=True)
-        if completed_path is None or completed_path.stat().st_size > MAX_DOWNLOAD_BYTES:
+        if (
+            completed_path is None
+            or (audio_only and completed_path.suffix.lower() != '.mp3')
+            or completed_path.stat().st_size > MAX_DOWNLOAD_BYTES
+        ):
             _remove_download_stem(download_stem)
             logging.warning('Downloader returned an unsafe or oversized file')
             return jsonify({'error': 'The downloaded file could not be accepted'}), 500

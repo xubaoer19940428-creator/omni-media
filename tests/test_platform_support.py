@@ -22,18 +22,12 @@ REPRESENTATIVE_URLS = {
     'bilibili': 'https://www.bilibili.com/video/BV1xx411c7mD',
     'weibo': 'https://weibo.com/tv/show/1034:1234567890123456',
     'reddit': 'https://www.reddit.com/r/videos/comments/abc123/example/',
-    'vimeo': 'https://vimeo.com/76979871',
     'dailymotion': 'https://www.dailymotion.com/video/x84sh87',
     'twitch': 'https://www.twitch.tv/videos/1234567890',
     'pinterest': 'https://www.pinterest.co.uk/pin/123456789012345678/',
-    'tumblr': 'https://example.tumblr.com/post/123456789012/example',
-    'rumble': 'https://rumble.com/v123abc-example.html',
-    'xiaohongshu': 'https://www.xiaohongshu.com/explore/1234567890abcdef12345678',
     'acfun': 'https://www.acfun.cn/v/ac12345678',
     'youku': 'https://v.youku.com/v_show/id_XNjA0MTY4NTQ4NA==.html',
-    'iqiyi': 'https://www.iqiyi.com/v_19rrn9q7l4.html',
     'tencent_video': 'https://v.qq.com/x/page/a1234567890.html',
-    'ixigua': 'https://www.ixigua.com/1234567890123456789',
     'soundcloud': 'https://soundcloud.com/artist/track',
     'vk': 'https://vk.com/video-1_1',
     'niconico': 'https://www.nicovideo.jp/watch/sm9',
@@ -41,7 +35,19 @@ REPRESENTATIVE_URLS = {
     'loom': 'https://www.loom.com/share/00000000000000000000000000000000',
     'kick': 'https://kick.com/example?clip=abc',
     'bitchute': 'https://www.bitchute.com/video/abcdefghijk',
-    'mixcloud': 'https://www.mixcloud.com/example/show/test/',
+    'bandcamp': 'http://youtube-dl.bandcamp.com/track/youtube-dl-test-song',
+    'odysee': 'https://odysee.com/@gardeningincanada:b/plants-i-will-never-grow-again.-the:e',
+    'archive_org': 'https://archive.org/details/Cops1922',
+    'imgur': 'https://imgur.com/A61SaA1',
+    'linkedin': 'https://www.linkedin.com/posts/mishalkhawaja_sendinblueviews-toronto-digitalmarketing-ugcPost-6850898786781339649-mM20',
+    'snapchat': 'https://www.snapchat.com/spotlight/W7_EDlXWTBiXAEEniNoMPwAAYYWtidGhudGZpAX1TKn0JAX1TKnXJAAAAAA',
+    'peertube': 'https://framatube.org/videos/watch/9c9de5e8-0a1e-484a-b099-e80766180a6d',
+    'gab': 'https://gab.com/SomeBitchIKnow/posts/107163961867310434',
+    'truthsocial': 'https://truthsocial.com/@realDonaldTrump/posts/108779000807761862',
+    'medaltv': 'https://medal.tv/games/valorant/clips/jTBFnLKdLy15K',
+    'rutube': 'https://rutube.ru/video/3eac3b4561676c17df9132a9a1e62e3e/',
+    'coub': 'http://coub.com/view/5u5n1',
+    'odnoklassniki': 'http://ok.ru/video/1484130554189',
 }
 
 
@@ -53,9 +59,9 @@ class PlatformSupportTests(unittest.TestCase):
     def tearDown(self):
         self.temp_dir.cleanup()
 
-    def test_exactly_30_platforms_are_exposed(self):
+    def test_exactly_36_platforms_are_exposed(self):
         platforms = self.downloader.get_supported_platforms()
-        self.assertEqual(30, len(platforms))
+        self.assertEqual(36, len(platforms))
         self.assertEqual(list(REPRESENTATIVE_URLS), [item['key'] for item in platforms])
 
     def test_every_representative_url_maps_to_its_platform(self):
@@ -63,6 +69,10 @@ class PlatformSupportTests(unittest.TestCase):
             with self.subTest(platform=expected_platform):
                 actual_platform, _ = self.downloader.detect_platform(url)
                 self.assertEqual(expected_platform, actual_platform)
+
+    def test_client_advertised_short_video_hosts_map_to_backend_platforms(self):
+        self.assertEqual('tiktok', self.downloader.detect_platform('https://vt.tiktok.com/ZSFake/')[0])
+        self.assertEqual('weibo', self.downloader.detect_platform('https://video.weibo.com/show/123')[0])
 
     def test_yt_dlp_has_a_specific_extractor_for_every_platform(self):
         try:
@@ -323,6 +333,78 @@ class PlatformSupportTests(unittest.TestCase):
         self.assertTrue(result['success'])
         get_video_info.assert_called_once_with('https://www.twitch.tv/videos/1234567890')
 
+    def test_normalize_media_payload_exposes_formats_and_audio(self):
+        payload = self.downloader._normalize_media_payload({
+            'formats': [
+                {
+                    'format_id': '18', 'ext': 'mp4', 'url': 'https://cdn/video.mp4',
+                    'width': 1280, 'height': 720, 'vcodec': 'avc1', 'acodec': 'mp4a',
+                },
+                {
+                    'format_id': '140', 'ext': 'm4a', 'url': 'https://cdn/audio.m4a',
+                    'vcodec': 'none', 'acodec': 'mp4a',
+                },
+            ],
+            'title': 'Track',
+        }, 'https://cdn/video.mp4')
+
+        self.assertEqual('video', payload['media_type'])
+        self.assertEqual(2, len(payload['sources']))
+        self.assertEqual('https://cdn/audio.m4a', payload['audio_url'])
+        self.assertEqual('Track', payload['audio_title'])
+
+    def test_normalize_media_payload_classifies_images_and_audio_only_media(self):
+        image = self.downloader._normalize_media_payload({
+            '_type': 'image',
+            'ext': 'jpg',
+            'url': 'https://cdn.example/original.jpg',
+        })
+        audio = self.downloader._normalize_media_payload({
+            'url': 'https://cdn.example/audio.mp3',
+            'vcodec': 'none',
+            'acodec': 'mp3',
+        })
+
+        self.assertEqual('image', image['media_type'])
+        self.assertEqual(['https://cdn.example/original.jpg'], image['images'])
+        self.assertEqual('audio', audio['media_type'])
+        self.assertEqual('https://cdn.example/audio.mp3', audio['audio_url'])
+
+    def test_normalize_media_payload_keeps_audio_when_many_formats_are_present(self):
+        formats = [
+            {
+                'format_id': str(index),
+                'url': f'https://cdn.example/video-{index}.mp4',
+                'vcodec': 'avc1',
+                'acodec': 'mp4a',
+            }
+            for index in range(30)
+        ]
+        formats.append({
+            'format_id': 'audio',
+            'url': 'https://cdn.example/audio.m4a',
+            'vcodec': 'none',
+            'acodec': 'mp4a',
+        })
+        payload = self.downloader._normalize_media_payload({'formats': formats})
+
+        self.assertEqual('https://cdn.example/audio.m4a', payload['audio_url'])
+        self.assertEqual('video', payload['media_type'])
+        self.assertLessEqual(len(payload['sources']), 24)
+
+    def test_audio_only_info_does_not_become_a_legacy_video_url(self):
+        info = {
+            'formats': [{
+                'format_id': 'audio',
+                'url': 'https://cdn.example/audio.mp3',
+                'vcodec': 'none',
+                'acodec': 'mp3',
+            }],
+        }
+        self.assertEqual('', self.downloader._extract_best_video_url(info))
+        payload = self.downloader._normalize_media_payload(info)
+        self.assertEqual('audio', payload['media_type'])
+
     def test_browser_cookies_are_only_used_when_available_or_configured(self):
         with (
             patch.dict(os.environ, {}, clear=True),
@@ -332,6 +414,12 @@ class PlatformSupportTests(unittest.TestCase):
 
         with (
             patch.dict(os.environ, {}, clear=True),
+            patch.object(self.downloader, '_local_chrome_profile_exists', return_value=True),
+        ):
+            self.assertEqual({}, self.downloader._cookie_options('instagram'))
+
+        with (
+            patch.dict(os.environ, {'YTDLP_COOKIES_FROM_BROWSER': 'auto'}, clear=True),
             patch.object(self.downloader, '_local_chrome_profile_exists', return_value=True),
         ):
             self.assertEqual(
@@ -409,6 +497,34 @@ class PlatformSupportTests(unittest.TestCase):
         self.assertIn('Telegram 网页端未提供', result['error'])
         self.assertIn('请在 Telegram 中打开', result['error'])
 
+    def test_instagram_ip_block_error_is_actionable_without_internal_details(self):
+        with patch.object(
+            downloader_module.yt_dlp.YoutubeDL,
+            'extract_info',
+            side_effect=RuntimeError(
+                'ERROR: [Instagram] post: Your IP address is blocked from accessing this post'
+            ),
+        ):
+            result = self.downloader.get_video_info(
+                'https://www.instagram.com/reel/example/'
+            )
+
+        self.assertFalse(result['success'])
+        self.assertIn('rate-limiting', result['error'])
+
+    def test_instagram_checkpoint_error_is_actionable(self):
+        with patch.object(
+            downloader_module.yt_dlp.YoutubeDL,
+            'extract_info',
+            side_effect=RuntimeError('challenge_required: verify your account'),
+        ):
+            result = self.downloader.get_video_info(
+                'https://www.instagram.com/reel/example/'
+            )
+
+        self.assertFalse(result['success'])
+        self.assertIn('verification checkpoint', result['error'])
+
     def test_real_subdomains_and_trailing_dot_are_accepted(self):
         accepted = {
             'https://m.youtube.com/watch?v=BaW_jenozKc': 'youtube',
@@ -425,14 +541,14 @@ class PlatformSupportTests(unittest.TestCase):
         client = app.test_client()
         response = client.get('/api/platforms')
         self.assertEqual(200, response.status_code)
-        self.assertEqual(30, len(response.get_json()['platforms']))
+        self.assertEqual(36, len(response.get_json()['platforms']))
 
         page_response = client.get('/')
         page = page_response.get_data(as_text=True)
         page_response.close()
         if 'class="platform-chip"' in page:
-            self.assertEqual(30, len(re.findall(r'class="platform-chip"', page)))
-            self.assertIn('30 platforms supported', page)
+            self.assertEqual(36, len(re.findall(r'class="platform-chip"', page)))
+            self.assertIn('36 platforms supported', page)
         else:
             self.assertIn('OmniMedia', page)
 
@@ -442,14 +558,13 @@ class PlatformSupportTests(unittest.TestCase):
         ).read_text(encoding='utf-8')
         frontend_keys = re.findall(r"^\s+key: '([^']+)'", constants, re.MULTILINE)
 
-        self.assertEqual(30, len(frontend_keys))
+        self.assertEqual(36, len(frontend_keys))
         self.assertEqual(set(REPRESENTATIVE_URLS), set(frontend_keys))
         self.assertNotIn("'t.co'", constants)
 
         for domain in (
             'redditmedia.com',
             'redd.it',
-            'vimeopro.com',
             'pinterest.co.uk',
         ):
             self.assertIn(f"'{domain}'", constants)

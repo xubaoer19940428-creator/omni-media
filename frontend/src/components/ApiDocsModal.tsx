@@ -140,7 +140,7 @@ export const ApiDocsModal: React.FC<ApiDocsModalProps> = ({ isOpen, onClose }) =
             </div>
 
             <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 font-mono text-cyan-300">
-              <pre>{`{\n  "original_url": "https://www.tiktok.com/@tiktok/video/7106594312292453678"\n}`}</pre>
+              <pre>{`{\n  "original_url": "https://www.tiktok.com/@tiktok/video/7106594312292453678",\n  "format_selector": "137+bestaudio/137"\n}\n\n{\n  "original_url": "https://www.tiktok.com/@tiktok/video/7106594312292453678",\n  "audio_only": true\n}`}</pre>
             </div>
           </div>
 

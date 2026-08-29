@@ -28,6 +28,31 @@ class OversizedYoutubeDL:
         Path(output_path).write_bytes(b'12345')
 
 
+class SuccessfulYoutubeDL:
+    options = None
+    output_extension = 'mp4'
+
+    def __init__(self, options):
+        type(self).options = options
+        self.options = options
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        return False
+
+    def download(self, _urls):
+        output_path = self.options['outtmpl'].replace(
+            '%(ext)s', type(self).output_extension
+        )
+        Path(output_path).write_bytes(b'media')
+
+
+class AudioFallbackYoutubeDL(SuccessfulYoutubeDL):
+    output_extension = 'm4a'
+
+
 class StreamingResponse:
     def __init__(self):
         self.headers = {}
@@ -78,6 +103,78 @@ class DownloadLimitTests(unittest.TestCase):
             self.assertEqual(1, len(OversizedYoutubeDL.options['progress_hooks']))
             self.assertEqual(downloader.read_timeout, OversizedYoutubeDL.options['socket_timeout'])
             self.assertEqual(3, OversizedYoutubeDL.options['extractor_retries'])
+            self.assertEqual([], list(Path(temp_dir).iterdir()))
+
+    def test_yt_dlp_uses_requested_video_format_and_merge_container(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            downloader = UniversalDownloader(temp_dir)
+            target = Path(temp_dir) / f'youtube_{"c" * 32}.mp4'
+            SuccessfulYoutubeDL.output_extension = 'mp4'
+
+            with patch.object(
+                downloader_module.yt_dlp,
+                'YoutubeDL',
+                SuccessfulYoutubeDL,
+            ):
+                result = downloader.download_video(
+                    YOUTUBE_URL,
+                    str(target),
+                    format_selector='137+bestaudio/137',
+                )
+
+            self.assertEqual(target.name, result)
+            self.assertEqual(
+                '137+bestaudio/137', SuccessfulYoutubeDL.options['format']
+            )
+            self.assertEqual('mp4', SuccessfulYoutubeDL.options['merge_output_format'])
+            self.assertNotIn('postprocessors', SuccessfulYoutubeDL.options)
+
+    def test_yt_dlp_audio_only_configures_mp3_postprocessor(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            downloader = UniversalDownloader(temp_dir)
+            target = Path(temp_dir) / f'youtube_{"d" * 32}.mp3'
+            SuccessfulYoutubeDL.output_extension = 'mp3'
+
+            with patch.object(
+                downloader_module.yt_dlp,
+                'YoutubeDL',
+                SuccessfulYoutubeDL,
+            ):
+                result = downloader.download_video(
+                    YOUTUBE_URL,
+                    str(target),
+                    audio_only=True,
+                )
+
+            self.assertEqual(target.name, result)
+            self.assertEqual('bestaudio/best', SuccessfulYoutubeDL.options['format'])
+            self.assertEqual(
+                [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
+                }],
+                SuccessfulYoutubeDL.options['postprocessors'],
+            )
+            self.assertNotIn('merge_output_format', SuccessfulYoutubeDL.options)
+
+    def test_audio_only_does_not_return_unconverted_audio(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            downloader = UniversalDownloader(temp_dir)
+            target = Path(temp_dir) / f'youtube_{"e" * 32}.mp3'
+
+            with patch.object(
+                downloader_module.yt_dlp,
+                'YoutubeDL',
+                AudioFallbackYoutubeDL,
+            ):
+                result = downloader.download_video(
+                    YOUTUBE_URL,
+                    str(target),
+                    audio_only=True,
+                )
+
+            self.assertIsNone(result)
             self.assertEqual([], list(Path(temp_dir).iterdir()))
 
     def test_douyin_stream_is_stopped_and_removed_at_size_limit(self):

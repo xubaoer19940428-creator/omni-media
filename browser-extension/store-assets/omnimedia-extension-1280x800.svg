@@ -27,7 +27,7 @@
     <text x="29" y="19" fill="#1d4ed8" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" font-weight="750" letter-spacing="1.3">BROWSER EXTENSION</text>
     <text x="0" y="101" fill="#0f172a" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="58" font-weight="820" letter-spacing="-2.8">Paste once.</text>
     <text x="0" y="167" fill="#0f172a" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="58" font-weight="820" letter-spacing="-2.8">Parse anywhere.</text>
-    <text x="0" y="222" fill="#475569" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="21">Links or complete share text from 30 platforms.</text>
+    <text x="0" y="222" fill="#475569" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="21">Links or complete share text from 36 platforms.</text>
     <text x="0" y="254" fill="#475569" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="21">The URL is sent only after you choose Parse.</text>
     <g transform="translate(0 313)">
       <rect width="181" height="43" rx="21.5" fill="#fff" stroke="#dbe5f0"/>
@@ -35,7 +35,7 @@
       <text x="42" y="27" fill="#334155" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="13" font-weight="700">Paste-first privacy</text>
       <rect x="195" width="151" height="43" rx="21.5" fill="#fff" stroke="#dbe5f0"/>
       <circle cx="217" cy="21.5" r="8" fill="none" stroke="#2563eb" stroke-width="1.8"/><path d="M217 13.5v16M209 21.5h16" stroke="#2563eb" stroke-width="1.5" opacity=".7"/>
-      <text x="236" y="27" fill="#334155" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="13" font-weight="700">30 platforms</text>
+      <text x="236" y="27" fill="#334155" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="13" font-weight="700">36 platforms</text>
     </g>
     <g transform="translate(0 393)">
       <path d="M0 0h355" stroke="#cbd5e1"/>
@@ -70,7 +70,7 @@
       <rect width="398" height="43" rx="12" fill="#f8fafc" stroke="#e2e8f0"/>
       <path d="M18 24a8 8 0 0 1 16 0M21 24a5 5 0 0 1 10 0M24 24a2 2 0 0 1 4 0" fill="none" stroke="#2563eb" stroke-width="1.5" stroke-linecap="round"/>
       <text x="44" y="26" fill="#475569" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" font-weight="700">Public media sources</text>
-      <rect x="309" y="10" width="72" height="23" rx="11.5" fill="#fff" stroke="#e2e8f0"/><text x="323" y="25" fill="#475569" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="9" font-weight="700">30 platforms</text>
+      <rect x="309" y="10" width="72" height="23" rx="11.5" fill="#fff" stroke="#e2e8f0"/><text x="323" y="25" fill="#475569" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="9" font-weight="700">36 platforms</text>
     </g>
     <g transform="translate(25 442)">
       <rect width="398" height="182" rx="18" fill="#fff" stroke="#dbe5f0"/>

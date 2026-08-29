@@ -5,22 +5,16 @@ export type PlatformKey =
   | 'youtube'
   | 'twitter'
   | 'bilibili'
-  | 'xiaohongshu'
   | 'weibo'
   | 'reddit'
   | 'facebook'
   | 'telegram'
   | 'pinterest'
-  | 'vimeo'
   | 'dailymotion'
   | 'twitch'
-  | 'tumblr'
-  | 'rumble'
   | 'acfun'
   | 'youku'
-  | 'iqiyi'
   | 'tencent_video'
-  | 'ixigua'
   | 'soundcloud'
   | 'vk'
   | 'niconico'
@@ -28,7 +22,19 @@ export type PlatformKey =
   | 'loom'
   | 'kick'
   | 'bitchute'
-  | 'mixcloud'
+  | 'bandcamp'
+  | 'odysee'
+  | 'archive_org'
+  | 'imgur'
+  | 'linkedin'
+  | 'snapchat'
+  | 'peertube'
+  | 'gab'
+  | 'truthsocial'
+  | 'medaltv'
+  | 'rutube'
+  | 'coub'
+  | 'odnoklassniki'
   | 'unknown';
 
 export interface AuthorInfo {
@@ -41,12 +47,18 @@ export interface AuthorInfo {
 
 export interface VideoFormat {
   id?: string;
+  format_id?: string;
+  format_note?: string;
   quality?: string;
   resolution?: string;
   ext?: string;
   filesize?: number;
   url?: string;
   has_watermark?: boolean;
+  width?: number;
+  height?: number;
+  vcodec?: string;
+  acodec?: string;
 }
 
 export interface ParsedMedia {
@@ -72,6 +84,8 @@ export interface ParsedMedia {
   audio_url?: string;
   audio_title?: string;
   formats?: VideoFormat[];
+  sources?: VideoFormat[];
+  media_type?: 'video' | 'audio' | 'image' | 'gallery' | string;
   tags?: string[];
   created_at?: string | number;
   raw_data?: Record<string, unknown>;

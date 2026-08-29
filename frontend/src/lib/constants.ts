@@ -22,16 +22,6 @@ export const SUPPORTED_PLATFORMS: PlatformConfig[] = [
     demoUrl: 'https://www.tiktok.com/@tiktok/video/7106594312292453678'
   },
   {
-    key: 'xiaohongshu',
-    name: 'Xiaohongshu (RED)',
-    color: '#ff2442',
-    domains: ['xiaohongshu.com', 'xhslink.com'],
-    supportsNoWatermark: false,
-    supportsGallery: false,
-    supportsAudio: false,
-    demoUrl: 'https://xhslink.com/a/sample'
-  },
-  {
     key: 'instagram',
     name: 'Instagram',
     color: '#e1306c',
@@ -117,15 +107,6 @@ export const SUPPORTED_PLATFORMS: PlatformConfig[] = [
     supportsAudio: false,
   },
   {
-    key: 'vimeo',
-    name: 'Vimeo',
-    color: '#1ab7ea',
-    domains: ['vimeo.com', 'vimeopro.com'],
-    supportsNoWatermark: false,
-    supportsGallery: false,
-    supportsAudio: false,
-  },
-  {
     key: 'dailymotion',
     name: 'Dailymotion',
     color: '#0a0a0a',
@@ -139,24 +120,6 @@ export const SUPPORTED_PLATFORMS: PlatformConfig[] = [
     name: 'Twitch',
     color: '#9146ff',
     domains: ['twitch.tv', 'clips.twitch.tv'],
-    supportsNoWatermark: false,
-    supportsGallery: false,
-    supportsAudio: false,
-  },
-  {
-    key: 'tumblr',
-    name: 'Tumblr',
-    color: '#001935',
-    domains: ['tumblr.com'],
-    supportsNoWatermark: false,
-    supportsGallery: false,
-    supportsAudio: false,
-  },
-  {
-    key: 'rumble',
-    name: 'Rumble',
-    color: '#85c742',
-    domains: ['rumble.com'],
     supportsNoWatermark: false,
     supportsGallery: false,
     supportsAudio: false,
@@ -180,28 +143,10 @@ export const SUPPORTED_PLATFORMS: PlatformConfig[] = [
     supportsAudio: false,
   },
   {
-    key: 'iqiyi',
-    name: 'iQIYI',
-    color: '#00be06',
-    domains: ['iqiyi.com', 'iq.com', 'pps.tv'],
-    supportsNoWatermark: false,
-    supportsGallery: false,
-    supportsAudio: false,
-  },
-  {
     key: 'tencent_video',
     name: 'Tencent Video',
     color: '#00a4ff',
     domains: ['v.qq.com'],
-    supportsNoWatermark: false,
-    supportsGallery: false,
-    supportsAudio: false,
-  },
-  {
-    key: 'ixigua',
-    name: 'Xigua Video',
-    color: '#ff2c55',
-    domains: ['ixigua.com'],
     supportsNoWatermark: false,
     supportsGallery: false,
     supportsAudio: false,
@@ -270,13 +215,61 @@ export const SUPPORTED_PLATFORMS: PlatformConfig[] = [
     supportsAudio: false,
   },
   {
-    key: 'mixcloud',
-    name: 'Mixcloud',
-    color: '#5000ff',
-    domains: ['mixcloud.com'],
+    key: 'bandcamp',
+    name: 'Bandcamp',
+    color: '#1da0c3',
+    domains: ['bandcamp.com'],
     supportsNoWatermark: false,
     supportsGallery: false,
     supportsAudio: true,
+  },
+  {
+    key: 'odysee',
+    name: 'Odysee',
+    color: '#f57c00',
+    domains: ['odysee.com', 'lbry.tv'],
+    supportsNoWatermark: false,
+    supportsGallery: false,
+    supportsAudio: false,
+  },
+  {
+    key: 'archive_org',
+    name: 'Internet Archive',
+    color: '#e63946',
+    domains: ['archive.org'],
+    supportsNoWatermark: false,
+    supportsGallery: false,
+    supportsAudio: false,
+  },
+  {
+    key: 'imgur', name: 'Imgur', color: '#1bb76e', domains: ['imgur.com', 'i.imgur.com'], supportsNoWatermark: false, supportsGallery: true, supportsAudio: false
+  },
+  {
+    key: 'linkedin', name: 'LinkedIn', color: '#0a66c2', domains: ['linkedin.com'], supportsNoWatermark: false, supportsGallery: false, supportsAudio: false
+  },
+  {
+    key: 'snapchat', name: 'Snapchat', color: '#fffc00', domains: ['snapchat.com'], supportsNoWatermark: false, supportsGallery: false, supportsAudio: false
+  },
+  {
+    key: 'peertube', name: 'PeerTube', color: '#f1680d', domains: ['framatube.org', 'peertube2.cpy.re', 'peertube.debian.social'], supportsNoWatermark: false, supportsGallery: false, supportsAudio: false
+  },
+  {
+    key: 'gab', name: 'Gab', color: '#21cf7a', domains: ['gab.com'], supportsNoWatermark: false, supportsGallery: false, supportsAudio: false
+  },
+  {
+    key: 'truthsocial', name: 'Truth Social', color: '#563acc', domains: ['truthsocial.com'], supportsNoWatermark: false, supportsGallery: false, supportsAudio: false
+  },
+  {
+    key: 'medaltv', name: 'Medal.tv', color: '#f04444', domains: ['medal.tv'], supportsNoWatermark: false, supportsGallery: false, supportsAudio: false
+  },
+  {
+    key: 'rutube', name: 'RuTube', color: '#00a1ff', domains: ['rutube.ru'], supportsNoWatermark: false, supportsGallery: false, supportsAudio: false
+  },
+  {
+    key: 'coub', name: 'Coub', color: '#111827', domains: ['coub.com'], supportsNoWatermark: false, supportsGallery: false, supportsAudio: false
+  },
+  {
+    key: 'odnoklassniki', name: 'Odnoklassniki', color: '#f7931e', domains: ['ok.ru'], supportsNoWatermark: false, supportsGallery: false, supportsAudio: false
   }
 ];
 

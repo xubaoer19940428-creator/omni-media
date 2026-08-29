@@ -29,7 +29,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenD
   const { lang, setLang, t } = useTranslation();
   const { theme, toggleTheme } = useTheme();
   const [isOnline, setIsOnline] = useState<boolean>(true);
-  const [platformsCount, setPlatformsCount] = useState<number>(30);
+  const [platformsCount, setPlatformsCount] = useState<number>(36);
   const [scrolled, setScrolled] = useState<boolean>(false);
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState<boolean>(false);
 

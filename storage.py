@@ -8,10 +8,10 @@ from typing import Optional
 import uuid
 
 
-ALLOWED_MEDIA_EXTENSIONS = {'.m4a', '.m4v', '.mkv', '.mov', '.mp4', '.webm'}
+ALLOWED_MEDIA_EXTENSIONS = {'.m4a', '.m4v', '.mkv', '.mov', '.mp3', '.mp4', '.webm'}
 OBJECT_PREFIX_RE = re.compile(r'^[a-z0-9][a-z0-9/_-]{0,127}$')
 DOWNLOAD_NAME_RE = re.compile(
-    r'^[a-z][a-z0-9_]{0,31}_[0-9a-f]{32}\.(?:mp4|webm|mkv|mov|m4a|m4v)$'
+    r'^[a-z][a-z0-9_]{0,31}_[0-9a-f]{32}\.(?:mp4|webm|mkv|mov|m4a|m4v|mp3)$'
 )
 
 

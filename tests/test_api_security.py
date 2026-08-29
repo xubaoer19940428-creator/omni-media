@@ -70,6 +70,132 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertNotIn('filepath', data)
         self.assertEqual(f"/download/{data['filename']}", data['download_url'])
 
+    def test_download_forwards_format_selector(self):
+        captured = {}
+
+        def fake_download(url, filename, max_bytes=None, format_selector=None):
+            captured.update(
+                url=url,
+                filename=filename,
+                max_bytes=max_bytes,
+                format_selector=format_selector,
+            )
+            Path(filename).write_bytes(b'video')
+            return Path(filename).name
+
+        with patch.object(
+            app_module.downloader, 'download_video', side_effect=fake_download
+        ):
+            response = self.client.post('/api/download', json={
+                'original_url': YOUTUBE_URL,
+                'format_selector': 'bv*[height<=1080]+ba/best',
+            })
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(
+            'bv*[height<=1080]+ba/best', captured['format_selector']
+        )
+        self.assertTrue(captured['filename'].endswith('.mp4'))
+        self.assertEqual(app_module.MAX_DOWNLOAD_BYTES, captured['max_bytes'])
+
+    def test_audio_only_download_uses_mp3_path_and_forwards_option(self):
+        captured = {}
+
+        def fake_download(url, filename, max_bytes=None, audio_only=False):
+            captured.update(
+                url=url,
+                filename=filename,
+                max_bytes=max_bytes,
+                audio_only=audio_only,
+            )
+            Path(filename).write_bytes(b'audio')
+            return Path(filename).name
+
+        with patch.object(
+            app_module.downloader, 'download_video', side_effect=fake_download
+        ):
+            response = self.client.post('/api/download', json={
+                'original_url': YOUTUBE_URL,
+                'audio_only': True,
+            })
+
+        self.assertEqual(200, response.status_code)
+        data = response.get_json()
+        self.assertTrue(captured['audio_only'])
+        self.assertTrue(captured['filename'].endswith('.mp3'))
+        self.assertRegex(data['filename'], r'^youtube_[0-9a-f]{32}\.mp3$')
+
+    def test_audio_only_download_rejects_non_mp3_output(self):
+        def fake_download(_url, filename, max_bytes=None, audio_only=False):
+            m4a_path = Path(filename).with_suffix('.m4a')
+            m4a_path.write_bytes(b'audio')
+            return m4a_path.name
+
+        with patch.object(
+            app_module.downloader, 'download_video', side_effect=fake_download
+        ):
+            response = self.client.post('/api/download', json={
+                'original_url': YOUTUBE_URL,
+                'audio_only': True,
+            })
+
+        self.assertEqual(500, response.status_code)
+        self.assertEqual([], list(self.download_dir.iterdir()))
+
+    def test_download_rejects_conflicting_or_invalid_format_options(self):
+        cases = [
+            {
+                'original_url': YOUTUBE_URL,
+                'audio_only': True,
+                'format_selector': '137',
+            },
+            {
+                'original_url': YOUTUBE_URL,
+                'format_selector': 'a' * 129,
+            },
+            {
+                'original_url': YOUTUBE_URL,
+                'format_selector': '137;touch /tmp/unsafe',
+            },
+            {
+                'original_url': YOUTUBE_URL,
+                'format_selector': 137,
+            },
+            {
+                'original_url': YOUTUBE_URL,
+                'audio_only': 'true',
+            },
+            {
+                'original_url': YOUTUBE_URL,
+                'format_selector': '1+2+3',
+            },
+            {
+                'original_url': YOUTUBE_URL,
+                'format_selector': 'all',
+            },
+            {
+                'original_url': YOUTUBE_URL,
+                'format_selector': 'all[ext=mp4]',
+            },
+            {
+                'original_url': YOUTUBE_URL,
+                'format_selector': 'mergeall',
+            },
+            {
+                'original_url': YOUTUBE_URL,
+                'format_selector': '137,140',
+            },
+        ]
+        for payload in cases:
+            with self.subTest(payload=payload), patch.object(
+                app_module, 'DOWNLOAD_RATE_LIMIT', 20
+            ), patch.object(app_module.downloader, 'download_video') as download_video:
+                app_module._rate_limit_state.clear()
+                response = self.client.post('/api/download', json=payload)
+
+            self.assertEqual(400, response.status_code)
+            download_video.assert_not_called()
+
     def test_r2_publication_returns_signed_url_and_removes_local_file(self):
         published_path = None
 
@@ -138,6 +264,67 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertEqual(200, first.status_code)
         self.assertEqual(200, second.status_code)
         self.assertEqual(429, third.status_code)
+
+    def test_parse_flattens_the_unified_media_contract(self):
+        parsed = {
+            'success': True,
+            'platform': 'soundcloud',
+            'video_info': {
+                'title': 'Example track',
+                'media_type': 'audio',
+                'video_url': '',
+                'audio_url': 'https://cdn.example/audio.m4a',
+                'audio_title': 'Example track',
+                'images': ['https://cdn.example/cover.jpg'],
+                'sources': [{
+                    'format_id': '140',
+                    'ext': 'm4a',
+                    'url': 'https://cdn.example/audio.m4a',
+                }],
+            },
+        }
+        with patch.object(app_module.downloader, 'process_url', return_value=parsed):
+            response = self.client.post('/api/parse', json={
+                'url': 'https://soundcloud.com/artist/track',
+            })
+
+        self.assertEqual(200, response.status_code)
+        data = response.get_json()
+        self.assertEqual('audio', data['media_type'])
+        self.assertEqual('https://cdn.example/audio.m4a', data['audio_url'])
+        self.assertEqual('140', data['sources'][0]['format_id'])
+
+    def test_parse_bounds_unified_media_fields_at_the_api_boundary(self):
+        parsed = {
+            'success': True,
+            'platform': 'instagram',
+            'video_info': {
+                'description': 'd' * 20_000,
+                'sources': [
+                    {'format_id': str(index), 'url': f'https://cdn/{index}'}
+                    for index in range(50)
+                ],
+                'formats': [
+                    {'format_id': str(index), 'url': f'https://cdn/{index}'}
+                    for index in range(50)
+                ],
+                'images': [f'https://cdn/{index}.jpg' for index in range(100)],
+                'tags': [f'tag-{index}' for index in range(200)],
+            },
+        }
+        with patch.object(app_module.downloader, 'process_url', return_value=parsed):
+            response = self.client.post('/api/parse', json={
+                'url': 'https://www.instagram.com/p/example/',
+            })
+
+        self.assertEqual(200, response.status_code)
+        data = response.get_json()
+        self.assertEqual(10_000, len(data['description']))
+        self.assertEqual(24, len(data['sources']))
+        self.assertEqual(24, len(data['formats']))
+        self.assertEqual(40, len(data['images']))
+        self.assertEqual(100, len(data['tags']))
+        self.assertEqual(40, len(data['video_info']['images']))
 
     def test_profile_parse_returns_bounded_profile_page(self):
         parsed = {

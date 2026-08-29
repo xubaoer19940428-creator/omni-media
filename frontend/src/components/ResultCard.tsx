@@ -34,10 +34,21 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
   const [isServerDownloading, setIsServerDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [videoPreviewFailed, setVideoPreviewFailed] = useState(false);
+  const [selectedFormat, setSelectedFormat] = useState('');
+  const [audioOnly, setAudioOnly] = useState(false);
 
   useEffect(() => {
     setVideoPreviewFailed(false);
-  }, [data.video_url]);
+    setSelectedFormat('');
+    setAudioOnly(data.media_type === 'audio' && !!data.audio_url);
+    if ((data.media_type === 'gallery' || data.media_type === 'image') && data.images?.length) {
+      setActiveTab('gallery');
+    } else if (data.media_type === 'audio' && data.audio_url) {
+      setActiveTab('audio');
+    } else {
+      setActiveTab('video');
+    }
+  }, [data.video_url, data.media_type, data.images, data.audio_url]);
 
   const hasImages = data.images && data.images.length > 0;
   const hasAudio = !!data.audio_url;
@@ -50,14 +61,17 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
     setTimeout(() => setCopiedField(null), 2000);
   };
 
-  const handleServerSideDownload = async () => {
+  const handleServerSideDownload = async (override?: { audioOnly?: boolean; formatSelector?: string }) => {
     if (!data.original_url && !data.video_url) return;
     const downloadWindow = window.open('about:blank', '_blank');
     if (downloadWindow) downloadWindow.opener = null;
     setIsServerDownloading(true);
     setDownloadError(null);
     try {
-      const res = await triggerServerDownload(data.original_url || data.video_url || '');
+      const res = await triggerServerDownload(data.original_url || data.video_url || '', {
+        formatSelector: override?.formatSelector ?? (selectedFormat || undefined),
+        audioOnly: override?.audioOnly ?? audioOnly,
+      });
       if (downloadWindow) {
         downloadWindow.location.href = res.download_url;
       } else {
@@ -70,6 +84,10 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
       setIsServerDownloading(false);
     }
   };
+
+  const availableFormats = (data.formats || data.sources || [])
+    .filter((format) => (format.format_id || format.id) && format.url && format.vcodec !== 'none')
+    .slice(0, 12);
 
   return (
     <div className="w-full tikhub-panel rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xl overflow-hidden animate-in fade-in duration-300">
@@ -271,13 +289,42 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
 
               {/* Action Buttons */}
               <div className="space-y-2.5">
+                {(availableFormats.length > 0 || hasAudio) && (
+                  <div className="flex items-center gap-2">
+                    <label htmlFor="download-format" className="sr-only">{t.result.downloadOptions}</label>
+                    <select
+                      id="download-format"
+                      value={audioOnly ? '__audio__' : selectedFormat}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        setAudioOnly(value === '__audio__');
+                        setSelectedFormat(value === '__audio__' ? '' : value);
+                      }}
+                      className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 shadow-sm outline-none transition focus:border-blue-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:focus:border-cyan-500/60"
+                    >
+                      <option value="">{t.result.bestQuality}</option>
+                      {availableFormats.map((format, index) => {
+                        const formatId = format.format_id || format.id || '';
+                        const selector = format.acodec === 'none' && formatId
+                          ? `${formatId}+bestaudio/${formatId}`
+                          : formatId;
+                        return (
+                          <option key={`${formatId || index}`} value={selector}>
+                            {format.format_note || format.resolution || format.quality || format.ext || t.result.videoFormat}
+                          </option>
+                        );
+                      })}
+                      {hasAudio && <option value="__audio__">{t.result.audioOnly}</option>}
+                    </select>
+                  </div>
+                )}
                 <button
-                  onClick={handleServerSideDownload}
+                  onClick={() => { void handleServerSideDownload(); }}
                   disabled={isServerDownloading}
                   className="w-full btn-primary-pill text-xs flex items-center justify-center gap-2 transition disabled:opacity-50"
                 >
                   <Download className="w-4 h-4" />
-                  <span>{isServerDownloading ? t.result.serverProcessing : t.result.downloadMp4}</span>
+                  <span>{isServerDownloading ? t.result.serverProcessing : audioOnly ? t.result.downloadAudio : t.result.downloadMp4}</span>
                 </button>
 
                 {downloadError && (
@@ -371,14 +418,19 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
 
             <div className="flex gap-3 pt-2">
               {data.audio_url && (
-                <a
-                  href={data.audio_url}
-                  download={`${data.title || 'audio'}.mp3`}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAudioOnly(true);
+                    setSelectedFormat('');
+                    void handleServerSideDownload({ audioOnly: true });
+                  }}
+                  disabled={isServerDownloading}
                   className="flex-1 btn-primary-pill text-xs flex items-center justify-center gap-2"
                 >
                   <Download className="w-4 h-4" />
-                  <span>{t.result.downloadAudio}</span>
-                </a>
+                  <span>{isServerDownloading ? t.result.serverProcessing : t.result.downloadAudio}</span>
+                </button>
               )}
               <button
                 onClick={() => handleCopy(data.audio_url || '', 'audio_url')}

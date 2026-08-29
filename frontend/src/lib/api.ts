@@ -136,7 +136,10 @@ export async function batchParseMediaUrls(urls: string[]): Promise<{
 /**
  * API client to trigger server-side video download
  */
-export async function triggerServerDownload(originalUrl: string): Promise<{
+export async function triggerServerDownload(originalUrl: string, options: {
+  formatSelector?: string;
+  audioOnly?: boolean;
+} = {}): Promise<{
   success: boolean;
   filename: string;
   download_url: string;
@@ -147,7 +150,11 @@ export async function triggerServerDownload(originalUrl: string): Promise<{
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ original_url: originalUrl }),
+    body: JSON.stringify({
+      original_url: originalUrl,
+      ...(options.formatSelector ? { format_selector: options.formatSelector } : {}),
+      ...(options.audioOnly ? { audio_only: true } : {}),
+    }),
   });
 
   const data = await res.json();
@@ -186,6 +193,6 @@ export async function checkBackendHealth(): Promise<{
     if (!res.ok) throw new Error('Backend offline');
     return await res.json();
   } catch {
-    return { status: 'offline', supported_platforms_count: 30 };
+    return { status: 'offline', supported_platforms_count: 36 };
   }
 }

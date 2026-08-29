@@ -10,11 +10,11 @@ export const metadata: Metadata = {
   },
   title: 'OmniMedia — Universal Social Media API & Developer Extraction Platform',
   description:
-    'A unified REST API for parsing public media links from Douyin, TikTok, Xiaohongshu, Instagram, Bilibili, YouTube, Twitter/X, and 23 more platforms.',
+    'A unified REST API for parsing public media links from Douyin, TikTok, Instagram, Bilibili, YouTube, Twitter/X, and 29 more platforms.',
   keywords: [
     'TikTok download API',
     'Douyin download API',
-    'Xiaohongshu downloader',
+    'public media downloader',
     'Media link parser',
     'Social media scraper',
     'TikHub alternative',
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'OmniMedia — Universal Social Media API & Developer Extraction Platform',
     description:
-    'Parse public media links across 30 platforms with normalized JSON responses and server-side downloads.',
+    'Parse public media links across 36 platforms with normalized JSON responses and server-side downloads.',
     type: 'website',
     url: 'https://useomnimedia.com',
   },

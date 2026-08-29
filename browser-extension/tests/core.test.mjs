@@ -16,13 +16,15 @@ test('production API origin is HTTPS', () => {
   assert.equal(API_ORIGIN, 'https://useomnimedia.com');
 });
 
-test('registry contains the explicit 30-platform contract in backend order', () => {
+test('registry contains the explicit 36-platform contract in backend order', () => {
   assert.deepEqual(SUPPORTED_PLATFORMS.map(({ key }) => key), [
     'tiktok', 'douyin', 'instagram', 'telegram', 'youtube', 'twitter',
-    'facebook', 'bilibili', 'weibo', 'reddit', 'vimeo', 'dailymotion',
-    'twitch', 'pinterest', 'tumblr', 'rumble', 'xiaohongshu', 'acfun',
-    'youku', 'iqiyi', 'tencent_video', 'ixigua', 'soundcloud', 'vk',
-    'niconico', 'streamable', 'loom', 'kick', 'bitchute', 'mixcloud'
+    'facebook', 'bilibili', 'weibo', 'reddit', 'dailymotion',
+    'twitch', 'pinterest', 'acfun', 'youku', 'tencent_video',
+    'soundcloud', 'vk', 'niconico', 'streamable', 'loom', 'kick', 'bitchute',
+    'bandcamp', 'odysee', 'archive_org', 'imgur', 'linkedin', 'snapchat',
+    'peertube', 'gab', 'truthsocial', 'medaltv', 'rutube', 'coub',
+    'odnoklassniki'
   ]);
 });
 
@@ -31,6 +33,12 @@ test('detects exact and nested supported domains', () => {
   assert.equal(detectPlatform('https://v.douyin.com/abc/')?.key, 'douyin');
   assert.equal(detectPlatform('https://clips.twitch.tv/Example')?.key, 'twitch');
   assert.equal(detectPlatform('https://v.qq.com/x/cover/example.html')?.key, 'tencent_video');
+  assert.equal(detectPlatform('https://youtube-dl.bandcamp.com/track/youtube-dl-test-song')?.key, 'bandcamp');
+  assert.equal(detectPlatform('https://odysee.com/@creator:1/video:2')?.key, 'odysee');
+  assert.equal(detectPlatform('https://archive.org/details/Cops1922')?.key, 'archive_org');
+  assert.equal(detectPlatform('https://www.tumblr.com/example/123'), null);
+  assert.equal(detectPlatform('https://vimeo.com/76979871'), null);
+  assert.equal(detectPlatform('https://framatube.org/videos/watch/example')?.key, 'peertube');
 });
 
 test('rejects suffix confusion, unsafe schemes, invalid URLs, and oversized input', () => {

@@ -8,7 +8,7 @@ OmniMedia — Media Link Parser
 
 **Summary** (132 characters maximum)
 
-Parse public media links from 30 supported platforms and prepare secure, short-lived downloads with OmniMedia.
+Parse public media links from 36 supported platforms and prepare secure, short-lived downloads with OmniMedia.
 
 **Category**
 
@@ -22,11 +22,11 @@ English (default), Simplified Chinese
 
 OmniMedia lets you paste and parse a public media link or complete copied share text through the OmniMedia service.
 
-Paste a link or copied share text from TikTok, Douyin, Instagram, YouTube, X, Bilibili, Xiaohongshu, or another registered platform, then choose Parse. You can also click **Use current tab** to fill the active page URL. The extension displays normalized public metadata and can continue to the OmniMedia website for a private, time-limited download.
+Paste a link or copied share text from TikTok, Douyin, Instagram, YouTube, X, Bilibili, or another registered platform, then choose Parse. You can also click **Use current tab** to fill the active page URL. The extension displays normalized public metadata and can continue to the OmniMedia website for a private, time-limited download.
 
 Key features:
 
-- Explicit support for 30 public-media platforms
+- Explicit support for 36 public-media platforms
 - Link and complete share-text input
 - Optional current-tab URL fill
 - Normalized title, author, platform, cover, and duration metadata

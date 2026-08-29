@@ -58,6 +58,26 @@ class StorageTests(unittest.TestCase):
         self.assertEqual(600, published.expires_in)
         self.assertTrue(published.remove_local_file)
 
+    def test_local_and_r2_storage_accept_mp3_downloads(self):
+        filename = f'youtube_{"b" * 32}.mp3'
+        client = Mock()
+        client.generate_presigned_url.return_value = 'https://signed.example/audio'
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            media = Path(temp_dir) / filename
+            media.write_bytes(b'audio')
+            local = LocalStorage().publish(media, filename)
+            published = self._r2(client).publish(media, filename)
+
+        self.assertEqual(f'/download/{filename}', local.download_url)
+        upload_args = client.upload_file.call_args
+        self.assertRegex(
+            upload_args.args[2],
+            r'^downloads/\d{4}/\d{2}/\d{2}/[0-9a-f]{32}\.mp3$',
+        )
+        self.assertEqual('audio/mpeg', upload_args.kwargs['ExtraArgs']['ContentType'])
+        self.assertEqual('https://signed.example/audio', published.download_url)
+
     def test_r2_upload_failure_does_not_sign(self):
         client = Mock()
         client.upload_file.side_effect = RuntimeError('upload failed')

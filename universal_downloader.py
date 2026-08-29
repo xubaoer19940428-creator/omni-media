@@ -61,6 +61,7 @@ class UniversalDownloader:
             'patterns': [
                 r'tiktok\.com',
                 r'vm\.tiktok\.com',
+                r'vt\.tiktok\.com',
             ],
             'icon': '🎵',
         },
@@ -127,6 +128,7 @@ class UniversalDownloader:
             'patterns': [
                 r'weibo\.com',
                 r'weibo\.cn',
+                r'video\.weibo\.com',
             ],
             'icon': '🔴',
         },
@@ -137,14 +139,6 @@ class UniversalDownloader:
                 r'redd\.it',
             ],
             'icon': '🤖',
-        },
-        'vimeo': {
-            'name': 'Vimeo',
-            'patterns': [
-                r'vimeo\.com',
-                r'vimeopro\.com',
-            ],
-            'icon': '🎞️',
         },
         'dailymotion': {
             'name': 'Dailymotion',
@@ -169,28 +163,6 @@ class UniversalDownloader:
             ],
             'icon': '📌',
         },
-        'tumblr': {
-            'name': 'Tumblr',
-            'patterns': [
-                r'tumblr\.com',
-            ],
-            'icon': '📝',
-        },
-        'rumble': {
-            'name': 'Rumble',
-            'patterns': [
-                r'rumble\.com',
-            ],
-            'icon': '🟢',
-        },
-        'xiaohongshu': {
-            'name': 'Xiaohongshu',
-            'patterns': [
-                r'xiaohongshu\.com',
-                r'xhslink\.com',
-            ],
-            'icon': '📕',
-        },
         'acfun': {
             'name': 'AcFun',
             'patterns': [
@@ -206,28 +178,12 @@ class UniversalDownloader:
             ],
             'icon': '🎬',
         },
-        'iqiyi': {
-            'name': 'iQIYI',
-            'patterns': [
-                r'iqiyi\.com',
-                r'iq\.com',
-                r'pps\.tv',
-            ],
-            'icon': '📽️',
-        },
         'tencent_video': {
             'name': 'Tencent Video',
             'patterns': [
                 r'v\.qq\.com',
             ],
             'icon': '🐧',
-        },
-        'ixigua': {
-            'name': 'Xigua Video',
-            'patterns': [
-                r'ixigua\.com',
-            ],
-            'icon': '🍉',
         },
         'soundcloud': {
             'name': 'SoundCloud',
@@ -281,13 +237,31 @@ class UniversalDownloader:
             ],
             'icon': 'B',
         },
-        'mixcloud': {
-            'name': 'Mixcloud',
-            'patterns': [
-                r'mixcloud\.com',
-            ],
-            'icon': 'M',
+        'bandcamp': {
+            'name': 'Bandcamp',
+            'patterns': [r'bandcamp\.com'],
+            'icon': 'B',
         },
+        'odysee': {
+            'name': 'Odysee',
+            'patterns': [r'odysee\.com', r'lbry\.tv'],
+            'icon': 'O',
+        },
+        'archive_org': {
+            'name': 'Internet Archive',
+            'patterns': [r'archive\.org'],
+            'icon': 'A',
+        },
+        'imgur': {'name': 'Imgur', 'patterns': [r'imgur\.com', r'i\.imgur\.com'], 'icon': 'I'},
+        'linkedin': {'name': 'LinkedIn', 'patterns': [r'linkedin\.com'], 'icon': 'in'},
+        'snapchat': {'name': 'Snapchat', 'patterns': [r'snapchat\.com'], 'icon': 'S'},
+        'peertube': {'name': 'PeerTube', 'patterns': [r'framatube\.org', r'peertube2\.cpy\.re', r'peertube\.debian\.social'], 'icon': 'P'},
+        'gab': {'name': 'Gab', 'patterns': [r'gab\.com'], 'icon': 'G'},
+        'truthsocial': {'name': 'Truth Social', 'patterns': [r'truthsocial\.com'], 'icon': 'T'},
+        'medaltv': {'name': 'Medal.tv', 'patterns': [r'medal\.tv'], 'icon': 'M'},
+        'rutube': {'name': 'RuTube', 'patterns': [r'rutube\.ru'], 'icon': 'R'},
+        'coub': {'name': 'Coub', 'patterns': [r'coub\.com'], 'icon': 'C'},
+        'odnoklassniki': {'name': 'Odnoklassniki', 'patterns': [r'ok\.ru'], 'icon': 'OK'},
     }
     
     def __init__(self, download_dir: str = "downloads") -> None:
@@ -329,7 +303,9 @@ class UniversalDownloader:
             logger.warning('YTDLP_COOKIE_FILE does not point to a readable file')
             return {}
 
-        browser = os.environ.get('YTDLP_COOKIES_FROM_BROWSER', 'auto').strip().lower()
+        # Browser cookies are opt-in: this API is unauthenticated, so silently
+        # forwarding an operator's session could expose private account media.
+        browser = os.environ.get('YTDLP_COOKIES_FROM_BROWSER', 'off').strip().lower()
         if browser in ('', 'off', 'none', 'false', '0'):
             return {}
         if browser == 'auto':
@@ -389,8 +365,6 @@ class UniversalDownloader:
         path = parsed.path.lower().rstrip('/')
         query = parsed.query.lower()
 
-        if platform_key == 'tumblr' and hostname not in ('tumblr.com', 'www.tumblr.com'):
-            return path in ('', '/')
         if platform_key == 'facebook' and path == '/profile.php':
             return bool(re.search(r'(?:^|&)id=\d+(?:&|$)', query))
         if platform_key == 'facebook' and path in {
@@ -407,22 +381,16 @@ class UniversalDownloader:
             'youtube': r'/(?:@[^/]+|channel/[^/]+|c/[^/]+|user/[^/]+)(?:/videos)?',
             'twitter': r'/(?!i(?:/|$)|home(?:/|$)|explore(?:/|$)|search(?:/|$)|settings(?:/|$))[a-z0-9_]+',
             'bilibili': r'/\d+(?:/video)?',
-            'xiaohongshu': r'/user/profile/[^/]+',
             'weibo': r'/(?:u/)?[a-z0-9._-]+',
             'reddit': r'/user/[^/]+',
             'facebook': r'/(?!watch$|reel$|videos$)[a-z0-9._-]+',
             'telegram': r'/[^/]+',
             'pinterest': r'/[^/]+(?:/_(?:created|saved))?',
-            'vimeo': r'/(?:user\d+|[a-z][a-z0-9_-]+)',
             'dailymotion': r'/user/[^/]+',
             'twitch': r'/(?!videos$|directory$|downloads$|settings$)[a-z0-9_]+',
-            'tumblr': r'/[^/]+',
-            'rumble': r'/(?:c|user)/[^/]+',
             'acfun': r'/u/[^/]+',
             'youku': r'/u/[^/]+',
-            'iqiyi': r'/u/[^/]+',
             'tencent_video': r'/biu/u/[^/]+',
-            'ixigua': r'/home/[^/]+',
         }
         shape = profile_shapes.get(platform_key)
         if platform_key == 'bilibili' and hostname != 'space.bilibili.com':
@@ -1069,8 +1037,9 @@ class UniversalDownloader:
                         )
                     return self._error_response("Could not retrieve video information")
                 
-                # 提取视频 URL
+                # 提取视频 URL 以及可选的图集、音频和格式信息。
                 video_url = self._extract_best_video_url(info)
+                media = self._normalize_media_payload(info, video_url)
                 
                 return {
                     "success": True,
@@ -1085,6 +1054,7 @@ class UniversalDownloader:
                     "like_count": info.get('like_count', 0),
                     "view_count": info.get('view_count', 0),
                     "comment_count": info.get('comment_count', 0),
+                    **media,
                 }
                 
         except Exception as exc:
@@ -1096,7 +1066,21 @@ class UniversalDownloader:
             )
             
             # 提供更友好的错误信息
-            if 'empty media' in error_msg.lower():
+            if any(
+                marker in error_msg.lower()
+                for marker in ('ip address is blocked', 'too many requests', 'rate-limit', '429')
+            ):
+                return self._error_response(
+                    "The platform is rate-limiting this IP. Wait and try again, or use a different network"
+                )
+            elif any(
+                marker in error_msg.lower()
+                for marker in ('checkpoint', 'challenge_required', 'challenge')
+            ):
+                return self._error_response(
+                    "Instagram requires a browser verification checkpoint. Open Instagram in Chrome, complete the check, then retry"
+                )
+            elif 'empty media' in error_msg.lower():
                 return self._error_response("This content may be private, or Instagram may require an active Chrome login")
             elif 'login' in error_msg.lower() or 'private' in error_msg.lower():
                 return self._error_response("This video may be private or require an account to view")
@@ -1242,7 +1226,7 @@ class UniversalDownloader:
     def _extract_best_video_url(self, info: Dict) -> str:
         """从 yt-dlp 信息中提取最佳视频 URL"""
         # 优先使用 url 字段
-        if info.get('url'):
+        if info.get('url') and info.get('vcodec') != 'none':
             return info['url']
         
         # 从 formats 中选择最佳
@@ -1252,7 +1236,11 @@ class UniversalDownloader:
         
         # 优先选择 mp4 格式，无水印
         for fmt in reversed(formats):
-            if fmt.get('ext') == 'mp4' and fmt.get('url'):
+            if (
+                fmt.get('ext') == 'mp4'
+                and fmt.get('url')
+                and fmt.get('vcodec') != 'none'
+            ):
                 url = fmt['url']
                 # 跳过带水印的
                 if 'wm' not in url.lower():
@@ -1260,15 +1248,129 @@ class UniversalDownloader:
         
         # 回退到任意 mp4
         for fmt in reversed(formats):
-            if fmt.get('ext') == 'mp4' and fmt.get('url'):
+            if (
+                fmt.get('ext') == 'mp4'
+                and fmt.get('url')
+                and fmt.get('vcodec') != 'none'
+            ):
                 return fmt['url']
         
         # 回退到任意格式
         for fmt in reversed(formats):
-            if fmt.get('url'):
+            if fmt.get('url') and fmt.get('vcodec') != 'none':
                 return fmt['url']
         
         return ''
+
+    @staticmethod
+    def _normalize_formats(info: Dict[str, Any]) -> list:
+        """Keep useful format choices while dropping extractor-specific noise."""
+        normalized = []
+        for fmt in info.get('formats') or []:
+            if not isinstance(fmt, dict) or not fmt.get('url'):
+                continue
+            source = {}
+            for key in (
+                'format_id', 'format_note', 'resolution', 'ext', 'filesize',
+                'url', 'width', 'height', 'vcodec', 'acodec',
+            ):
+                value = fmt.get(key)
+                if value in (None, ''):
+                    continue
+                if isinstance(value, str):
+                    value = value[:8192] if key == 'url' else value[:256]
+                source[key] = value
+            if source not in normalized:
+                normalized.append(source)
+        if len(normalized) <= 24:
+            return normalized
+
+        selected = normalized[-24:]
+        best_audio = next((
+            source for source in reversed(normalized)
+            if source.get('vcodec') == 'none'
+            and source.get('acodec') not in (None, 'none')
+        ), None)
+        if best_audio and best_audio not in selected:
+            selected[0] = best_audio
+        return selected
+
+    @classmethod
+    def _normalize_media_payload(
+        cls,
+        info: Dict[str, Any],
+        video_url: str = '',
+    ) -> Dict[str, Any]:
+        """Map yt-dlp's variable shape onto the shared media contract."""
+        images = []
+        has_entries = False
+        for entry in info.get('entries') or []:
+            if not isinstance(entry, dict):
+                continue
+            has_entries = True
+            is_image = entry.get('ext') in {
+                'avif', 'gif', 'heic', 'jpeg', 'jpg', 'png', 'webp',
+            } or entry.get('_type') == 'image'
+            image = (
+                entry.get('url') or entry.get('thumbnail') or cls._best_thumbnail(entry)
+            ) if is_image else None
+            if isinstance(image, str) and image and image not in images:
+                images.append(image[:8192])
+            if len(images) >= 40:
+                break
+        image_extensions = {'avif', 'gif', 'heic', 'jpeg', 'jpg', 'png', 'webp'}
+        is_single_image = info.get('_type') == 'image' or info.get('ext') in image_extensions
+        if is_single_image:
+            image = info.get('url') or info.get('thumbnail')
+            if isinstance(image, str) and image and image not in images:
+                images.append(image[:8192])
+
+        raw_formats = [fmt for fmt in (info.get('formats') or []) if isinstance(fmt, dict)]
+        formats = cls._normalize_formats(info)
+        top_level_audio_url = (
+            info.get('url')
+            if info.get('vcodec') == 'none' and info.get('acodec') not in (None, 'none')
+            else ''
+        )
+        audio_url = info.get('audio_url') or top_level_audio_url or next(
+            (
+                fmt.get('url') for fmt in formats
+                if fmt.get('url') and fmt.get('vcodec') in (None, 'none')
+                and fmt.get('acodec') not in (None, 'none')
+            ),
+            '',
+        )
+        if not audio_url:
+            audio_url = next(
+                (
+                    fmt.get('url') for fmt in raw_formats
+                    if fmt.get('url') and fmt.get('vcodec') == 'none'
+                    and fmt.get('acodec') not in (None, 'none')
+                ),
+                '',
+            )
+        has_video = bool(video_url) or any(
+            fmt.get('vcodec') not in (None, 'none') for fmt in raw_formats
+        )
+        if is_single_image and images:
+            media_type = 'image'
+        elif has_entries and not has_video and images:
+            media_type = 'gallery'
+        elif audio_url and not has_video:
+            media_type = 'audio'
+        else:
+            media_type = 'video'
+
+        return {
+            'media_type': media_type,
+            'sources': formats,
+            'images': images,
+            'audio_url': audio_url[:8192] if isinstance(audio_url, str) else '',
+            'audio_title': str(info.get('track') or info.get('title') or '')[:500],
+            'description': str(info.get('description') or '')[:10_000],
+            'shares': info.get('repost_count') or info.get('share_count') or 0,
+            'tags': [str(tag)[:200] for tag in list(info.get('tags') or [])[:100]],
+        }
     
     @staticmethod
     def _decode_unicode_text(text: str) -> str:
@@ -1286,6 +1388,8 @@ class UniversalDownloader:
         url: str,
         filename: Optional[str] = None,
         max_bytes: Optional[int] = None,
+        format_selector: Optional[str] = None,
+        audio_only: bool = False,
     ) -> Optional[str]:
         """
         下载视频
@@ -1322,7 +1426,7 @@ class UniversalDownloader:
         else:
             filepath = os.path.join(self.download_dir, filename)
         
-        if not filepath.endswith('.mp4'):
+        if not Path(filepath).suffix:
             filepath = filepath + '.mp4'
 
         base_path = os.path.splitext(filepath)[0]
@@ -1347,7 +1451,10 @@ class UniversalDownloader:
             'quiet': False,
             'no_warnings': False,
             'outtmpl': base_path + '.%(ext)s',
-            'format': 'best[ext=mp4]/best',
+            'format': (
+                'bestaudio/best' if audio_only
+                else format_selector or 'best[ext=mp4]/best'
+            ),
             'http_headers': {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'Accept-Language': 'en-US,en;q=0.9',
@@ -1358,6 +1465,15 @@ class UniversalDownloader:
             'extractor_retries': 3,
             'socket_timeout': self.read_timeout,
         }
+
+        if audio_only:
+            ydl_opts['postprocessors'] = [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }]
+        elif format_selector and '+' in format_selector:
+            ydl_opts['merge_output_format'] = 'mp4'
 
         if max_bytes:
             ydl_opts['max_filesize'] = max_bytes
@@ -1370,7 +1486,7 @@ class UniversalDownloader:
             ydl_opts['noplaylist'] = True
         
         # 抖音使用直接下载视频 URL
-        if platform_key == 'douyin':
+        if platform_key == 'douyin' and not audio_only and not format_selector:
             # 先解析获取直接视频URL，用 requests 直接下载
             douyin_info = self._get_douyin_video_info(url)
             if douyin_info.get('success') and douyin_info.get('video_url'):
@@ -1469,9 +1585,13 @@ class UniversalDownloader:
             # 查找下载的文件
             import glob
             found_files = glob.glob(glob.escape(base_path) + '.*')
+            if audio_only:
+                found_files.sort(key=lambda path: Path(path).suffix.lower() != '.mp3')
             
             for found_file in found_files:
                 if os.path.exists(found_file) and os.path.getsize(found_file) > 0:
+                    if audio_only and Path(found_file).suffix.lower() != '.mp3':
+                        continue
                     if max_bytes and os.path.getsize(found_file) > max_bytes:
                         cleanup_partial_files()
                         logger.warning(
@@ -1482,6 +1602,7 @@ class UniversalDownloader:
                     logger.info('[%s] Download completed', platform_name)
                     return os.path.basename(found_file)
             
+            cleanup_partial_files()
             logger.warning('[%s] No downloaded file was found', platform_name)
             return None
             
@@ -1540,8 +1661,19 @@ class UniversalDownloader:
                         "like_count": info.get('like_count', 0),
                         "view_count": info.get('view_count', 0),
                         "comment_count": info.get('comment_count', 0),
+                        "share_count": info.get('share_count', info.get('shares', 0)),
+                        "description": info.get('description', ''),
+                        "media_type": info.get('media_type', 'video'),
+                        "sources": info.get('sources', []),
+                        "formats": info.get('formats', info.get('sources', [])),
+                        "images": info.get('images', []),
+                        "audio_url": info.get('audio_url', ''),
+                        "audio_title": info.get('audio_title', ''),
+                        "tags": info.get('tags', []),
                     },
-                    "has_download_url": bool(info.get('video_url')),
+                    "has_download_url": bool(
+                        info.get('video_url') or info.get('audio_url') or info.get('images')
+                    ),
                 }
             else:
                 return self._error_response(info.get('error', 'Douyin parsing failed'))
@@ -1551,7 +1683,7 @@ class UniversalDownloader:
         
         if not info.get('success'):
             return info
-        
+
         return {
             "success": True,
             "platform": platform_key,
@@ -1566,8 +1698,19 @@ class UniversalDownloader:
                 "like_count": info.get('like_count', 0),
                 "view_count": info.get('view_count', 0),
                 "comment_count": info.get('comment_count', 0),
+                "share_count": info.get('share_count', info.get('shares', 0)),
+                "description": info.get('description', ''),
+                "media_type": info.get('media_type', 'video'),
+                "sources": info.get('sources', []),
+                "formats": info.get('formats', info.get('sources', [])),
+                "images": info.get('images', []),
+                "audio_url": info.get('audio_url', ''),
+                "audio_title": info.get('audio_title', ''),
+                "tags": info.get('tags', []),
             },
-            "has_download_url": bool(info.get('video_url')),
+            "has_download_url": bool(
+                info.get('video_url') or info.get('audio_url') or info.get('images')
+            ),
         }
 
 

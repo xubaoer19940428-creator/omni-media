@@ -84,7 +84,7 @@ const platformCases = new Map([
   ['https://www.youtube.com/watch?v=abc', 'youtube'],
   ['https://www.pinterest.co.uk/pin/123', 'pinterest'],
   ['https://media.redditmedia.com/example', 'reddit'],
-  ['https://player.vimeopro.com/video/123', 'vimeo'],
+  ['https://player.vimeopro.com/video/123', 'unknown'],
   ['https://youtube.com.evil.example/watch?v=abc', 'unknown'],
   ['https://notiktok.com/video/123', 'unknown'],
 ]);
@@ -94,6 +94,7 @@ for (const [url, expected] of platformCases) {
 
 const calls = [];
 const profileCalls = [];
+const downloadCalls = [];
 const originalFetch = globalThis.fetch;
 globalThis.fetch = async (url, options) => {
   const body = JSON.parse(options.body);
@@ -113,6 +114,19 @@ globalThis.fetch = async (url, options) => {
       },
     };
   }
+  if (url.endsWith('/api/download')) {
+    downloadCalls.push(body);
+    return {
+      ok: true,
+      async json() {
+        return {
+          success: true,
+          filename: 'youtube_example.mp4',
+          download_url: '/download/youtube_example.mp4',
+        };
+      },
+    };
+  }
   const urls = body.urls;
   calls.push(urls);
   return {
@@ -127,6 +141,23 @@ globalThis.fetch = async (url, options) => {
 };
 
 try {
+  await api.triggerServerDownload('https://www.youtube.com/watch?v=example', {
+    formatSelector: '137+bestaudio/137',
+  });
+  await api.triggerServerDownload('https://www.youtube.com/watch?v=audio', {
+    audioOnly: true,
+  });
+  assert.deepEqual(downloadCalls, [
+    {
+      original_url: 'https://www.youtube.com/watch?v=example',
+      format_selector: '137+bestaudio/137',
+    },
+    {
+      original_url: 'https://www.youtube.com/watch?v=audio',
+      audio_only: true,
+    },
+  ]);
+
   const profile = await api.parseProfileUrl('https://www.youtube.com/@example', 6, 12);
   assert.equal(profile.profile.name, 'Example creator');
   assert.deepEqual(profileCalls, [{

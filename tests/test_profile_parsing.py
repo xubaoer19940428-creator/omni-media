@@ -223,7 +223,7 @@ class ProfileParsingTests(unittest.TestCase):
         self.assertFalse(downloader.is_profile_url('https://space.bilibili.com/123/medialist/play/1'))
         self.assertFalse(downloader.is_profile_url('https://x.com/i/lists/123'))
         self.assertTrue(downloader.is_profile_url('https://space.bilibili.com/123/video'))
-        self.assertTrue(downloader.is_profile_url('https://creator.tumblr.com/'))
+        self.assertFalse(downloader.is_profile_url('https://creator.tumblr.com/'))
         self.assertFalse(downloader.is_profile_url('https://www.facebook.com/photo.php?fbid=123'))
         self.assertFalse(downloader.is_profile_url('https://www.facebook.com/video.php?v=123'))
 
