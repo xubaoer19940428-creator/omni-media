@@ -1,18 +1,19 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ArrowRight, ChevronRight } from 'lucide-react';
 import { SUPPORTED_PLATFORMS } from '@/lib/constants';
 import { useTranslation } from '@/lib/i18n';
 import { PlatformIcon } from './PlatformIcons';
 import gsap from 'gsap';
 
 interface HeroSectionProps {
+  onStartParsing?: () => void;
   onSelectPlatform?: (key: string) => void;
   onExploreApi?: () => void;
 }
 
-export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectPlatform, onExploreApi }) => {
+export const HeroSection: React.FC<HeroSectionProps> = ({ onStartParsing, onSelectPlatform, onExploreApi }) => {
   const { t, lang } = useTranslation();
   const heroRef = useRef<HTMLDivElement>(null);
   const badgeRef = useRef<HTMLDivElement>(null);
@@ -23,9 +24,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectPlatform, onEx
 
   // Focus targets
   const focusBoxRef = useRef<HTMLDivElement>(null);
-  const word1Ref = useRef<HTMLSpanElement>(null);
-  const word2Ref = useRef<HTMLSpanElement>(null);
-  const word3Ref = useRef<HTMLSpanElement>(null);
+  const word1Ref = useRef<HTMLButtonElement>(null);
+  const word2Ref = useRef<HTMLButtonElement>(null);
+  const word3Ref = useRef<HTMLButtonElement>(null);
   const [activeFocusIndex, setActiveFocusIndex] = useState(0);
   const focusIndexRef = useRef(0);
 
@@ -70,6 +71,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectPlatform, onEx
 
   // Periodic Focus Glide Cycle (stays for 2.8 seconds on each word!)
   useEffect(() => {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) {
+      focusIndexRef.current = 0;
+      setActiveFocusIndex(0);
+      return;
+    }
+
     // Initial mount placement
     const timer = setTimeout(() => {
       moveFocusTo(0);
@@ -95,6 +103,17 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectPlatform, onEx
 
   // Master Entrance Animation
   useEffect(() => {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) {
+      gsap.set(
+        [badgeRef.current, titleContainerRef.current, subtitleRef.current],
+        { opacity: 1, x: 0, y: 0, scale: 1 }
+      );
+      gsap.set(statsRef.current?.children ? Array.from(statsRef.current.children) : [], { opacity: 1, y: 0, scale: 1 });
+      gsap.set(pillsRef.current?.children ? Array.from(pillsRef.current.children) : [], { opacity: 1, y: 0, scale: 1 });
+      return;
+    }
+
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 
@@ -196,46 +215,49 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectPlatform, onEx
           {/* Line 1 */}
           <div>
             <span className="font-extrabold text-slate-900 dark:text-white">Universal </span>
-            <span
+            <button
+              type="button"
               ref={word1Ref}
               onClick={() => moveFocusTo(0)}
-              className={`inline-block px-1.5 cursor-pointer transition-colors duration-400 ${
+              className={`inline-block border-0 bg-transparent px-1.5 cursor-pointer transition-colors duration-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-cyan-400 ${
                 activeFocusIndex === 0
                   ? 'text-blue-600 dark:text-cyan-300 font-extrabold'
                   : 'text-slate-800 dark:text-slate-200 opacity-40 blur-[1px]'
               }`}
             >
               Social Media
-            </span>
+            </button>
             <span className="font-extrabold text-slate-900 dark:text-white"> API</span>
           </div>
 
           {/* Line 2 */}
           <div className="mt-1 sm:mt-0">
             <span className="text-slate-500 dark:text-slate-400 font-normal">for </span>
-            <span
+            <button
+              type="button"
               ref={word2Ref}
               onClick={() => moveFocusTo(1)}
-              className={`inline-block px-1.5 cursor-pointer transition-colors duration-400 ${
+              className={`inline-block border-0 bg-transparent px-1.5 cursor-pointer transition-colors duration-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:focus-visible:ring-indigo-400 ${
                 activeFocusIndex === 1
                   ? 'text-indigo-600 dark:text-indigo-300 font-extrabold'
                   : 'text-slate-800 dark:text-slate-200 opacity-40 blur-[1px]'
               }`}
             >
               Developers
-            </span>
+            </button>
             <span className="text-slate-400 dark:text-slate-500 font-normal"> &amp; </span>
-            <span
+            <button
+              type="button"
               ref={word3Ref}
               onClick={() => moveFocusTo(2)}
-              className={`inline-block px-1.5 cursor-pointer transition-colors duration-400 ${
+              className={`inline-block border-0 bg-transparent px-1.5 cursor-pointer transition-colors duration-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-cyan-400 ${
                 activeFocusIndex === 2
                   ? 'text-blue-600 dark:text-cyan-400 font-extrabold'
                   : 'text-slate-800 dark:text-slate-200 opacity-40 blur-[1px]'
               }`}
             >
               36 Platforms
-            </span>
+            </button>
           </div>
         </h1>
       </div>
@@ -247,6 +269,24 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSelectPlatform, onEx
       >
         {t.hero.subtitle}
       </p>
+
+      <div className="mt-7 flex flex-col items-center justify-center gap-3 px-4 sm:flex-row">
+        <a
+          href="#workbench"
+          onClick={() => onStartParsing?.()}
+          className="btn-gradient-pill inline-flex w-full items-center justify-center gap-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-cyan-400 dark:focus-visible:ring-offset-slate-950 sm:w-auto"
+        >
+          {t.hero.primaryCta}
+          <ArrowRight className="h-4 w-4" />
+        </a>
+        <button
+          type="button"
+          onClick={() => onExploreApi?.()}
+          className="btn-secondary-pill inline-flex w-full items-center justify-center gap-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-cyan-400 dark:focus-visible:ring-offset-slate-950 sm:w-auto"
+        >
+          {t.hero.apiCta}
+        </button>
+      </div>
 
       {/* Hero Stats Row with GSAP Animated Counters */}
       <div ref={statsRef} className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3.5 max-w-3xl mx-auto px-4">

@@ -12,7 +12,9 @@ import {
   Moon,
   Activity,
   ChevronDown,
-  Check
+  Check,
+  Menu,
+  X
 } from 'lucide-react';
 import { checkBackendHealth } from '@/lib/api';
 import { useTranslation, Language } from '@/lib/i18n';
@@ -28,10 +30,11 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenDocs }) => {
   const { lang, setLang, t } = useTranslation();
   const { theme, toggleTheme } = useTheme();
-  const [isOnline, setIsOnline] = useState<boolean>(true);
+  const [isOnline, setIsOnline] = useState<boolean | null>(null);
   const [platformsCount, setPlatformsCount] = useState<number>(36);
   const [scrolled, setScrolled] = useState<boolean>(false);
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState<boolean>(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
   const langDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -41,7 +44,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenD
       if (res.supported_platforms_count) {
         setPlatformsCount(res.supported_platforms_count);
       }
-    });
+    }).catch(() => setIsOnline(false));
 
     const handleScroll = () => {
       setScrolled(window.scrollY > 15);
@@ -49,6 +52,10 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenD
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [activeTab]);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -79,6 +86,12 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenD
         <div
           className="flex items-center gap-3 cursor-pointer group select-none shrink-0"
           onClick={() => setActiveTab('workbench')}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') setActiveTab('workbench');
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label="Open workbench"
         >
           <div className="relative">
             <OmniMediaLogo className="w-9 h-9" />
@@ -86,12 +99,12 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenD
             <span className="absolute -bottom-0.5 -right-0.5 flex h-2 w-2">
               <span
                 className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                  isOnline ? 'bg-emerald-400' : 'bg-amber-400'
+                  isOnline === null ? 'bg-slate-400' : isOnline ? 'bg-emerald-400' : 'bg-amber-400'
                 }`}
               />
               <span
                 className={`relative inline-flex rounded-full h-2 w-2 border border-white dark:border-[#07090e] ${
-                  isOnline ? 'bg-emerald-500' : 'bg-amber-500'
+                  isOnline === null ? 'bg-slate-400' : isOnline ? 'bg-emerald-500' : 'bg-amber-500'
                 }`}
               />
             </span>
@@ -167,7 +180,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenD
           <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-slate-100/90 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 text-[11px] font-mono">
             <Activity className="w-3.5 h-3.5 text-emerald-500" />
             <span className="text-slate-700 dark:text-slate-300 font-medium">
-              {isOnline ? t.nav.systemNormal : t.nav.engineConnecting}
+              {isOnline === null ? t.nav.systemChecking : isOnline ? t.nav.systemNormal : t.nav.engineConnecting}
             </span>
           </div>
 
@@ -243,6 +256,16 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenD
             )}
           </div>
 
+          <button
+            type="button"
+            onClick={() => setIsMobileMenuOpen((open) => !open)}
+            className="md:hidden p-2 rounded-full bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-cyan-400"
+            aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={isMobileMenuOpen}
+          >
+            {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+          </button>
+
           {/* API Docs Button */}
           <button
             onClick={onOpenDocs}
@@ -264,6 +287,39 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenD
           </a>
         </div>
       </div>
+      {isMobileMenuOpen && (
+        <div className="md:hidden border-t border-slate-200/80 dark:border-white/[0.08] bg-white/95 dark:bg-[#07090e]/95 backdrop-blur-2xl shadow-lg">
+          <nav className="mx-auto max-w-[1400px] px-3 py-3 grid grid-cols-2 gap-2" aria-label="Mobile navigation">
+            {([
+              ['workbench', t.nav.workbench, Sparkles],
+              ['playground', t.nav.playground, Terminal],
+              ['batch', t.nav.batch, Layers],
+              ['platforms', `${t.nav.platforms} · ${platformsCount}`, Globe],
+            ] as const).map(([tab, label, Icon]) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setActiveTab(tab)}
+                className={`flex items-center gap-2 rounded-xl px-3 py-3 text-left text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-cyan-400 ${activeTab === tab ? 'bg-blue-50 text-blue-700 dark:bg-cyan-500/10 dark:text-cyan-300' : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-900'}`}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                {label}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                onOpenDocs();
+              }}
+              className="col-span-2 flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-900"
+            >
+              <BookOpen className="h-4 w-4" />
+              {t.nav.docs}
+            </button>
+          </nav>
+        </div>
+      )}
     </header>
   );
 };

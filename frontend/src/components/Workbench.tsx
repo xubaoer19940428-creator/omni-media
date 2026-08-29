@@ -181,7 +181,7 @@ export const Workbench: React.FC<WorkbenchProps> = ({ initialUrl = '', autoParse
   const platformInfo = SUPPORTED_PLATFORMS.find(p => p.key === detectedPlatform);
 
   return (
-    <div ref={containerRef} className="w-full max-w-5xl mx-auto space-y-8">
+    <div id="workbench" ref={containerRef} className="w-full max-w-5xl mx-auto space-y-8 scroll-mt-24">
       {/* Workbench Console Window */}
       <div className="tikhub-panel rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xl overflow-hidden relative">
         {/* Scanning laser beam indicator during extraction */}

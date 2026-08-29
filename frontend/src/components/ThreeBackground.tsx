@@ -11,6 +11,12 @@ export const ThreeBackground: React.FC = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const reducedContext = canvas.getContext('2d');
+      reducedContext?.clearRect(0, 0, canvas.width, canvas.height);
+      return;
+    }
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 

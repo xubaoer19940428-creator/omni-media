@@ -15,6 +15,7 @@ export const translations = {
       docs: 'API Docs',
       systemNormal: 'All Systems Normal',
       engineConnecting: 'Engine Connecting',
+      systemChecking: 'Checking status',
     },
     // Hero
     hero: {
@@ -28,6 +29,8 @@ export const translations = {
       statLatency: 'URLs per Request',
       statAvailability: 'Response Format',
       morePlatforms: '+20 more',
+      primaryCta: 'Start parsing',
+      apiCta: 'Explore API',
     },
     // Workbench
     workbench: {
@@ -215,6 +218,7 @@ export const translations = {
       docs: 'API 规范',
       systemNormal: '服务运行正常',
       engineConnecting: '引擎连接中',
+      systemChecking: '正在检查状态',
     },
     // Hero
     hero: {
@@ -228,6 +232,8 @@ export const translations = {
       statLatency: '单请求链接数',
       statAvailability: '响应格式',
       morePlatforms: '+20 更多平台',
+      primaryCta: '开始解析',
+      apiCta: '查看 API',
     },
     // Workbench
     workbench: {

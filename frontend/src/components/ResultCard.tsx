@@ -111,10 +111,10 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
         </div>
 
         {/* View Switcher Pills */}
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900/90 p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
+        <div className="flex max-w-full items-center gap-1 overflow-x-auto bg-slate-100 dark:bg-slate-900/90 p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-xs [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <button
             onClick={() => setActiveTab('video')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition font-medium ${
+            className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-lg transition font-medium ${
               activeTab === 'video'
                 ? 'bg-white dark:bg-slate-100 text-slate-900 dark:text-slate-950 font-semibold shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -127,7 +127,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
           {hasImages && (
             <button
               onClick={() => setActiveTab('gallery')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition font-medium ${
+              className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-lg transition font-medium ${
                 activeTab === 'gallery'
                   ? 'bg-white dark:bg-slate-100 text-slate-900 dark:text-slate-950 font-semibold shadow-sm'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -141,7 +141,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
           {hasAudio && (
             <button
               onClick={() => setActiveTab('audio')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition font-medium ${
+              className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-lg transition font-medium ${
                 activeTab === 'audio'
                   ? 'bg-white dark:bg-slate-100 text-slate-900 dark:text-slate-950 font-semibold shadow-sm'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -154,7 +154,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
 
           <button
             onClick={() => setActiveTab('meta')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition font-medium ${
+            className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-lg transition font-medium ${
               activeTab === 'meta'
                 ? 'bg-white dark:bg-slate-100 text-slate-900 dark:text-slate-950 font-semibold shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -166,7 +166,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
 
           <button
             onClick={() => setActiveTab('json')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition font-medium ${
+            className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-lg transition font-medium ${
               activeTab === 'json'
                 ? 'bg-white dark:bg-slate-100 text-slate-900 dark:text-slate-950 font-semibold shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -179,12 +179,12 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
       </div>
 
       {/* Main Content Area */}
-      <div className="p-6">
+      <div className="p-3 sm:p-6">
         {/* TAB 1: VIDEO */}
         {activeTab === 'video' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* Player Container */}
-            <div className="lg:col-span-7 bg-slate-950 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl flex flex-col items-center justify-center relative min-h-[340px]">
+            <div className="lg:col-span-7 bg-slate-950 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl flex flex-col items-center justify-center relative min-h-[240px] sm:min-h-[340px]">
               {data.video_url && !videoPreviewFailed ? (
                 <video
                   src={data.video_url}
@@ -196,7 +196,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
                   className="w-full max-h-[480px] object-contain rounded-2xl"
                 />
               ) : data.cover || data.cover_url ? (
-                <div className="relative w-full h-[360px] flex items-center justify-center">
+                <div className="relative w-full h-[240px] sm:h-[360px] flex items-center justify-center">
                   <img
                     src={getProxyImageUrl(data.cover || data.cover_url)}
                     alt={data.title || 'Cover'}

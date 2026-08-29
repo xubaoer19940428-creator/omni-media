@@ -49,13 +49,14 @@ export default function HomePage() {
       {/* Hero Section */}
       <div className="relative z-10 pt-2">
         <HeroSection
+          onStartParsing={() => setActiveTab('workbench')}
           onSelectPlatform={() => setActiveTab('platforms')}
           onExploreApi={() => setActiveTab('playground')}
         />
       </div>
 
       {/* Infinite Platform Marquee Ticker */}
-      <div className="relative z-10 mb-8">
+      <div className="relative z-10 mb-8 hidden sm:block">
         <PlatformMarquee onSelectPlatform={() => setActiveTab('platforms')} />
       </div>
 
