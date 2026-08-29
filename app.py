@@ -87,23 +87,24 @@ CORS_ALLOWED_ORIGINS = {
 
 
 def _frontend_script_hashes():
-    index_path = FRONTEND_DIR / 'index.html'
-    if not index_path.is_file():
-        return ()
-    try:
-        html = index_path.read_text(encoding='utf-8')
-    except OSError:
-        logging.exception('Could not read the exported frontend for CSP hashing')
+    html_paths = sorted(FRONTEND_DIR.rglob('*.html')) if FRONTEND_DIR.is_dir() else []
+    if not html_paths:
         return ()
 
     hashes = []
-    for match in re.finditer(
-        r'<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>',
-        html,
-        re.IGNORECASE | re.DOTALL,
-    ):
-        digest = hashlib.sha256(match.group(1).encode('utf-8')).digest()
-        hashes.append(f"'sha256-{base64.b64encode(digest).decode('ascii')}'")
+    for html_path in html_paths:
+        try:
+            html = html_path.read_text(encoding='utf-8')
+        except OSError:
+            logging.exception('Could not read the exported frontend for CSP hashing')
+            continue
+        for match in re.finditer(
+            r'<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>',
+            html,
+            re.IGNORECASE | re.DOTALL,
+        ):
+            digest = hashlib.sha256(match.group(1).encode('utf-8')).digest()
+            hashes.append(f"'sha256-{base64.b64encode(digest).decode('ascii')}'")
     return tuple(dict.fromkeys(hashes))
 
 

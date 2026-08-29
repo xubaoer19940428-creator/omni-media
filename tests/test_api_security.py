@@ -787,6 +787,17 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertNotIn('ETag', response.headers)
         response.close()
 
+    def test_csp_hashes_cover_all_exported_html_routes(self):
+        with tempfile.TemporaryDirectory() as frontend_dir:
+            frontend_path = Path(frontend_dir)
+            (frontend_path / 'index.html').write_text('<script>window.home=1</script>', encoding='utf-8')
+            nested = frontend_path / 'privacy'
+            nested.mkdir()
+            (nested / 'index.html').write_text('<script>window.privacy=1</script>', encoding='utf-8')
+            with patch.object(app_module, 'FRONTEND_DIR', frontend_path):
+                hashes = app_module._frontend_script_hashes()
+            self.assertEqual(2, len(hashes))
+
     def test_cleanup_rejects_path_traversal(self):
         victim = Path(self.temp_dir.name) / 'victim.txt'
         victim.write_text('keep me', encoding='utf-8')
