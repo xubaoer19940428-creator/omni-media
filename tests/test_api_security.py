@@ -641,10 +641,14 @@ class ApiSecurityTests(unittest.TestCase):
 
             status = response.status_code
             body = response.get_data()
+            cache_control = response.headers.get('Cache-Control')
+            etag = response.headers.get('ETag')
             response.close()
 
         self.assertEqual(200, status)
         self.assertIn(b'privacy', body)
+        self.assertEqual('no-store, max-age=0', cache_control)
+        self.assertIsNone(etag)
 
     def test_download_rejects_unsupported_url_before_downloading(self):
         with patch.object(app_module.downloader, 'download_video') as download_video:
@@ -741,6 +745,19 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         self.assertFalse(expired.exists())
 
+    def test_direct_exported_html_is_not_conditionally_cached(self):
+        with tempfile.TemporaryDirectory() as frontend_dir:
+            frontend_path = Path(frontend_dir)
+            (frontend_path / 'index.html').write_text('home', encoding='utf-8')
+            (frontend_path / 'page.html').write_text('page', encoding='utf-8')
+
+            with patch.object(app_module, 'FRONTEND_DIR', frontend_path.resolve()):
+                response = self.client.get('/page.html')
+
+            self.assertEqual(200, response.status_code)
+            self.assertEqual('no-store, max-age=0', response.headers['Cache-Control'])
+            self.assertNotIn('ETag', response.headers)
+
     def test_security_headers_include_csp_and_https_hsts(self):
         with patch.object(
             app_module,
@@ -766,6 +783,8 @@ class ApiSecurityTests(unittest.TestCase):
             'max-age=31536000',
             response.headers['Strict-Transport-Security'],
         )
+        self.assertEqual('no-store, max-age=0', response.headers['Cache-Control'])
+        self.assertNotIn('ETag', response.headers)
         response.close()
 
     def test_cleanup_rejects_path_traversal(self):

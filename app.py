@@ -109,6 +109,26 @@ def _frontend_script_hashes():
 
 FRONTEND_SCRIPT_HASHES = _frontend_script_hashes()
 
+
+def _serve_frontend_html(directory, filename='index.html'):
+    """Serve version-coupled HTML without conditional browser caching.
+
+    Next's exported HTML contains inline hydration payloads whose CSP hashes
+    change on every build. A cached body combined with headers from a newer
+    deployment will be blocked, so HTML must never be reused across releases.
+    """
+    response = send_from_directory(
+        directory,
+        filename,
+        conditional=False,
+        etag=False,
+        max_age=0,
+    )
+    response.headers['Cache-Control'] = 'no-store, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
 DOWNLOAD_FILENAME_RE = re.compile(
     r'^[a-z][a-z0-9_]{0,31}_[0-9a-f]{32}\.(?:mp4|webm|mkv|mov|m4a|m4v|mp3)$'
 )
@@ -694,7 +714,7 @@ def health_check():
 def index():
     frontend_index = FRONTEND_DIR / 'index.html'
     if frontend_index.is_file():
-        return send_from_directory(FRONTEND_DIR, 'index.html')
+        return _serve_frontend_html(FRONTEND_DIR)
     return render_template(
         'index.html',
         platforms=downloader.get_supported_platforms(),
@@ -1017,10 +1037,12 @@ def serve_frontend_asset(asset_path):
         if FRONTEND_DIR not in candidate.parents:
             return jsonify({'error': 'Not found'}), 404
         if candidate.is_file():
+            if candidate.suffix.lower() == '.html':
+                return _serve_frontend_html(candidate.parent, candidate.name)
             return send_from_directory(FRONTEND_DIR, asset_path)
         directory_index = candidate / 'index.html'
         if directory_index.is_file():
-            return send_from_directory(candidate, 'index.html')
+            return _serve_frontend_html(candidate)
     return jsonify({'error': 'Not found'}), 404
 
 if __name__ == '__main__':

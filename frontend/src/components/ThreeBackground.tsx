@@ -17,6 +17,7 @@ export const ThreeBackground: React.FC = () => {
     if (!ctx) return;
 
     let animationFrameId: number;
+    let lastScrollAt = 0;
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
 
@@ -72,11 +73,16 @@ export const ThreeBackground: React.FC = () => {
       height = canvas.height = window.innerHeight;
     };
 
+    const handleScroll = () => {
+      lastScrollAt = performance.now();
+    };
+
     window.addEventListener('mousemove', handlePointerMove, { passive: true });
     window.addEventListener('touchstart', handlePointerMove, { passive: true });
     window.addEventListener('touchmove', handlePointerMove, { passive: true });
     window.addEventListener('mouseleave', handlePointerLeave);
     window.addEventListener('resize', handleResize);
+    window.addEventListener('scroll', handleScroll, { passive: true });
 
     const isLight = theme === 'light';
     const nodeColor = isLight ? 'rgba(37, 99, 235, ' : 'rgba(0, 242, 254, ';
@@ -84,6 +90,13 @@ export const ThreeBackground: React.FC = () => {
     const lineColor = isLight ? 'rgba(37, 99, 235, ' : 'rgba(0, 242, 254, ';
 
     const render = () => {
+      // Keep the branded animation, but yield the canvas while the browser is
+      // actively compositing a scroll frame. It resumes immediately after.
+      if (performance.now() - lastScrollAt < 90) {
+        animationFrameId = requestAnimationFrame(render);
+        return;
+      }
+
       ctx.clearRect(0, 0, width, height);
 
       // Smooth mouse lerp
@@ -160,6 +173,7 @@ export const ThreeBackground: React.FC = () => {
       window.removeEventListener('touchmove', handlePointerMove);
       window.removeEventListener('mouseleave', handlePointerLeave);
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', handleScroll);
       cancelAnimationFrame(animationFrameId);
     };
   }, [theme]);
@@ -167,7 +181,7 @@ export const ThreeBackground: React.FC = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 pointer-events-none z-0 transition-opacity duration-300"
+      className="fixed inset-0 pointer-events-none z-0 transition-opacity duration-300 [contain:strict] [transform:translateZ(0)]"
     />
   );
 };
