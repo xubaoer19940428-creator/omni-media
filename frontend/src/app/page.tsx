@@ -56,7 +56,7 @@ export default function HomePage() {
       </div>
 
       {/* Infinite Platform Marquee Ticker */}
-      <div className="relative z-10 mb-8 hidden sm:block">
+      <div className="relative z-10 mb-8">
         <PlatformMarquee onSelectPlatform={() => setActiveTab('platforms')} />
       </div>
 

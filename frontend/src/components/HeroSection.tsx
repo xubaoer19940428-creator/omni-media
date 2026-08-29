@@ -57,7 +57,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onStartParsing, onSele
 
     // Smooth Glide with GSAP
     gsap.killTweensOf(boxEl);
-    const vars = {
+    const focusTween = {
       x: targetLeft,
       y: targetTop,
       width: targetWidth,
@@ -66,11 +66,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onStartParsing, onSele
       duration: 0.6,
       ease: 'power3.out',
     };
-    if (reduceMotion) {
-      gsap.set(boxEl, vars);
-    } else {
-      gsap.to(boxEl, vars);
-    }
+    if (reduceMotion) gsap.set(boxEl, focusTween);
+    else gsap.to(boxEl, focusTween);
 
     focusIndexRef.current = index;
     setActiveFocusIndex(index);
@@ -112,10 +109,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onStartParsing, onSele
   useEffect(() => {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduceMotion) {
-      gsap.set(
-        [badgeRef.current, titleContainerRef.current, subtitleRef.current],
-        { opacity: 1, x: 0, y: 0, scale: 1 }
-      );
+      gsap.set([badgeRef.current, titleContainerRef.current, subtitleRef.current], { opacity: 1, x: 0, y: 0, scale: 1 });
       gsap.set(statsRef.current?.children ? Array.from(statsRef.current.children) : [], { opacity: 1, y: 0, scale: 1 });
       gsap.set(pillsRef.current?.children ? Array.from(pillsRef.current.children) : [], { opacity: 1, y: 0, scale: 1 });
       return;
