@@ -740,6 +740,7 @@ a {
 
 .site-footer {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 30px;
@@ -761,12 +762,25 @@ a {
 }
 
 .site-footer span,
+.site-footer a,
 .site-footer p {
   color: var(--muted);
   font-family: var(--mono);
   font-size: 9px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.site-footer a {
+  color: var(--ink);
+  text-decoration: none;
+  text-transform: none;
+  transition: color 160ms ease;
+}
+
+.site-footer a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .site-footer p {

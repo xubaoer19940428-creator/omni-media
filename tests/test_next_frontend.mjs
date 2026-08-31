@@ -58,6 +58,14 @@ const homePageSource = fs.readFileSync(
   new URL('../frontend/src/app/page.tsx', import.meta.url),
   'utf8',
 );
+const footerSource = fs.readFileSync(
+  new URL('../frontend/src/components/Footer.tsx', import.meta.url),
+  'utf8',
+);
+const fallbackPageSource = fs.readFileSync(
+  new URL('../templates/index.html', import.meta.url),
+  'utf8',
+);
 const nextConfigSource = fs.readFileSync(
   new URL('../frontend/next.config.mjs', import.meta.url),
   'utf8',
@@ -79,6 +87,9 @@ assert.match(profileResultSource, /dark:/);
 assert.match(i18nSource, /creatorMode: 'Creator profile'/);
 assert.match(i18nSource, /creatorMode: '个人主页'/);
 assert.match(nextConfigSource, /trailingSlash:\s*true/);
+assert.match(footerSource, /mailto:xubaoer199400428@gmail\.com/);
+assert.match(footerSource, /t\.footer\.contact/);
+assert.match(fallbackPageSource, /mailto:xubaoer199400428@gmail\.com/);
 
 const platformCases = new Map([
   ['https://www.youtube.com/watch?v=abc', 'youtube'],

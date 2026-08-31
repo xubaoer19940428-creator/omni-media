@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Github, Globe, Heart, Shield, Terminal } from 'lucide-react';
+import { Github, Heart, Mail, Shield } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
 import { OmniMediaLogo } from './OmniMediaLogo';
 
@@ -42,6 +42,15 @@ export const Footer: React.FC = () => {
           >
             <Github className="w-3.5 h-3.5" />
             <span>{t.footer.repo}</span>
+          </a>
+
+          <a
+            href="mailto:xubaoer199400428@gmail.com"
+            aria-label={`${t.footer.contact}: xubaoer199400428@gmail.com`}
+            className="hover:text-blue-600 dark:hover:text-cyan-400 transition flex items-center gap-1"
+          >
+            <Mail className="w-3.5 h-3.5" />
+            <span>xubaoer199400428@gmail.com</span>
           </a>
 
           <div className="flex items-center gap-1 text-slate-400">
