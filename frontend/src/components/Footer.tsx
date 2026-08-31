@@ -50,7 +50,7 @@ export const Footer: React.FC = () => {
             className="hover:text-blue-600 dark:hover:text-cyan-400 transition flex items-center gap-1"
           >
             <Mail className="w-3.5 h-3.5" />
-            <span>xubaoer199400428@gmail.com</span>
+            <span>{t.footer.contact}</span>
           </a>
 
           <div className="flex items-center gap-1 text-slate-400">

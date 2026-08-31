@@ -89,7 +89,9 @@ assert.match(i18nSource, /creatorMode: '个人主页'/);
 assert.match(nextConfigSource, /trailingSlash:\s*true/);
 assert.match(footerSource, /mailto:xubaoer199400428@gmail\.com/);
 assert.match(footerSource, /t\.footer\.contact/);
+assert.match(footerSource, /<span>\{t\.footer\.contact\}<\/span>/);
 assert.match(fallbackPageSource, /mailto:xubaoer199400428@gmail\.com/);
+assert.match(fallbackPageSource, />Support<\/a>/);
 
 const platformCases = new Map([
   ['https://www.youtube.com/watch?v=abc', 'youtube'],
