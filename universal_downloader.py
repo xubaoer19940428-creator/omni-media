@@ -1030,6 +1030,10 @@ class UniversalDownloader:
                 info = ydl.extract_info(url, download=False)
                 
                 if not info:
+                    if platform_key == 'twitter':
+                        fallback = self._get_twitter_video_info(extracted_url=url)
+                        if fallback.get('success'):
+                            return fallback
                     if platform_key == 'telegram':
                         return self._error_response(
                             "Telegram 网页端未提供该视频的下载地址"
@@ -1040,6 +1044,10 @@ class UniversalDownloader:
                 # 提取视频 URL 以及可选的图集、音频和格式信息。
                 video_url = self._extract_best_video_url(info)
                 media = self._normalize_media_payload(info, video_url)
+                if platform_key == 'twitter' and not video_url:
+                    fallback = self._get_twitter_video_info(extracted_url=url)
+                    if fallback.get('success'):
+                        return fallback
                 
                 return {
                     "success": True,
@@ -1064,6 +1072,14 @@ class UniversalDownloader:
                 platform_name,
                 type(exc).__name__,
             )
+
+            # X frequently changes the GraphQL response consumed by yt-dlp.
+            # Use the public FxTwitter representation as a narrow fallback so
+            # posts with normal video attachments remain usable without cookies.
+            if platform_key == 'twitter':
+                fallback = self._get_twitter_video_info(extracted_url=url)
+                if fallback.get('success'):
+                    return fallback
             
             # 提供更友好的错误信息
             if any(
@@ -1090,6 +1106,187 @@ class UniversalDownloader:
                 return self._error_response(
                     "Parsing failed. The platform may be temporarily unavailable"
                 )
+
+    def _get_twitter_video_info(self, extracted_url: str) -> Dict[str, Any]:
+        """Read public X video attachments from FxTwitter when yt-dlp misses them."""
+        match = re.search(r'/status/(\d+)', urlparse(extracted_url).path)
+        if not match:
+            return self._error_response('Could not extract the X post ID')
+
+        status_id = match.group(1)
+        endpoint = f'https://api.fxtwitter.com/status/{status_id}'
+        try:
+            def non_negative_number(value: Any) -> float:
+                try:
+                    return max(0, float(value or 0))
+                except (TypeError, ValueError):
+                    return 0
+
+            response = requests.get(
+                endpoint,
+                headers={
+                    'Accept': 'application/json',
+                    'User-Agent': 'OmniMedia/2.0 (+https://useomnimedia.com)',
+                },
+                timeout=self.http_timeout,
+            )
+            response.raise_for_status()
+            payload = response.json()
+            tweet = payload.get('tweet') if isinstance(payload, dict) else None
+            if not isinstance(tweet, dict):
+                return self._error_response('The X post did not return public media data')
+
+            media = tweet.get('media') if isinstance(tweet.get('media'), dict) else {}
+            candidates = media.get('videos') or media.get('all') or []
+            if not isinstance(candidates, list):
+                candidates = []
+
+            formats = []
+            thumbnail = ''
+            duration = 0
+            for candidate in candidates:
+                if not isinstance(candidate, dict) or candidate.get('type') != 'video':
+                    continue
+                thumbnail = thumbnail or str(candidate.get('thumbnail_url') or '')
+                if not duration:
+                    duration = non_negative_number(candidate.get('duration'))
+                variants = candidate.get('formats') or candidate.get('variants') or []
+                if not isinstance(variants, list):
+                    variants = []
+                direct_url = candidate.get('url')
+                if direct_url and not any(
+                    isinstance(item, dict) and item.get('url') == direct_url
+                    for item in variants
+                ):
+                    variants.append({
+                        'url': direct_url,
+                        'container': candidate.get('format') or 'mp4',
+                        'bitrate': 0,
+                    })
+                for index, variant in enumerate(variants):
+                    if not isinstance(variant, dict) or not isinstance(variant.get('url'), str):
+                        continue
+                    variant_url = variant['url']
+                    parsed_variant = urlparse(variant_url)
+                    if (
+                        parsed_variant.scheme != 'https'
+                        or (parsed_variant.hostname or '').lower() != 'video.twimg.com'
+                    ):
+                        continue
+                    container = str(variant.get('container') or '').lower()
+                    content_type = str(variant.get('content_type') or '').lower()
+                    is_mp4 = container == 'mp4' or 'video/mp4' in content_type or '.mp4' in variant_url
+                    if not is_mp4:
+                        continue
+                    resolution = re.search(r'/vid/[^/]+/(\d+)x(\d+)/', parsed_variant.path)
+                    width = int(resolution.group(1)) if resolution else non_negative_number(candidate.get('width'))
+                    height = int(resolution.group(2)) if resolution else non_negative_number(candidate.get('height'))
+                    formats.append({
+                        'format_id': f'x-{width or 0}x{height or 0}-{index}',
+                        'ext': 'mp4',
+                        'url': variant_url[:8192],
+                        'width': width,
+                        'height': height,
+                        'vcodec': 'h264',
+                        'acodec': 'aac',
+                        'tbr': non_negative_number(variant.get('bitrate')),
+                    })
+
+            if not formats:
+                return self._error_response('No video could be found in this X post')
+
+            best = max(
+                formats,
+                key=lambda item: (
+                    item.get('tbr') or 0,
+                    (item.get('width') or 0) * (item.get('height') or 0),
+                ),
+            )
+            author = tweet.get('author') if isinstance(tweet.get('author'), dict) else {}
+            title = str(tweet.get('text') or '').replace('\n', ' ').strip()[:200]
+            parsed_thumbnail = urlparse(thumbnail)
+            if (
+                parsed_thumbnail.scheme != 'https'
+                or (parsed_thumbnail.hostname or '').lower() != 'pbs.twimg.com'
+            ):
+                thumbnail = ''
+            return {
+                'success': True,
+                'platform': 'twitter',
+                'platform_name': 'Twitter/X',
+                'video_id': status_id,
+                'title': title or f'X post {status_id}',
+                'author': author.get('name') or author.get('screen_name') or 'Unknown creator',
+                'video_url': best['url'],
+                'cover_url': thumbnail[:8192],
+                'duration': duration,
+                'like_count': tweet.get('likes') or 0,
+                'view_count': tweet.get('views') or 0,
+                'comment_count': tweet.get('replies') or 0,
+                **self._normalize_media_payload({'formats': formats, 'description': tweet.get('text') or '', 'repost_count': tweet.get('retweets') or 0}, best['url']),
+            }
+        except Exception as exc:
+            logger.warning(
+                '[Twitter/X] FxTwitter fallback failed (%s)',
+                type(exc).__name__,
+            )
+            return self._error_response('X media is temporarily unavailable')
+
+    def _download_direct_media(
+        self,
+        media_url: str,
+        filepath: str,
+        max_bytes: Optional[int],
+        referer: str,
+    ) -> bool:
+        """Stream a resolved public media URL with the normal size bound."""
+        parsed_media = urlparse(media_url)
+        if (
+            parsed_media.scheme != 'https'
+            or (parsed_media.hostname or '').lower() != 'video.twimg.com'
+        ):
+            raise ValueError('Untrusted X media URL')
+        response = requests.get(
+            media_url,
+            allow_redirects=False,
+            timeout=(self.connect_timeout, self.download_timeout),
+            headers={
+                'User-Agent': (
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                    'AppleWebKit/537.36 (KHTML, like Gecko) '
+                    'Chrome/120.0.0.0 Safari/537.36'
+                ),
+                'Referer': referer,
+            },
+            stream=True,
+        )
+        try:
+            if 300 <= getattr(response, 'status_code', 200) < 400:
+                raise ValueError('Unexpected X media redirect')
+            response.raise_for_status()
+            content_type = response.headers.get('Content-Type', '').lower()
+            if content_type and not content_type.startswith('video/'):
+                raise ValueError('Unexpected X media response type')
+            declared_length = int(response.headers.get('Content-Length', 0) or 0)
+            if max_bytes and declared_length > max_bytes:
+                raise DownloadSizeLimitExceeded(
+                    'Download exceeds the configured size limit'
+                )
+
+            downloaded_bytes = 0
+            with open(filepath, 'wb') as output:
+                for chunk in response.iter_content(chunk_size=65536):
+                    if not chunk:
+                        continue
+                    downloaded_bytes += len(chunk)
+                    if max_bytes and downloaded_bytes > max_bytes:
+                        raise DownloadSizeLimitExceeded(
+                            'Download exceeds the configured size limit'
+                        )
+                    output.write(chunk)
+            return downloaded_bytes > 0
+        finally:
+            response.close()
 
     def get_profile_info(
         self,
@@ -1440,6 +1637,38 @@ class UniversalDownloader:
                 except OSError:
                     pass
 
+        def download_twitter_fallback() -> Optional[str]:
+            if platform_key != 'twitter' or audio_only:
+                return None
+            twitter_info = self._get_twitter_video_info(url)
+            if not twitter_info.get('success'):
+                return None
+            sources = twitter_info.get('sources') or []
+            selected_source = next((
+                source for source in sources
+                if source.get('format_id') == format_selector
+            ), None) if format_selector else None
+            if format_selector and not selected_source:
+                logger.warning('[Twitter/X] Requested format is unavailable in fallback data')
+                return None
+            media_url = (
+                (selected_source or {}).get('url')
+                or twitter_info.get('video_url')
+            )
+            try:
+                logger.info('[Twitter/X] Downloading the resolved source file')
+                if self._download_direct_media(media_url, filepath, max_bytes, url):
+                    return os.path.basename(filepath)
+            except DownloadSizeLimitExceeded:
+                logger.warning('[Twitter/X] Download exceeds the configured size limit')
+            except Exception as exc:
+                logger.warning(
+                    '[Twitter/X] Direct download failed (%s)',
+                    type(exc).__name__,
+                )
+            cleanup_partial_files()
+            return None
+
         def enforce_download_size(status: Dict[str, Any]) -> None:
             if not max_bytes:
                 return
@@ -1484,7 +1713,7 @@ class UniversalDownloader:
         # Telegram 帖子可能包含多个视频；下载帖子中的主视频
         if platform_key == 'telegram':
             ydl_opts['noplaylist'] = True
-        
+
         # 抖音使用直接下载视频 URL
         if platform_key == 'douyin' and not audio_only and not format_selector:
             # 先解析获取直接视频URL，用 requests 直接下载
@@ -1604,7 +1833,7 @@ class UniversalDownloader:
             
             cleanup_partial_files()
             logger.warning('[%s] No downloaded file was found', platform_name)
-            return None
+            return download_twitter_fallback()
             
         except Exception as exc:
             cleanup_partial_files()
@@ -1613,7 +1842,7 @@ class UniversalDownloader:
                 platform_name,
                 type(exc).__name__,
             )
-            return None
+            return download_twitter_fallback()
     
     def _error_response(self, error: str) -> Dict[str, Any]:
         """生成错误响应"""

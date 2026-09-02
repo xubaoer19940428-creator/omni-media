@@ -53,6 +53,11 @@ class AudioFallbackYoutubeDL(SuccessfulYoutubeDL):
     output_extension = 'm4a'
 
 
+class FailingYoutubeDL(SuccessfulYoutubeDL):
+    def download(self, _urls):
+        raise RuntimeError('extractor failed')
+
+
 class StreamingResponse:
     def __init__(self):
         self.headers = {}
@@ -220,6 +225,46 @@ class DownloadLimitTests(unittest.TestCase):
                     StreamingSession.request_kwargs['timeout'],
                 )
             self.assertEqual([], list(Path(temp_dir).iterdir()))
+
+    def test_twitter_fallback_downloads_the_selected_direct_format(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            downloader = UniversalDownloader(temp_dir)
+            target = Path(temp_dir) / f'twitter_{"f" * 32}.mp4'
+            info = {
+                'success': True,
+                'video_url': 'https://video.twimg.com/high.mp4',
+                'sources': [
+                    {
+                        'format_id': 'x-640x360-1',
+                        'url': 'https://video.twimg.com/medium.mp4',
+                    },
+                ],
+            }
+            response = StreamingResponse()
+
+            with (
+                patch.object(downloader, '_get_twitter_video_info', return_value=info),
+                patch.object(downloader_module.requests, 'get', return_value=response) as request_get,
+                patch.object(downloader_module.yt_dlp, 'YoutubeDL', FailingYoutubeDL),
+            ):
+                result = downloader.download_video(
+                    'https://x.com/creator/status/2094424974932984168',
+                    str(target),
+                    max_bytes=10,
+                    format_selector='x-640x360-1',
+                )
+
+            self.assertEqual(target.name, result)
+            self.assertEqual(b'12345', target.read_bytes())
+            self.assertTrue(response.closed)
+            self.assertEqual(
+                'https://video.twimg.com/medium.mp4',
+                request_get.call_args.args[0],
+            )
+            self.assertEqual(
+                'https://x.com/creator/status/2094424974932984168',
+                request_get.call_args.kwargs['headers']['Referer'],
+            )
 
 
 if __name__ == '__main__':

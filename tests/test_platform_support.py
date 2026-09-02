@@ -525,6 +525,96 @@ class PlatformSupportTests(unittest.TestCase):
         self.assertFalse(result['success'])
         self.assertIn('verification checkpoint', result['error'])
 
+    def test_twitter_fxtwitter_fallback_extracts_amplify_video(self):
+        class Response:
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return {
+                    'tweet': {
+                        'text': 'A public X video',
+                        'author': {'name': 'Creator', 'screen_name': 'creator'},
+                        'likes': 12,
+                        'views': 345,
+                        'replies': 2,
+                        'retweets': 4,
+                        'media': {
+                            'videos': [{
+                                'type': 'video',
+                                'thumbnail_url': 'https://pbs.twimg.com/thumb.jpg',
+                                'duration': 9.5,
+                                'formats': [
+                                    {'url': 'https://video.twimg.com/amplify_video/1/vid/avc1/640x360/a.mp4?tag=29', 'container': 'mp4', 'bitrate': 832000},
+                                    {'url': 'https://video.twimg.com/amplify_video/1/pl/a.m3u8', 'container': 'm3u8'},
+                                ],
+                            }],
+                        },
+                    },
+                }
+
+        with patch.object(downloader_module.requests, 'get', return_value=Response()) as request_get:
+            result = self.downloader._get_twitter_video_info(
+                'https://x.com/creator/status/2094424974932984168?s=20'
+            )
+
+        self.assertTrue(result['success'])
+        self.assertEqual('twitter', result['platform'])
+        self.assertEqual('Creator', result['author'])
+        self.assertEqual(9.5, result['duration'])
+        self.assertEqual(
+            'https://video.twimg.com/amplify_video/1/vid/avc1/640x360/a.mp4?tag=29',
+            result['video_url'],
+        )
+        self.assertEqual('video', result['media_type'])
+        request_get.assert_called_once()
+        self.assertIn('/status/2094424974932984168', request_get.call_args.args[0])
+
+    def test_twitter_fallback_rejects_non_twimg_media_urls(self):
+        response = MagicMock()
+        response.json.return_value = {
+            'tweet': {
+                'media': {
+                    'videos': [{
+                        'type': 'video',
+                        'url': 'https://private.example/video.mp4',
+                    }],
+                },
+            },
+        }
+
+        with patch.object(downloader_module.requests, 'get', return_value=response):
+            result = self.downloader._get_twitter_video_info(
+                'https://x.com/creator/status/2094424974932984168'
+            )
+
+        self.assertFalse(result['success'])
+        self.assertIn('No video', result['error'])
+
+    def test_twitter_truthy_metadata_without_video_uses_fallback(self):
+        fake_ydl = MagicMock()
+        fake_ydl.__enter__.return_value.extract_info.return_value = {
+            'id': '2094424974932984168',
+            'title': 'Metadata without media',
+            'formats': [],
+        }
+        fallback = {
+            'success': True,
+            'platform': 'twitter',
+            'video_url': 'https://video.twimg.com/video.mp4',
+        }
+
+        with (
+            patch.object(downloader_module.yt_dlp, 'YoutubeDL', return_value=fake_ydl),
+            patch.object(self.downloader, '_get_twitter_video_info', return_value=fallback) as twitter_fallback,
+        ):
+            result = self.downloader.get_video_info(
+                'https://x.com/creator/status/2094424974932984168'
+            )
+
+        self.assertEqual(fallback, result)
+        twitter_fallback.assert_called_once()
+
     def test_real_subdomains_and_trailing_dot_are_accepted(self):
         accepted = {
             'https://m.youtube.com/watch?v=BaW_jenozKc': 'youtube',
