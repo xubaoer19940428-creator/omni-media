@@ -35,6 +35,9 @@ export type PlatformKey =
   | 'rutube'
   | 'coub'
   | 'odnoklassniki'
+  | 'bluesky'
+  | 'dropbox'
+  | 'googledrive'
   | 'unknown';
 
 export interface AuthorInfo {

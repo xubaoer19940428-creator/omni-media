@@ -23,7 +23,7 @@ export const translations = {
       title1: 'Universal Social Media API',
       titleFor: 'for Developers &',
       titleBrackets: 'Platforms',
-      subtitle: 'Parse public media links across 36 platforms through one same-origin REST API, with normalized JSON responses and server-side downloads.',
+      subtitle: 'Parse public media links across 39 platforms through one same-origin REST API, with normalized JSON responses and server-side downloads.',
       statPlatforms: 'Supported Platforms',
       statWatermark: 'Core API Endpoints',
       statLatency: 'URLs per Request',
@@ -143,13 +143,14 @@ export const translations = {
     platforms: {
       tag: 'SUPPORTED PLATFORMS MATRIX',
       title: 'Supported Platform Parsers',
-      subtitle: '36 registered adapters exposed through the same parse, batch, and platform-status APIs.',
+      subtitle: '39 registered adapters exposed through the same parse, batch, and platform-status APIs.',
       searchPlaceholder: 'Search by platform name or domain (e.g. tiktok, douyin, instagram)...',
       liveStatus: 'Parser Available',
       noWatermark: 'URL Recognition',
       galleryHd: 'Normalized JSON',
       audioExtractor: 'Batch API',
       testInWorkbench: 'Test in Workbench',
+      learnMore: 'Platform details',
     },
     // Docs Modal
     docs: {
@@ -227,7 +228,7 @@ export const translations = {
       title1: '全能社媒数据与媒体 API',
       titleFor: '专为开发者与平台打造',
       titleBrackets: '矩阵',
-      subtitle: '通过一个同源 REST API 解析 36 个平台的公开媒体链接，统一返回 JSON，并支持服务端下载。',
+      subtitle: '通过一个同源 REST API 解析 39 个平台的公开媒体链接，统一返回 JSON，并支持服务端下载。',
       statPlatforms: '支持平台总数',
       statWatermark: '核心 API 接口',
       statLatency: '单请求链接数',
@@ -346,14 +347,15 @@ export const translations = {
     // Platforms
     platforms: {
       tag: 'SUPPORTED PLATFORMS MATRIX',
-      title: '36 个主流平台解析器',
-      subtitle: '36 个已注册适配器，共用单条解析、批量解析和平台状态接口。',
+      title: '39 个主流平台解析器',
+      subtitle: '39 个已注册适配器，共用单条解析、批量解析和平台状态接口。',
       searchPlaceholder: '搜索平台名称、域名（如 tiktok、抖音、youtube）...',
       liveStatus: '已接入解析器',
       noWatermark: '链接识别',
       galleryHd: '统一 JSON',
       audioExtractor: '批量 API',
       testInWorkbench: '填入工作台测试',
+      learnMore: '平台详情',
     },
     // Docs Modal
     docs: {

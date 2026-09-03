@@ -16,7 +16,7 @@ test('production API origin is HTTPS', () => {
   assert.equal(API_ORIGIN, 'https://useomnimedia.com');
 });
 
-test('registry contains the explicit 36-platform contract in backend order', () => {
+test('registry contains the explicit 39-platform contract in backend order', () => {
   assert.deepEqual(SUPPORTED_PLATFORMS.map(({ key }) => key), [
     'tiktok', 'douyin', 'instagram', 'telegram', 'youtube', 'twitter',
     'facebook', 'bilibili', 'weibo', 'reddit', 'dailymotion',
@@ -24,7 +24,7 @@ test('registry contains the explicit 36-platform contract in backend order', () 
     'soundcloud', 'vk', 'niconico', 'streamable', 'loom', 'kick', 'bitchute',
     'bandcamp', 'odysee', 'archive_org', 'imgur', 'linkedin', 'snapchat',
     'peertube', 'gab', 'truthsocial', 'medaltv', 'rutube', 'coub',
-    'odnoklassniki'
+    'odnoklassniki', 'bluesky', 'dropbox', 'googledrive'
   ]);
 });
 
@@ -39,6 +39,9 @@ test('detects exact and nested supported domains', () => {
   assert.equal(detectPlatform('https://www.tumblr.com/example/123'), null);
   assert.equal(detectPlatform('https://vimeo.com/76979871'), null);
   assert.equal(detectPlatform('https://framatube.org/videos/watch/example')?.key, 'peertube');
+  assert.equal(detectPlatform('https://bsky.app/profile/bsky.app/post/3l3vgf77uco2g')?.key, 'bluesky');
+  assert.equal(detectPlatform('https://www.dropbox.com/s/example/video.mp4?dl=0')?.key, 'dropbox');
+  assert.equal(detectPlatform('https://drive.google.com/file/d/example/view')?.key, 'googledrive');
 });
 
 test('rejects suffix confusion, unsafe schemes, invalid URLs, and oversized input', () => {

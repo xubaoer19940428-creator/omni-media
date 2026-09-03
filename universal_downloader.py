@@ -262,6 +262,21 @@ class UniversalDownloader:
         'rutube': {'name': 'RuTube', 'patterns': [r'rutube\.ru'], 'icon': 'R'},
         'coub': {'name': 'Coub', 'patterns': [r'coub\.com'], 'icon': 'C'},
         'odnoklassniki': {'name': 'Odnoklassniki', 'patterns': [r'ok\.ru'], 'icon': 'OK'},
+        'bluesky': {
+            'name': 'Bluesky',
+            'patterns': [r'bsky\.app', r'main\.bsky\.dev'],
+            'icon': 'B',
+        },
+        'dropbox': {
+            'name': 'Dropbox',
+            'patterns': [r'dropbox\.com'],
+            'icon': 'D',
+        },
+        'googledrive': {
+            'name': 'Google Drive',
+            'patterns': [r'drive\.google\.com', r'docs\.google\.com', r'drive\.usercontent\.google\.com'],
+            'icon': 'G',
+        },
     }
     
     def __init__(self, download_dir: str = "downloads") -> None:

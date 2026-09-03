@@ -48,6 +48,9 @@ REPRESENTATIVE_URLS = {
     'rutube': 'https://rutube.ru/video/3eac3b4561676c17df9132a9a1e62e3e/',
     'coub': 'http://coub.com/view/5u5n1',
     'odnoklassniki': 'http://ok.ru/video/1484130554189',
+    'bluesky': 'https://bsky.app/profile/bsky.app/post/3l3vgf77uco2g',
+    'dropbox': 'https://www.dropbox.com/s/nelirfsxnmcfbfh/youtube-dl%20test%20video%20%27%C3%A4%22BaW_jenozKc.mp4?dl=0',
+    'googledrive': 'https://drive.google.com/file/d/0ByeS4oOUV-49Zzh4R1J6R09zazQ/edit?pli=1',
 }
 
 
@@ -59,9 +62,9 @@ class PlatformSupportTests(unittest.TestCase):
     def tearDown(self):
         self.temp_dir.cleanup()
 
-    def test_exactly_36_platforms_are_exposed(self):
+    def test_exactly_39_platforms_are_exposed(self):
         platforms = self.downloader.get_supported_platforms()
-        self.assertEqual(36, len(platforms))
+        self.assertEqual(39, len(platforms))
         self.assertEqual(list(REPRESENTATIVE_URLS), [item['key'] for item in platforms])
 
     def test_every_representative_url_maps_to_its_platform(self):
@@ -631,14 +634,14 @@ class PlatformSupportTests(unittest.TestCase):
         client = app.test_client()
         response = client.get('/api/platforms')
         self.assertEqual(200, response.status_code)
-        self.assertEqual(36, len(response.get_json()['platforms']))
+        self.assertEqual(39, len(response.get_json()['platforms']))
 
         page_response = client.get('/')
         page = page_response.get_data(as_text=True)
         page_response.close()
         if 'class="platform-chip"' in page:
-            self.assertEqual(36, len(re.findall(r'class="platform-chip"', page)))
-            self.assertIn('36 platforms supported', page)
+            self.assertEqual(39, len(re.findall(r'class="platform-chip"', page)))
+            self.assertIn('39 platforms supported', page)
         else:
             self.assertIn('OmniMedia', page)
 
@@ -648,7 +651,7 @@ class PlatformSupportTests(unittest.TestCase):
         ).read_text(encoding='utf-8')
         frontend_keys = re.findall(r"^\s+key: '([^']+)'", constants, re.MULTILINE)
 
-        self.assertEqual(36, len(frontend_keys))
+        self.assertEqual(39, len(frontend_keys))
         self.assertEqual(set(REPRESENTATIVE_URLS), set(frontend_keys))
         self.assertNotIn("'t.co'", constants)
 

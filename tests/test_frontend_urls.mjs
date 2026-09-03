@@ -50,6 +50,9 @@ const validUrls = [
     'https://rutube.ru/video/3eac3b4561676c17df9132a9a1e62e3e/',
     'http://coub.com/view/5u5n1',
     'http://ok.ru/video/1484130554189',
+    'https://bsky.app/profile/bsky.app/post/3l3vgf77uco2g',
+    'https://www.dropbox.com/s/nelirfsxnmcfbfh/youtube-dl%20test%20video%20%27%C3%A4%22BaW_jenozKc.mp4?dl=0',
+    'https://drive.google.com/file/d/0ByeS4oOUV-49Zzh4R1J6R09zazQ/edit?pli=1',
     'Shared link: https://www.youtube.com/watch?v=BaW_jenozKc',
     // Platform support is enforced by the backend's single platform registry.
     'https://example.com/video',

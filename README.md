@@ -5,7 +5,7 @@
 
   <h1>OmniMedia</h1>
 
-  <p><strong>Parse, preview, and download public media from 36 social platforms in one place.</strong></p>
+  <p><strong>Parse, preview, and download public media from 39 social platforms in one place.</strong></p>
 
   <p>
     Paste a link or complete app share text, inspect normalized media metadata,
@@ -23,7 +23,7 @@
   </p>
 
   <p>
-    <img src="https://img.shields.io/badge/platforms-36-5b5bd6?style=flat-square" alt="36 supported platforms">
+    <img src="https://img.shields.io/badge/platforms-39-5b5bd6?style=flat-square" alt="39 supported platforms">
     <img src="https://img.shields.io/badge/Python-3.10+-3776ab?style=flat-square&logo=python&logoColor=white" alt="Python 3.10+">
     <img src="https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js" alt="Next.js 16">
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT license"></a>
@@ -74,6 +74,7 @@
 | Odysee | Internet Archive | Imgur | LinkedIn |
 | Snapchat | PeerTube | Gab | Truth Social |
 | Medal.tv | RuTube | Coub | Odnoklassniki |
+| Bluesky | Dropbox | Google Drive | |
 
 OmniMedia works with public, login-free media. Paid, private, login-required,
 geo-restricted, deleted, or DRM-protected content may not be available, and the

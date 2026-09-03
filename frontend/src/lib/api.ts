@@ -193,6 +193,6 @@ export async function checkBackendHealth(): Promise<{
     if (!res.ok) throw new Error('Backend offline');
     return await res.json();
   } catch {
-    return { status: 'offline', supported_platforms_count: 36 };
+    return { status: 'offline', supported_platforms_count: 39 };
   }
 }

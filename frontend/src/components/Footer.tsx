@@ -3,7 +3,9 @@
 import React from 'react';
 import { Github, Heart, Mail, Shield } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
+import { SEO_INDEXABLE_KEYS, getSeoPlatform } from '@/lib/platformSeo';
 import { OmniMediaLogo } from './OmniMediaLogo';
+import Link from 'next/link';
 
 export const Footer: React.FC = () => {
   const { t } = useTranslation();
@@ -60,6 +62,29 @@ export const Footer: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Static internal links keep platform guides discoverable before client hydration. */}
+      <nav aria-label="Platform guides" className="max-w-7xl mx-auto mt-8 border-t border-slate-200/80 pt-6 dark:border-white/[0.06]">
+        <p className="text-center text-[10px] font-mono font-semibold uppercase tracking-[0.16em] text-slate-400">
+          Platform guides
+        </p>
+        <ul className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-slate-600 dark:text-slate-400">
+          {SEO_INDEXABLE_KEYS.map((key) => {
+            const platform = getSeoPlatform(key);
+            if (!platform) return null;
+            return (
+              <li key={platform.key}>
+                <Link
+                  href={`/platform/${platform.key}/`}
+                  className="transition hover:text-blue-600 dark:hover:text-cyan-300"
+                >
+                  {platform.name}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
     </footer>
   );
 };

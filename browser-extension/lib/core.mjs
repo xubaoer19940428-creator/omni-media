@@ -37,7 +37,10 @@ export const SUPPORTED_PLATFORMS = Object.freeze([
   { key: 'medaltv', name: 'Medal.tv', domains: ['medal.tv'] },
   { key: 'rutube', name: 'RuTube', domains: ['rutube.ru'] },
   { key: 'coub', name: 'Coub', domains: ['coub.com'] },
-  { key: 'odnoklassniki', name: 'Odnoklassniki', domains: ['ok.ru'] }
+  { key: 'odnoklassniki', name: 'Odnoklassniki', domains: ['ok.ru'] },
+  { key: 'bluesky', name: 'Bluesky', domains: ['bsky.app', 'main.bsky.dev'] },
+  { key: 'dropbox', name: 'Dropbox', domains: ['dropbox.com'] },
+  { key: 'googledrive', name: 'Google Drive', domains: ['drive.google.com', 'docs.google.com', 'drive.usercontent.google.com'] }
 ]);
 
 function isDomainMatch(hostname, domain) {

@@ -8,9 +8,20 @@ export const metadata: Metadata = {
   alternates: {
     canonical: '/',
   },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   title: 'OmniMedia — Universal Social Media API & Developer Extraction Platform',
   description:
-    'A unified REST API for parsing public media links from Douyin, TikTok, Instagram, Bilibili, YouTube, Twitter/X, and 29 more platforms.',
+    'A unified REST API for parsing public media links from Douyin, TikTok, Instagram, Bilibili, YouTube, Twitter/X, and 33 more platforms.',
   keywords: [
     'TikTok download API',
     'Douyin download API',
@@ -27,7 +38,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'OmniMedia — Universal Social Media API & Developer Extraction Platform',
     description:
-    'Parse public media links across 36 platforms with normalized JSON responses and server-side downloads.',
+    'Parse public media links across 39 platforms with normalized JSON responses and server-side downloads.',
     type: 'website',
     url: 'https://useomnimedia.com',
   },
@@ -43,6 +54,37 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@graph': [
+                {
+                  '@type': 'Organization',
+                  '@id': 'https://useomnimedia.com/#organization',
+                  name: 'OmniMedia',
+                  url: 'https://useomnimedia.com/',
+                  logo: 'https://useomnimedia.com/icon.svg',
+                },
+                {
+                  '@type': 'WebSite',
+                  '@id': 'https://useomnimedia.com/#website',
+                  name: 'OmniMedia',
+                  url: 'https://useomnimedia.com/',
+                  publisher: { '@id': 'https://useomnimedia.com/#organization' },
+                },
+                {
+                  '@type': 'SoftwareApplication',
+                  name: 'OmniMedia',
+                  applicationCategory: 'DeveloperApplication',
+                  operatingSystem: 'Any',
+                  url: 'https://useomnimedia.com/',
+                },
+              ],
+            }).replace(/</g, '\\u003c'),
+          }}
+        />
         {/* Anti-FOUC Theme Script */}
         <script
           dangerouslySetInnerHTML={{

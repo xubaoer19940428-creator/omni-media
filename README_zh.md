@@ -5,7 +5,7 @@
 
   <h1>OmniMedia</h1>
 
-  <p><strong>在一个地方解析、预览并下载 36 个社交平台的公开媒体。</strong></p>
+  <p><strong>在一个地方解析、预览并下载 39 个社交平台的公开媒体。</strong></p>
 
   <p>
     粘贴链接或 App 中复制的完整分享文本，即可查看统一格式的媒体信息、
@@ -23,7 +23,7 @@
   </p>
 
   <p>
-    <img src="https://img.shields.io/badge/支持平台-36-5b5bd6?style=flat-square" alt="支持 36 个平台">
+    <img src="https://img.shields.io/badge/支持平台-39-5b5bd6?style=flat-square" alt="支持 39 个平台">
     <img src="https://img.shields.io/badge/Python-3.10+-3776ab?style=flat-square&logo=python&logoColor=white" alt="Python 3.10+">
     <img src="https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js" alt="Next.js 16">
     <a href="LICENSE"><img src="https://img.shields.io/badge/许可证-MIT-green?style=flat-square" alt="MIT 许可证"></a>
@@ -74,6 +74,7 @@
 | Odysee | Internet Archive | Imgur | LinkedIn |
 | Snapchat | PeerTube | Gab | Truth Social |
 | Medal.tv | RuTube | Coub | Odnoklassniki |
+| Bluesky | Dropbox | Google Drive | |
 
 OmniMedia 面向公开且无需登录的媒体。付费、私密、需要登录、地区限制、
 已删除或受 DRM 保护的内容可能无法使用，本项目也不会尝试绕过这些限制。

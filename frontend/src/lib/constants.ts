@@ -270,6 +270,15 @@ export const SUPPORTED_PLATFORMS: PlatformConfig[] = [
   },
   {
     key: 'odnoklassniki', name: 'Odnoklassniki', color: '#f7931e', domains: ['ok.ru'], supportsNoWatermark: false, supportsGallery: false, supportsAudio: false
+  },
+  {
+    key: 'bluesky', name: 'Bluesky', color: '#1185fe', domains: ['bsky.app', 'main.bsky.dev'], supportsNoWatermark: false, supportsGallery: false, supportsAudio: false
+  },
+  {
+    key: 'dropbox', name: 'Dropbox', color: '#0061ff', domains: ['dropbox.com'], supportsNoWatermark: false, supportsGallery: false, supportsAudio: false
+  },
+  {
+    key: 'googledrive', name: 'Google Drive', color: '#0f9d58', domains: ['drive.google.com', 'docs.google.com', 'drive.usercontent.google.com'], supportsNoWatermark: false, supportsGallery: false, supportsAudio: false
   }
 ];
 

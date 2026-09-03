@@ -36,7 +36,7 @@ export const McpBentoSection: React.FC<McpBentoSectionProps> = ({ onExplorePlayg
           <span>{lang === 'zh' ? '开发者 API 与结构化数据' : 'DEVELOPER API & STRUCTURED DATA'}</span>
         </div>
         <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-          {lang === 'zh' ? '一个接口连接 36 个平台解析器' : 'One API for 36 Platform Parsers'}
+          {lang === 'zh' ? '一个接口连接 39 个平台解析器' : 'One API for 39 Platform Parsers'}
         </h2>
         <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
           {lang === 'zh'
@@ -121,7 +121,7 @@ export const McpBentoSection: React.FC<McpBentoSectionProps> = ({ onExplorePlayg
           </div>
         </div>
 
-        {/* Bento 3: 36-platform scraper core */}
+        {/* Bento 3: 39-platform scraper core */}
         <div
           onMouseMove={handleMouseMove}
           className="tikhub-card rounded-2xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-6 group"
@@ -132,7 +132,7 @@ export const McpBentoSection: React.FC<McpBentoSectionProps> = ({ onExplorePlayg
             </div>
 
             <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-              {lang === 'zh' ? '36 个平台注册解析器' : '36 Registered Platform Parsers'}
+              {lang === 'zh' ? '39 个平台注册解析器' : '39 Registered Platform Parsers'}
             </h3>
 
             <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">

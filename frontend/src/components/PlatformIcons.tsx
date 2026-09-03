@@ -238,6 +238,12 @@ export const PlatformIcon: React.FC<{ platformKey: string; className?: string; s
       return <BrandPathIcon color="#f57c00" className={className} size={size} path="M12 2.5 21.5 12 12 21.5 2.5 12 12 2.5zm0 4.1L6.6 12l5.4 5.4 5.4-5.4L12 6.6z" />;
     case 'archive_org':
       return <BrandPathIcon color="#e63946" className={className} size={size} path="M3 4h18v3H3V4zm2 5h14v11H5V9zm3 2v7h2v-7H8zm6 0v7h2v-7h-2z" />;
+    case 'bluesky':
+      return <BrandPathIcon color="#1185fe" className={className} size={size} path="M12 11.2C10.6 8.4 6.8 3.4 3.3 2.1 1.4 1.4.7 1.8 1 4.1c.2 1.8 1.1 5 2 6.4 1.2 1.9 3.2 2.3 5.6 1.9-4.1.7-7.8 2.4-6.1 5.9 1.8 3.7 6.9-1.5 9.5-4.1 2.6 2.6 7.7 7.8 9.5 4.1 1.7-3.5-2-5.2-6.1-5.9 2.4.4 4.4 0 5.6-1.9.9-1.4 1.8-4.6 2-6.4.3-2.3-.4-2.7-2.3-2C17.2 3.4 13.4 8.4 12 11.2z" />;
+    case 'dropbox':
+      return <BrandPathIcon color="#0061ff" className={className} size={size} path="M6.2 4 2 7.1l4.2 3.2L10.4 7 6.2 4zm11.6 0-4.2 3 4.2 3.3L22 7.1 17.8 4zM6.2 11.5 2 14.7l4.2 3.1 4.2-3.1-4.2-3.2zm11.6 0-4.2 3.2 4.2 3.1 4.2-3.1-4.2-3.2zM12 15.4 7.8 18.5 12 21.6l4.2-3.1-4.2-3.1z" />;
+    case 'googledrive':
+      return <BrandPathIcon color="#0f9d58" className={className} size={size} path="M8.2 3h7.6L23 17.5h-7.6L8.2 3zM8.2 3 1 15.5 4.8 22l7.2-12.5L8.2 3zM4.8 22h14.4l3.8-6.5H8.6L4.8 22z" />;
     default:
       return <GenericPlatformIcon className={className} size={size} />;
   }

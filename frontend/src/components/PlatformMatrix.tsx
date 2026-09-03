@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import {
   Globe,
   Search,
   Check,
+  Minus,
   ArrowUpRight
 } from 'lucide-react';
 import { SUPPORTED_PLATFORMS } from '@/lib/constants';
@@ -14,6 +16,14 @@ import { PlatformIcon } from './PlatformIcons';
 interface PlatformMatrixProps {
   onTestUrl?: (url: string) => void;
 }
+
+const CapabilityIcon: React.FC<{ enabled: boolean }> = ({ enabled }) => (
+  enabled ? (
+    <Check aria-label="Supported" className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400" />
+  ) : (
+    <Minus aria-label="Not advertised" className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600" />
+  )
+);
 
 export const PlatformMatrix: React.FC<PlatformMatrixProps> = ({ onTestUrl }) => {
   const { t } = useTranslation();
@@ -87,31 +97,39 @@ export const PlatformMatrix: React.FC<PlatformMatrixProps> = ({ onTestUrl }) => 
               <div className="space-y-1.5 pt-3 border-t border-slate-100 dark:border-slate-800/80 text-xs">
                 <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-[11px]">
                   <span>{t.platforms.noWatermark}</span>
-                  <Check className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400" />
+                  <CapabilityIcon enabled={platform.supportsNoWatermark} />
                 </div>
 
                 <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-[11px]">
                   <span>{t.platforms.galleryHd}</span>
-                  <Check className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400" />
+                  <CapabilityIcon enabled={platform.supportsGallery} />
                 </div>
 
                 <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-[11px]">
                   <span>{t.platforms.audioExtractor}</span>
-                  <Check className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400" />
+                  <CapabilityIcon enabled={platform.supportsAudio} />
                 </div>
               </div>
             </div>
 
             {/* Quick Demo Test */}
-            {platform.demoUrl && (
-              <button
-                onClick={() => onTestUrl?.(platform.demoUrl!)}
-                className="w-full btn-secondary-pill text-xs flex items-center justify-center gap-1 group-hover:border-blue-500/40"
+            <div className="space-y-2">
+              {platform.demoUrl && (
+                <button
+                  onClick={() => onTestUrl?.(platform.demoUrl!)}
+                  className="w-full btn-secondary-pill text-xs flex items-center justify-center gap-1 group-hover:border-blue-500/40"
+                >
+                  <span>{t.platforms.testInWorkbench}</span>
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </button>
+              )}
+              <Link
+                href={`/platform/${platform.key}/`}
+                className="flex items-center justify-center text-[11px] font-semibold text-blue-600 hover:text-blue-500 dark:text-cyan-300 dark:hover:text-cyan-200"
               >
-                <span>{t.platforms.testInWorkbench}</span>
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              </button>
-            )}
+                {t.platforms.learnMore}
+              </Link>
+            </div>
           </div>
         ))}
       </div>
