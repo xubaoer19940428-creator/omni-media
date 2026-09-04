@@ -4,6 +4,7 @@ from pathlib import Path
 from urllib.parse import urljoin, urlparse
 import base64
 import hashlib
+import importlib.util
 import ipaddress
 import logging
 import math
@@ -21,6 +22,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 from storage import StoragePublishError, create_storage_backend
 from universal_downloader import UniversalDownloader
+from gallery_integrations import GalleryError, GalleryNotInstalled, resolve_gallery
 
 
 LOG_LEVEL = getattr(logging, os.environ.get('LOG_LEVEL', 'INFO').upper(), logging.INFO)
@@ -57,6 +59,7 @@ CLEANUP_INTERVAL_SECONDS = _env_int('CLEANUP_INTERVAL_SECONDS', 60)
 MAX_PROXY_IMAGE_BYTES = _env_int('MAX_PROXY_IMAGE_BYTES', 8 * 1024 * 1024)
 MAX_PROXY_REDIRECTS = _env_int('MAX_PROXY_REDIRECTS', 3)
 DOWNLOAD_RATE_LIMIT = _env_int('DOWNLOAD_RATE_LIMIT', 4)
+GALLERY_RATE_LIMIT = _env_int('GALLERY_RATE_LIMIT', 8)
 PARSE_RATE_LIMIT = _env_int('PARSE_RATE_LIMIT', 20)
 PROFILE_RATE_LIMIT = _env_int('PROFILE_RATE_LIMIT', 8)
 FILE_RATE_LIMIT = _env_int('FILE_RATE_LIMIT', 60)
@@ -158,6 +161,10 @@ _image_session.trust_env = False
 
 downloader = UniversalDownloader(DOWNLOAD_DIR)
 storage_backend = create_storage_backend()
+
+
+def _gallery_dl_available():
+    return importlib.util.find_spec('gallery_dl') is not None
 
 
 class ImageProxyError(Exception):
@@ -708,6 +715,7 @@ def health_check():
         'timestamp': time.time(),
         'supported_platforms_count': len(downloader.get_supported_platforms()),
         'storage_backend': storage_backend.name,
+        'enhancements': {'gallery_dl': _gallery_dl_available()},
     })
 
 
@@ -1009,6 +1017,27 @@ def cleanup_files():
     except OSError:
         logging.exception('Could not delete cached download')
         return jsonify({'error': 'Could not clear the cached file'}), 500
+
+
+@app.route('/api/gallery/resolve', methods=['POST'])
+def resolve_gallery_urls():
+    """Resolve a bounded public image/gallery URL list with gallery-dl."""
+    limited = _rate_limit_response('gallery-resolve', GALLERY_RATE_LIMIT)
+    if limited:
+        return limited
+    data = _json_object()
+    if data is None:
+        return jsonify({'error': 'A JSON object is required'}), 400
+    max_items = data.get('max_items', 40)
+    if isinstance(max_items, bool) or not isinstance(max_items, int):
+        return jsonify({'error': 'max_items must be an integer'}), 400
+    try:
+        urls = resolve_gallery(data.get('url', ''), max_items=max_items)
+        return jsonify({'success': True, 'count': len(urls), 'images': urls})
+    except GalleryNotInstalled:
+        return jsonify({'error': 'Gallery enhancement is not installed'}), 503
+    except GalleryError as exc:
+        return jsonify({'error': str(exc)}), 422
 
 @app.route('/api/proxy-image')
 def proxy_image():

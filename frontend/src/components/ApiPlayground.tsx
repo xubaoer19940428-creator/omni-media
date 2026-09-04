@@ -16,7 +16,7 @@ import { useTranslation } from '@/lib/i18n';
 export const ApiPlayground: React.FC = () => {
   const { t } = useTranslation();
   const [selectedLang, setSelectedLang] = useState<'curl' | 'python' | 'node' | 'go' | 'php'>('curl');
-  const [selectedEndpoint, setSelectedEndpoint] = useState<'/api/parse' | '/api/download' | '/api/batch-parse'>('/api/parse');
+  const [selectedEndpoint, setSelectedEndpoint] = useState<'/api/parse' | '/api/download' | '/api/batch-parse' | '/api/gallery/resolve'>('/api/parse');
   const [apiUrl, setApiUrl] = useState(DEMO_LINKS[0].url);
   const [copied, setCopied] = useState(false);
   const [responseJson, setResponseJson] = useState<string | null>(null);
@@ -184,8 +184,8 @@ echo $response;
               {/* Endpoint selection */}
               <div>
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5 font-mono">{t.playground.targetEndpoint}</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(['/api/parse', '/api/download', '/api/batch-parse'] as const).map((ep) => (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {(['/api/parse', '/api/download', '/api/batch-parse', '/api/gallery/resolve'] as const).map((ep) => (
                     <button
                       key={ep}
                       onClick={() => setSelectedEndpoint(ep)}

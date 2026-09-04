@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Film,
   Image as ImageIcon,
@@ -19,7 +19,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { ParsedMedia } from '@/types';
-import { getProxyImageUrl, triggerServerDownload } from '@/lib/api';
+import { getProxyImageUrl, resolveGalleryUrls, triggerServerDownload } from '@/lib/api';
 import { useTranslation } from '@/lib/i18n';
 
 interface ResultCardProps {
@@ -36,11 +36,19 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
   const [videoPreviewFailed, setVideoPreviewFailed] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState('');
   const [audioOnly, setAudioOnly] = useState(false);
+  const [galleryLoading, setGalleryLoading] = useState(false);
+  const [galleryError, setGalleryError] = useState<string | null>(null);
+  const [galleryImages, setGalleryImages] = useState<string[]>(data.images || []);
+  const galleryRequestRef = useRef(0);
 
   useEffect(() => {
     setVideoPreviewFailed(false);
     setSelectedFormat('');
     setAudioOnly(data.media_type === 'audio' && !!data.audio_url);
+    setGalleryImages(data.images || []);
+    setGalleryError(null);
+    setGalleryLoading(false);
+    galleryRequestRef.current += 1;
     if ((data.media_type === 'gallery' || data.media_type === 'image') && data.images?.length) {
       setActiveTab('gallery');
     } else if (data.media_type === 'audio' && data.audio_url) {
@@ -48,9 +56,11 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
     } else {
       setActiveTab('video');
     }
-  }, [data.video_url, data.media_type, data.images, data.audio_url]);
+  }, [data.original_url, data.video_url, data.media_type, data.images, data.audio_url]);
 
-  const hasImages = data.images && data.images.length > 0;
+  // Keep the Gallery tab available for URLs whose primary parser found no
+  // images; that is the main case where gallery-dl can discover media.
+  const hasImages = Boolean(data.original_url || data.images?.length);
   const hasAudio = !!data.audio_url;
   const authorName = typeof data.author === 'string' ? data.author : data.author?.nickname || data.author?.name || 'Creator';
   const authorAvatar = typeof data.author === 'object' ? data.author?.avatar : undefined;
@@ -88,6 +98,24 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
   const availableFormats = (data.formats || data.sources || [])
     .filter((format) => (format.format_id || format.id) && format.url && format.vcodec !== 'none')
     .slice(0, 12);
+
+  const handleGalleryResolve = async () => {
+    if (!data.original_url) return;
+    const requestId = ++galleryRequestRef.current;
+    setGalleryLoading(true);
+    setGalleryError(null);
+    try {
+      const urls = await resolveGalleryUrls(data.original_url);
+      if (requestId !== galleryRequestRef.current) return;
+      setGalleryImages((current) => Array.from(new Set([...current, ...urls])).slice(0, 40));
+    } catch (err: any) {
+      if (requestId !== galleryRequestRef.current) return;
+      setGalleryError(err.message || 'Gallery extraction failed');
+    } finally {
+      if (requestId === galleryRequestRef.current) setGalleryLoading(false);
+    }
+  };
+
 
   return (
     <div className="w-full tikhub-panel rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xl overflow-hidden animate-in fade-in duration-300">
@@ -138,7 +166,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
               }`}
             >
               <ImageIcon className="w-3.5 h-3.5" />
-              <span>{t.result.gallery} ({data.images?.length})</span>
+              <span>{t.result.gallery} ({galleryImages.length})</span>
             </button>
           )}
 
@@ -371,20 +399,29 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
         {activeTab === 'gallery' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">{t.result.foundPhotos} ({data.images?.length || 0})</span>
-              <button
-                onClick={() => {
-                  data.images?.forEach((img) => window.open(img, '_blank'));
-                }}
-                className="btn-gradient-pill text-xs flex items-center gap-1.5"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>{t.result.openAllTabs}</span>
-              </button>
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">{t.result.foundPhotos} ({galleryImages.length})</span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => { galleryImages.forEach((img) => window.open(img, '_blank', 'noopener,noreferrer')); }}
+                  className="btn-gradient-pill text-xs flex items-center gap-1.5"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>{t.result.openAllTabs}</span>
+                </button>
+                <button
+                  onClick={() => { void handleGalleryResolve(); }}
+                  disabled={galleryLoading || !data.original_url}
+                  className="btn-secondary-pill text-xs flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  <span>{galleryLoading ? t.result.galleryResolving : t.result.resolveGallery}</span>
+                </button>
+              </div>
             </div>
+            {galleryError && <p className="text-xs text-amber-600 dark:text-amber-300">{galleryError}</p>}
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {data.images?.map((img, idx) => (
+              {galleryImages.map((img, idx) => (
                 <div
                   key={idx}
                   className="group relative aspect-[3/4] rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-md"

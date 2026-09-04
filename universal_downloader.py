@@ -1303,6 +1303,62 @@ class UniversalDownloader:
         finally:
             response.close()
 
+    def _download_tiktok_resolved_media(
+        self,
+        media_url: str,
+        filepath: str,
+        max_bytes: Optional[int],
+        referer: str,
+    ) -> bool:
+        """Stream a TikTok CDN URL returned by the custom public parser."""
+        parsed = urlparse(media_url)
+        hostname = (parsed.hostname or '').lower().rstrip('.')
+        if parsed.scheme != 'https' or not (
+            hostname.endswith('.tiktok.com') or hostname.endswith('.tiktokcdn.com')
+        ):
+            raise ValueError('Untrusted TikTok media URL')
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)',
+            'Referer': referer,
+        }
+        if _has_curl_cffi:
+            session = cffi_requests.Session(impersonate='chrome120')
+            response = session.get(
+                media_url,
+                allow_redirects=False,
+                timeout=(self.connect_timeout, self.download_timeout),
+                headers=headers,
+                stream=True,
+            )
+        else:
+            response = requests.get(
+                media_url,
+                allow_redirects=False,
+                timeout=(self.connect_timeout, self.download_timeout),
+                headers=headers,
+                stream=True,
+            )
+        try:
+            response.raise_for_status()
+            content_type = response.headers.get('Content-Type', '').lower()
+            if content_type and not content_type.startswith('video/'):
+                raise ValueError('Unexpected TikTok media response type')
+            declared_length = int(response.headers.get('Content-Length', 0) or 0)
+            if max_bytes and declared_length > max_bytes:
+                raise DownloadSizeLimitExceeded('Download exceeds the configured size limit')
+            downloaded_bytes = 0
+            with open(filepath, 'wb') as output:
+                for chunk in response.iter_content(chunk_size=65536):
+                    if not chunk:
+                        continue
+                    downloaded_bytes += len(chunk)
+                    if max_bytes and downloaded_bytes > max_bytes:
+                        raise DownloadSizeLimitExceeded('Download exceeds the configured size limit')
+                    output.write(chunk)
+            return downloaded_bytes > 0
+        finally:
+            response.close()
+
     def get_profile_info(
         self,
         url: str,
@@ -1820,6 +1876,29 @@ class UniversalDownloader:
             else:
                 logger.warning('[Douyin] No downloadable source URL was found')
                 return None
+
+        # TikTok's custom parser can obtain a playable CDN URL even when
+        # yt-dlp is blocked by the upstream IP policy. Reuse that URL for the
+        # server-side download instead of failing after a second yt-dlp call.
+        if platform_key == 'tiktok' and not audio_only:
+            try:
+                resolved = self.get_video_info(url)
+                if resolved.get('success'):
+                    formats = resolved.get('formats') or []
+                    requested_id = (format_selector or '').split('+', 1)[0].split('/', 1)[0]
+                    selected = next(
+                        (item for item in formats if item.get('format_id') == requested_id),
+                        None,
+                    ) if requested_id else None
+                    media_url = (selected or {}).get('url') or resolved.get('video_url')
+                    if media_url and self._download_tiktok_resolved_media(
+                        media_url, filepath, max_bytes, url
+                    ):
+                        logger.info('[TikTok] Downloaded the resolved source file')
+                        return os.path.basename(filepath)
+            except Exception as exc:
+                cleanup_partial_files()
+                logger.warning('[TikTok] Resolved media download failed (%s)', type(exc).__name__)
         
         try:
             logger.info('[%s] Downloading the source file', platform_name)

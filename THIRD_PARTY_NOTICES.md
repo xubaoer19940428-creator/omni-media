@@ -10,3 +10,14 @@
 - License text: [`LICENSES/Apache-2.0.txt`](LICENSES/Apache-2.0.txt)
 
 The adapted file retains the upstream attribution and license header.
+
+## gallery-dl
+
+The optional gallery URL enhancement invokes `gallery-dl` as a separate process:
+
+- Copyright: Mike Fährmann and gallery-dl contributors
+- Source: <https://github.com/mikf/gallery-dl>
+- License: GNU General Public License v2.0 or later
+
+OmniMedia does not copy or modify gallery-dl source code. Deployments that install
+the optional dependency must comply with its upstream license and notices.

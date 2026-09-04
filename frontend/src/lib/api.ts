@@ -133,6 +133,16 @@ export async function batchParseMediaUrls(urls: string[]): Promise<{
   return { success: true, total: results.length, results };
 }
 
+export async function resolveGalleryUrls(url: string, maxItems = 40): Promise<string[]> {
+  const res = await fetch(`${API_BASE_URL}/api/gallery/resolve`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url, max_items: maxItems }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.success) throw new Error(data.error || 'Gallery extraction failed.');
+  return Array.isArray(data.images) ? data.images : [];
+}
+
 /**
  * API client to trigger server-side video download
  */

@@ -209,6 +209,10 @@ curl -X POST http://localhost:7860/api/download \
 - `GET /api/health` — 服务健康状态
 - `GET /api/platforms` — 支持平台列表
 - `GET /api/proxy-image?url=...` — 有大小限制的封面图片代理
+- `POST /api/gallery/resolve` — 使用可选的 gallery-dl 解析公开图集 URL（无需 API key）
+
+图集增强默认使用本地已安装的 gallery-dl；未安装时返回 503，不影响主解析和下载流程。
+启用方法：`pip install -r requirements-optional.txt`。
 
 ## 合理使用
 

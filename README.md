@@ -246,6 +246,11 @@ Other useful endpoints:
 - `GET /api/health` — service health
 - `GET /api/platforms` — supported platform registry
 - `GET /api/proxy-image?url=...` — bounded cover-image proxy
+- `POST /api/gallery/resolve` — optional gallery-dl public gallery URL extraction (no API key)
+
+The gallery enhancement uses a locally installed gallery-dl process. If it is not
+installed, the endpoint returns 503 without affecting the primary parser or downloader.
+Enable it with `pip install -r requirements-optional.txt`.
 
 ## Responsible use
 
