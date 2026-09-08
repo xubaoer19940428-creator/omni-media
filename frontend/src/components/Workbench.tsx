@@ -28,6 +28,21 @@ interface WorkbenchProps {
   autoParse?: boolean;
 }
 
+function isSafeHistoryItem(value: unknown): value is ParsedMedia {
+  if (!value || typeof value !== 'object') return false;
+  const item = value as ParsedMedia;
+  if (item.success !== true || typeof item.original_url !== 'string' || item.original_url.length > 4096) {
+    return false;
+  }
+  if (extractUrlFromText(item.original_url).platformKey === 'unknown') return false;
+  if (item.title !== undefined && typeof item.title !== 'string') return false;
+  for (const candidate of [item.cover, item.cover_url]) {
+    if (candidate === undefined || candidate === '') continue;
+    if (typeof candidate !== 'string' || !/^https?:\/\//i.test(candidate)) return false;
+  }
+  return true;
+}
+
 export const Workbench: React.FC<WorkbenchProps> = ({ initialUrl = '', autoParse = false }) => {
   const { t } = useTranslation();
   const [inputText, setInputText] = useState(initialUrl);
@@ -46,13 +61,39 @@ export const Workbench: React.FC<WorkbenchProps> = ({ initialUrl = '', autoParse
   const resultRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const autoParsedUrlRef = useRef('');
+  const activeRequestRef = useRef<AbortController | null>(null);
+  const activeRequestTargetRef = useRef('');
+  const requestVersionRef = useRef(0);
+
+  const beginRequest = (target: string) => {
+    activeRequestRef.current?.abort();
+    const controller = new AbortController();
+    activeRequestRef.current = controller;
+    activeRequestTargetRef.current = extractUrlFromText(target).url;
+    requestVersionRef.current += 1;
+    return { controller, version: requestVersionRef.current };
+  };
+
+  const cancelActiveRequest = () => {
+    activeRequestRef.current?.abort();
+    activeRequestRef.current = null;
+    activeRequestTargetRef.current = '';
+    requestVersionRef.current += 1;
+  };
 
   // Auto-detect platform as user types or pastes
   useEffect(() => {
     const { url, platformKey } = extractUrlFromText(inputText);
     setCleanUrl(url);
     setDetectedPlatform(platformKey);
+    if (activeRequestRef.current && url !== activeRequestTargetRef.current) {
+      cancelActiveRequest();
+      setLoading(false);
+      setProfileLoadingMore(false);
+    }
   }, [inputText]);
+
+  useEffect(() => () => activeRequestRef.current?.abort(), []);
 
   // Keep an extension-provided query URL in sync after the static page hydrates.
   useEffect(() => {
@@ -66,7 +107,8 @@ export const Workbench: React.FC<WorkbenchProps> = ({ initialUrl = '', autoParse
     try {
       const saved = localStorage.getItem('omnimedia_history');
       if (saved) {
-        setHistory(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        setHistory(Array.isArray(parsed) ? parsed.filter(isSafeHistoryItem).slice(0, 8) : []);
       }
     } catch {}
   }, []);
@@ -94,11 +136,13 @@ export const Workbench: React.FC<WorkbenchProps> = ({ initialUrl = '', autoParse
   }, [showDemoDropdown]);
 
   const saveToHistory = (item: ParsedMedia) => {
-    try {
-      const updated = [item, ...history.filter(h => h.original_url !== item.original_url)].slice(0, 8);
-      setHistory(updated);
-      localStorage.setItem('omnimedia_history', JSON.stringify(updated));
-    } catch {}
+    setHistory((current) => {
+      const updated = [item, ...current.filter(h => h.original_url !== item.original_url)].slice(0, 8);
+      try {
+        localStorage.setItem('omnimedia_history', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
   };
 
   const clearHistory = () => {
@@ -126,14 +170,20 @@ export const Workbench: React.FC<WorkbenchProps> = ({ initialUrl = '', autoParse
 
     setLoading(true);
     setError(null);
+    const { controller, version } = beginRequest(target);
     try {
-      const data = await parseMediaUrl(target);
+      const data = await parseMediaUrl(target, controller.signal);
+      if (version !== requestVersionRef.current) return;
       setResult(data);
       saveToHistory(data);
     } catch (err: any) {
+      if (version !== requestVersionRef.current || err?.name === 'AbortError') return;
       setError(err.message || 'Parsing failed');
     } finally {
-      setLoading(false);
+      if (version === requestVersionRef.current) {
+        activeRequestRef.current = null;
+        setLoading(false);
+      }
     }
   };
 
@@ -147,8 +197,10 @@ export const Workbench: React.FC<WorkbenchProps> = ({ initialUrl = '', autoParse
     if (append) setProfileLoadingMore(true);
     else setLoading(true);
     setError(null);
+    const { controller, version } = beginRequest(target);
     try {
-      const data = await parseProfileUrl(target, 12, cursor);
+      const data = await parseProfileUrl(target, 12, cursor, controller.signal);
+      if (version !== requestVersionRef.current) return;
       setProfileResult((current) => append && current
         ? {
             ...data,
@@ -157,14 +209,21 @@ export const Workbench: React.FC<WorkbenchProps> = ({ initialUrl = '', autoParse
           }
         : data);
     } catch (err: any) {
+      if (version !== requestVersionRef.current || err?.name === 'AbortError') return;
       setError(err.message || 'Profile parsing failed');
     } finally {
-      if (append) setProfileLoadingMore(false);
-      else setLoading(false);
+      if (version === requestVersionRef.current) {
+        activeRequestRef.current = null;
+        if (append) setProfileLoadingMore(false);
+        else setLoading(false);
+      }
     }
   };
 
   const handleModeChange = (nextMode: 'media' | 'profile') => {
+    cancelActiveRequest();
+    setLoading(false);
+    setProfileLoadingMore(false);
     setMode(nextMode);
     setError(null);
     setResult(null);
@@ -412,7 +471,10 @@ export const Workbench: React.FC<WorkbenchProps> = ({ initialUrl = '', autoParse
             {history.map((item, idx) => (
               <div
                 key={idx}
-                onClick={() => setResult(item)}
+                onClick={() => {
+                  setMode('media');
+                  setResult(item);
+                }}
                 className="tikhub-card rounded-xl p-3 cursor-pointer flex items-center gap-3 group"
               >
                 {item.cover || item.cover_url ? (

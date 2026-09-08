@@ -81,6 +81,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
       const res = await triggerServerDownload(data.original_url || data.video_url || '', {
         formatSelector: override?.formatSelector ?? (selectedFormat || undefined),
         audioOnly: override?.audioOnly ?? audioOnly,
+        mediaToken: data.media_token,
       });
       if (downloadWindow) {
         downloadWindow.location.href = res.download_url;

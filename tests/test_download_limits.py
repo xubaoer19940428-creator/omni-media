@@ -74,6 +74,12 @@ class StreamingResponse:
         self.closed = True
 
 
+class TypedStreamingResponse(StreamingResponse):
+    def __init__(self, content_type='video/mp4'):
+        super().__init__()
+        self.headers = {'Content-Type': content_type, 'Content-Length': '5'}
+
+
 class StreamingSession:
     response = None
     request_kwargs = None
@@ -87,6 +93,61 @@ class StreamingSession:
 
 
 class DownloadLimitTests(unittest.TestCase):
+    @patch('universal_downloader.socket.getaddrinfo', return_value=[(None, None, None, None, ('93.184.216.34', 443))])
+    def test_parser_resolved_media_is_streamed_without_second_extraction(self, _dns):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            downloader = UniversalDownloader(temp_dir)
+            target = Path(temp_dir) / f'youtube_{"a" * 32}.mp4'
+            response = TypedStreamingResponse()
+            with (
+                patch.object(downloader_module, '_has_curl_cffi', False),
+                patch.object(downloader_module.requests, 'get', return_value=response) as request_get,
+                patch.object(downloader_module.yt_dlp, 'YoutubeDL') as youtube_dl,
+            ):
+                result = downloader.download_video(
+                    YOUTUBE_URL,
+                    str(target),
+                    max_bytes=10,
+                    resolved_media_url='https://cdn.example/video.mp4',
+                )
+
+            self.assertEqual(target.name, result)
+            self.assertEqual(b'12345', target.read_bytes())
+            self.assertFalse(youtube_dl.called)
+            self.assertFalse(request_get.call_args.kwargs['allow_redirects'])
+            self.assertTrue(response.closed)
+
+    def test_parser_resolved_media_rejects_private_hosts_before_request(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            downloader = UniversalDownloader(temp_dir)
+            with patch.object(downloader_module.requests, 'get') as request_get:
+                with self.assertRaises(ValueError):
+                    downloader._download_resolved_media(
+                        'https://127.0.0.1/video.mp4',
+                        str(Path(temp_dir) / 'video.mp4'),
+                        10,
+                        YOUTUBE_URL,
+                    )
+            request_get.assert_not_called()
+
+    @patch('universal_downloader.socket.getaddrinfo', return_value=[(None, None, None, None, ('93.184.216.34', 443))])
+    def test_parser_resolved_media_requires_media_content_type(self, _dns):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            downloader = UniversalDownloader(temp_dir)
+            response = TypedStreamingResponse('text/html')
+            with (
+                patch.object(downloader_module, '_has_curl_cffi', False),
+                patch.object(downloader_module.requests, 'get', return_value=response),
+                self.assertRaises(ValueError),
+            ):
+                downloader._download_resolved_media(
+                    'https://cdn.example/video.mp4',
+                    str(Path(temp_dir) / 'video.mp4'),
+                    10,
+                    YOUTUBE_URL,
+                )
+            self.assertTrue(response.closed)
+
     def test_yt_dlp_download_is_bounded_and_oversized_file_is_removed(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             downloader = UniversalDownloader(temp_dir)

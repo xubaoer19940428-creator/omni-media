@@ -33,6 +33,7 @@ class ApiSecurityTests(unittest.TestCase):
         )
         self.download_dir_patch.start()
         app_module._rate_limit_state.clear()
+        app_module._media_tokens.clear()
         app_module._last_cleanup_check = -float('inf')
         app_module.app.config.update(TESTING=True)
         self.client = app_module.app.test_client()
@@ -432,6 +433,99 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertEqual('Example', data['title'])
         self.assertEqual('https://cdn.example/video.mp4', data['video_url'])
         self.assertEqual(4, data['views'])
+        self.assertRegex(data['media_token'], r'^[0-9a-f]{32}$')
+        self.assertEqual(app_module.MEDIA_TOKEN_TTL_SECONDS, data['media_token_expires_in'])
+
+    def test_download_reuses_media_url_bound_to_parse_token(self):
+        parsed = {
+            'success': True,
+            'platform': 'youtube',
+            'video_info': {'video_url': 'https://cdn.example/video.mp4'},
+        }
+        with patch.object(app_module.downloader, 'process_url', return_value=parsed):
+            token = self.client.post('/api/parse', json={'url': YOUTUBE_URL}).get_json()['media_token']
+
+        captured = {}
+
+        def fake_download(_url, filename, **options):
+            captured.update(options)
+            Path(filename).write_bytes(b'video')
+            return Path(filename).name
+
+        with patch.object(app_module.downloader, 'download_video', side_effect=fake_download):
+            response = self.client.post('/api/download', json={
+                'original_url': YOUTUBE_URL,
+                'media_token': token,
+            })
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual('https://cdn.example/video.mp4', captured['resolved_media_url'])
+
+    def test_media_token_is_ignored_for_wrong_url_expiry_or_invalid_shape(self):
+        def create_token():
+            return app_module._store_media_token({
+                'success': True,
+                'original_url': YOUTUBE_URL,
+                'platform_key': 'youtube',
+                'video_url': 'https://cdn.example/video.mp4',
+            })
+
+        wrong_url_token = create_token()
+        expired_token = create_token()
+        app_module._media_tokens[expired_token]['expires_at'] = time.monotonic() - 1
+        cases = [
+            ('https://youtu.be/BaW_jenozKc', wrong_url_token),
+            (YOUTUBE_URL, 'not-a-token'),
+            (YOUTUBE_URL, expired_token),
+        ]
+
+        for original_url, candidate_token in cases:
+            app_module._rate_limit_state.clear()
+            captured = {}
+
+            def fake_download(_url, filename, **options):
+                captured.update(options)
+                Path(filename).write_bytes(b'video')
+                return Path(filename).name
+
+            with patch.object(app_module.downloader, 'download_video', side_effect=fake_download):
+                response = self.client.post('/api/download', json={
+                    'original_url': original_url,
+                    'media_token': candidate_token,
+                })
+
+            self.assertEqual(200, response.status_code)
+            self.assertNotIn('resolved_media_url', captured)
+
+    def test_audio_or_combined_format_does_not_reuse_single_media_url(self):
+        token = app_module._store_media_token({
+            'success': True,
+            'original_url': YOUTUBE_URL,
+            'platform_key': 'youtube',
+            'video_url': 'https://cdn.example/video.mp4',
+            'formats': [{
+                'format_id': '137',
+                'url': 'https://cdn.example/video-only.mp4',
+                'acodec': 'none',
+            }],
+        })
+        self.assertIsNone(app_module._resolve_media_token(token, YOUTUBE_URL, audio_only=True))
+        self.assertIsNone(app_module._resolve_media_token(token, YOUTUBE_URL, format_selector='137+bestaudio/137'))
+        self.assertIsNone(app_module._resolve_media_token(token, YOUTUBE_URL, format_selector='137'))
+
+    def test_readiness_checks_reserved_download_capacity(self):
+        required = app_module.MIN_FREE_DISK_BYTES + (
+            app_module.MAX_DOWNLOAD_BYTES * app_module.MAX_CONCURRENT_DOWNLOADS
+        )
+        with patch.object(app_module.shutil, 'disk_usage', return_value=Mock(free=required)):
+            ready = self.client.get('/api/ready')
+        with patch.object(app_module.shutil, 'disk_usage', return_value=Mock(free=required - 1)):
+            not_ready = self.client.get('/api/ready')
+
+        self.assertEqual(200, ready.status_code)
+        self.assertEqual('ready', ready.get_json()['status'])
+        self.assertEqual(503, not_ready.status_code)
+        self.assertEqual('not_ready', not_ready.get_json()['status'])
 
     def test_request_id_is_generated_or_accepts_a_safe_caller_value(self):
         generated = self.client.get('/api/health')
@@ -759,20 +853,12 @@ class ApiSecurityTests(unittest.TestCase):
             self.assertNotIn('ETag', response.headers)
 
     def test_security_headers_include_csp_and_https_hsts(self):
-        with patch.object(
-            app_module,
-            'FRONTEND_SCRIPT_HASHES',
-            ("'sha256-test-inline-script-hash='",),
-        ):
-            response = self.client.get('/', base_url='https://quickclean.example')
+        response = self.client.get('/', base_url='https://quickclean.example')
 
         self.assertEqual(200, response.status_code)
         self.assertIn("default-src 'self'", response.headers['Content-Security-Policy'])
         self.assertNotIn("script-src 'self' 'unsafe-inline'", response.headers['Content-Security-Policy'])
-        self.assertIn(
-            "script-src 'self' 'sha256-test-inline-script-hash='",
-            response.headers['Content-Security-Policy'],
-        )
+        self.assertIn("'sha256-", response.headers['Content-Security-Policy'])
         csp = response.headers['Content-Security-Policy']
         script_src = csp.split('script-src ', 1)[1].split(';', 1)[0]
         connect_src = csp.split('connect-src ', 1)[1].split(';', 1)[0]
@@ -787,16 +873,23 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertNotIn('ETag', response.headers)
         response.close()
 
-    def test_csp_hashes_cover_all_exported_html_routes(self):
+    def test_csp_hashes_follow_rebuilt_html_without_process_restart(self):
         with tempfile.TemporaryDirectory() as frontend_dir:
             frontend_path = Path(frontend_dir)
-            (frontend_path / 'index.html').write_text('<script>window.home=1</script>', encoding='utf-8')
-            nested = frontend_path / 'privacy'
-            nested.mkdir()
-            (nested / 'index.html').write_text('<script>window.privacy=1</script>', encoding='utf-8')
+            index_path = frontend_path / 'index.html'
+            old_html = '<script>window.build="old"</script>'
+            new_html = '<script>window.build="new"</script>'
+            index_path.write_text(old_html, encoding='utf-8')
             with patch.object(app_module, 'FRONTEND_DIR', frontend_path):
-                hashes = app_module._frontend_script_hashes()
-            self.assertEqual(2, len(hashes))
+                old_response = self.client.get('/')
+                index_path.write_text(new_html, encoding='utf-8')
+                new_response = self.client.get('/')
+
+            old_hash = app_module._inline_script_hashes(old_html)[0]
+            new_hash = app_module._inline_script_hashes(new_html)[0]
+            self.assertIn(old_hash, old_response.headers['Content-Security-Policy'])
+            self.assertNotIn(old_hash, new_response.headers['Content-Security-Policy'])
+            self.assertIn(new_hash, new_response.headers['Content-Security-Policy'])
 
     def test_cleanup_rejects_path_traversal(self):
         victim = Path(self.temp_dir.name) / 'victim.txt'

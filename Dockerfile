@@ -39,6 +39,6 @@ EXPOSE 7860
 USER quickclean
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-    CMD curl --fail --silent "http://127.0.0.1:${PORT:-7860}/api/health" >/dev/null || exit 1
+    CMD curl --fail --silent "http://127.0.0.1:${PORT:-7860}/api/ready" >/dev/null || exit 1
 
 CMD ["sh", "-c", "exec gunicorn --bind 0.0.0.0:${PORT:-7860} --workers 1 --threads ${GUNICORN_THREADS:-8} --timeout 600 --graceful-timeout 30 --access-logfile - app:app"]

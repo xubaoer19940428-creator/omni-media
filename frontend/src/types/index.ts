@@ -70,6 +70,8 @@ export interface ParsedMedia {
   platform?: string;
   platform_key?: PlatformKey;
   original_url?: string;
+  media_token?: string;
+  media_token_expires_in?: number;
   title?: string;
   description?: string;
   author?: string | AuthorInfo;

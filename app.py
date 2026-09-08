@@ -22,7 +22,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 from storage import StoragePublishError, create_storage_backend
 from universal_downloader import UniversalDownloader
-from gallery_integrations import GalleryError, GalleryNotInstalled, resolve_gallery
+from gallery_integrations import GalleryError, GalleryNotInstalled, classify_media_url, resolve_gallery
 
 
 LOG_LEVEL = getattr(logging, os.environ.get('LOG_LEVEL', 'INFO').upper(), logging.INFO)
@@ -75,6 +75,8 @@ MAX_PROFILE_ITEMS = min(_env_int('MAX_PROFILE_ITEMS', 12), 12)
 MAX_PROFILE_CURSOR = min(_env_int('MAX_PROFILE_CURSOR', 1200), 1200)
 MAX_RATE_LIMIT_CLIENTS = _env_int('MAX_RATE_LIMIT_CLIENTS', 10_000)
 BATCH_RATE_LIMIT = _env_int('BATCH_RATE_LIMIT', 4)
+MEDIA_TOKEN_TTL_SECONDS = min(_env_int('MEDIA_TOKEN_TTL_SECONDS', 300), 1800)
+MAX_MEDIA_TOKENS = _env_int('MAX_MEDIA_TOKENS', 2000)
 
 FRONTEND_DIR = Path(
     os.environ.get('FRONTEND_DIR', Path(__file__).parent / 'frontend' / 'out')
@@ -89,29 +91,17 @@ CORS_ALLOWED_ORIGINS = {
 }
 
 
-def _frontend_script_hashes():
-    html_paths = sorted(FRONTEND_DIR.rglob('*.html')) if FRONTEND_DIR.is_dir() else []
-    if not html_paths:
-        return ()
-
+def _inline_script_hashes(html):
+    """Return CSP hashes for the exact HTML body being sent to the browser."""
     hashes = []
-    for html_path in html_paths:
-        try:
-            html = html_path.read_text(encoding='utf-8')
-        except OSError:
-            logging.exception('Could not read the exported frontend for CSP hashing')
-            continue
-        for match in re.finditer(
-            r'<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>',
-            html,
-            re.IGNORECASE | re.DOTALL,
-        ):
-            digest = hashlib.sha256(match.group(1).encode('utf-8')).digest()
-            hashes.append(f"'sha256-{base64.b64encode(digest).decode('ascii')}'")
+    for match in re.finditer(
+        r'<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>',
+        html,
+        re.IGNORECASE | re.DOTALL,
+    ):
+        digest = hashlib.sha256(match.group(1).encode('utf-8')).digest()
+        hashes.append(f"'sha256-{base64.b64encode(digest).decode('ascii')}'")
     return tuple(dict.fromkeys(hashes))
-
-
-FRONTEND_SCRIPT_HASHES = _frontend_script_hashes()
 
 
 def _serve_frontend_html(directory, filename='index.html'):
@@ -149,13 +139,16 @@ ALLOWED_IMAGE_CONTENT_TYPES = {
     'image/webp',
 }
 REQUEST_ID_RE = re.compile(r'^[A-Za-z0-9_-]{8,64}$')
+MEDIA_TOKEN_RE = re.compile(r'^[0-9a-f]{32}$')
 
 _download_slots = threading.BoundedSemaphore(MAX_CONCURRENT_DOWNLOADS)
 _parse_slots = threading.BoundedSemaphore(MAX_CONCURRENT_PARSES)
 _rate_limit_state = defaultdict(deque)
 _rate_limit_lock = threading.Lock()
 _cleanup_check_lock = threading.Lock()
+_media_token_lock = threading.Lock()
 _last_cleanup_check = 0.0
+_media_tokens = {}
 _image_session = requests.Session()
 _image_session.trust_env = False
 
@@ -178,6 +171,58 @@ def _json_object():
         return None
     data = request.get_json(silent=True)
     return data if isinstance(data, dict) else None
+
+
+def _prune_media_tokens(now=None):
+    now = time.monotonic() if now is None else now
+    expired = [token for token, item in _media_tokens.items() if item['expires_at'] <= now]
+    for token in expired:
+        _media_tokens.pop(token, None)
+    while len(_media_tokens) >= MAX_MEDIA_TOKENS:
+        _media_tokens.pop(next(iter(_media_tokens)), None)
+
+
+def _store_media_token(result):
+    if not result.get('success') or not result.get('original_url'):
+        return None
+    now = time.monotonic()
+    token = uuid.uuid4().hex
+    snapshot = {
+        'original_url': result.get('original_url'),
+        'platform_key': result.get('platform_key') or result.get('platform'),
+        'video_url': result.get('video_url') or '',
+        'audio_url': result.get('audio_url') or '',
+        'formats': result.get('formats') or result.get('sources') or [],
+        'expires_at': now + MEDIA_TOKEN_TTL_SECONDS,
+    }
+    with _media_token_lock:
+        _prune_media_tokens(now)
+        _media_tokens[token] = snapshot
+    return token
+
+
+def _resolve_media_token(token, original_url, format_selector=None, audio_only=False):
+    if not isinstance(token, str) or not MEDIA_TOKEN_RE.fullmatch(token):
+        return None
+    now = time.monotonic()
+    with _media_token_lock:
+        _prune_media_tokens(now)
+        item = _media_tokens.get(token)
+    if not item or item['original_url'] != original_url:
+        return None
+    # Audio-only downloads require transcoding to MP3, while combined yt-dlp
+    # selectors can require multiple source files. Keep those on the normal
+    # downloader path instead of treating one cached URL as the final output.
+    if audio_only or (format_selector and '+' in format_selector):
+        return None
+    requested_id = (format_selector or '').split('+', 1)[0].split('/', 1)[0]
+    if requested_id:
+        for media_format in item.get('formats', []):
+            if isinstance(media_format, dict) and str(media_format.get('format_id') or media_format.get('id') or '') == requested_id:
+                if media_format.get('acodec') == 'none':
+                    return None
+                return media_format.get('url') or None
+    return item.get('video_url') or None
 
 
 def _cors_origin():
@@ -345,6 +390,10 @@ def _parse_media(share_url):
     try:
         result = downloader.process_url(share_url)
         normalized = _normalize_parse_result(result, share_url)
+        media_token = _store_media_token(normalized)
+        if media_token:
+            normalized['media_token'] = media_token
+            normalized['media_token_expires_in'] = MEDIA_TOKEN_TTL_SECONDS
         return normalized, 200 if normalized.get('success') else 400
     except Exception:
         logging.exception('Unexpected parse endpoint failure')
@@ -666,8 +715,14 @@ def add_security_headers(response):
         'camera=(), microphone=(), geolocation=()',
     )
     script_sources = "'self'"
-    if FRONTEND_SCRIPT_HASHES:
-        script_sources = f"{script_sources} {' '.join(FRONTEND_SCRIPT_HASHES)}"
+    if response.mimetype == 'text/html':
+        # Next's inline hydration payload changes on every build. Hash the
+        # actual response instead of a startup snapshot, so a frontend rebuild
+        # cannot leave the running Flask process serving an unusable page.
+        response.direct_passthrough = False
+        script_hashes = _inline_script_hashes(response.get_data(as_text=True))
+        if script_hashes:
+            script_sources = f"{script_sources} {' '.join(script_hashes)}"
     response.headers.setdefault(
         'Content-Security-Policy',
         "default-src 'self'; "
@@ -716,6 +771,28 @@ def health_check():
         'supported_platforms_count': len(downloader.get_supported_platforms()),
         'storage_backend': storage_backend.name,
         'enhancements': {'gallery_dl': _gallery_dl_available()},
+    })
+
+
+@app.route('/api/ready')
+def readiness_check():
+    """Report whether the process can accept new media work."""
+    try:
+        free_disk_bytes = shutil.disk_usage(DOWNLOAD_DIR).free
+    except OSError:
+        return jsonify({'status': 'not_ready', 'reason': 'download storage unavailable'}), 503
+    required_bytes = MIN_FREE_DISK_BYTES + (MAX_DOWNLOAD_BYTES * MAX_CONCURRENT_DOWNLOADS)
+    if free_disk_bytes < required_bytes:
+        return jsonify({
+            'status': 'not_ready',
+            'reason': 'download storage temporarily full',
+            'free_bytes': free_disk_bytes,
+            'required_bytes': required_bytes,
+        }), 503
+    return jsonify({
+        'status': 'ready',
+        'storage_backend': storage_backend.name,
+        'gallery_dl': _gallery_dl_available(),
     })
 
 
@@ -847,6 +924,8 @@ def download_video():
     if len(original_url) > 4096:
         return jsonify({'error': 'The video URL is too long'}), 400
 
+    media_token = data.get('media_token')
+
     platform_key, _platform_name = downloader.detect_platform(original_url)
     if platform_key in ('unknown', 'other'):
         return jsonify({'error': 'This platform is not supported'}), 400
@@ -860,13 +939,23 @@ def download_video():
     if audio_only and format_selector:
         return jsonify({'error': 'Choose either audio-only or a video format'}), 400
 
+    resolved_media_url = _resolve_media_token(
+        media_token,
+        downloader.extract_url_from_text(original_url),
+        format_selector=format_selector,
+        audio_only=audio_only,
+    )
+
     _maybe_remove_expired_downloads(force=True)
     try:
         free_disk_bytes = shutil.disk_usage(DOWNLOAD_DIR).free
     except OSError:
         logging.exception('Could not inspect download disk space')
         return jsonify({'error': 'The download storage is unavailable'}), 500
-    if free_disk_bytes < max(MIN_FREE_DISK_BYTES, MAX_DOWNLOAD_BYTES):
+    required_free_bytes = MIN_FREE_DISK_BYTES + (
+        MAX_DOWNLOAD_BYTES * MAX_CONCURRENT_DOWNLOADS
+    )
+    if free_disk_bytes < required_free_bytes:
         return jsonify({
             'error': 'The download storage is temporarily full'
         }), 507
@@ -892,8 +981,12 @@ def download_video():
                 download_options['format_selector'] = format_selector
             if audio_only:
                 download_options['audio_only'] = True
+            if resolved_media_url:
+                download_options['resolved_media_url'] = resolved_media_url
             downloaded_file = downloader.download_video(
-                original_url, str(requested_path), **download_options
+                original_url,
+                str(requested_path),
+                **download_options,
             )
         except Exception:
             _operation_timing(
@@ -1033,7 +1126,13 @@ def resolve_gallery_urls():
         return jsonify({'error': 'max_items must be an integer'}), 400
     try:
         urls = resolve_gallery(data.get('url', ''), max_items=max_items)
-        return jsonify({'success': True, 'count': len(urls), 'images': urls})
+        items = [{'url': url, 'media_type': classify_media_url(url)} for url in urls]
+        return jsonify({
+            'success': True,
+            'count': len(items),
+            'images': [item['url'] for item in items if item['media_type'] == 'image'],
+            'items': items,
+        })
     except GalleryNotInstalled:
         return jsonify({'error': 'Gallery enhancement is not installed'}), 503
     except GalleryError as exc:

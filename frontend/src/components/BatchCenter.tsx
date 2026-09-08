@@ -46,7 +46,7 @@ export const BatchCenter: React.FC = () => {
       const { url, platformKey } = extractUrlFromText(line);
       const platformObj = SUPPORTED_PLATFORMS.find((p) => p.key === platformKey);
       return {
-        id: Math.random().toString(36).substring(2, 9),
+        id: crypto.randomUUID(),
         rawInput: line,
         extractedUrl: url,
         platformKey,
@@ -74,15 +74,11 @@ export const BatchCenter: React.FC = () => {
     );
     const urlsToParse = tasksToParse.map((task) => task.extractedUrl);
 
-    try {
-      // High-speed parallel backend batch endpoint
-      const response = await batchParseMediaUrls(urlsToParse);
-
-      // The endpoint preserves input order, so URL normalization cannot break mapping.
+    const applyResults = (results: ParsedMedia[]) => {
       setTasks((prev) =>
         prev.map((task) => {
           const resultIndex = tasksToParse.findIndex((candidate) => candidate.id === task.id);
-          const matchedResult = resultIndex >= 0 ? response.results[resultIndex] : undefined;
+          const matchedResult = resultIndex >= 0 ? results[resultIndex] : undefined;
 
           if (matchedResult) {
             if (matchedResult.success) {
@@ -102,6 +98,13 @@ export const BatchCenter: React.FC = () => {
           return task;
         })
       );
+    };
+
+    try {
+      // Results are applied after each bounded chunk, so completed work remains
+      // visible even if a later chunk fails.
+      const response = await batchParseMediaUrls(urlsToParse, applyResults);
+      applyResults(response.results);
     } catch (err: any) {
       setTasks((prev) =>
         prev.map((t) => (t.status === 'parsing' ? { ...t, status: 'error', error: err.message || 'Batch parsing failed' } : t))
@@ -116,7 +119,9 @@ export const BatchCenter: React.FC = () => {
       const downloadWindow = window.open('about:blank', '_blank');
       if (downloadWindow) downloadWindow.opener = null;
       try {
-        const res = await triggerServerDownload(task.extractedUrl);
+        const res = await triggerServerDownload(task.extractedUrl, {
+          mediaToken: task.result?.media_token,
+        });
         if (downloadWindow) {
           downloadWindow.location.href = res.download_url;
         } else {

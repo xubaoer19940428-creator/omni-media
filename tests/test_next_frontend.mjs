@@ -44,6 +44,8 @@ assert.doesNotMatch(resultCardSource, /href=\{data\.video_url\}/);
 assert.doesNotMatch(batchCenterSource, /window\.open\(task\.result\.video_url/);
 assert.match(resultCardSource, /triggerServerDownload/);
 assert.match(batchCenterSource, /triggerServerDownload/);
+assert.match(batchCenterSource, /crypto\.randomUUID\(\)/);
+assert.match(batchCenterSource, /batchParseMediaUrls\(urlsToParse, applyResults\)/);
 assert.match(resultCardSource, /onError=\{\(\) => setVideoPreviewFailed\(true\)\}/);
 
 const workbenchSource = fs.readFileSync(
@@ -81,6 +83,8 @@ assert.match(homePageSource, /URLSearchParams\(window\.location\.search\)/);
 assert.match(homePageSource, /get\('auto'\) === '1'/);
 assert.match(workbenchSource, /handleParse\(initialUrl\)/);
 assert.match(workbenchSource, /parseProfileUrl/);
+assert.match(workbenchSource, /AbortController/);
+assert.match(workbenchSource, /isSafeHistoryItem/);
 assert.match(workbenchSource, /t\.profile\.creatorMode/);
 assert.match(profileResultSource, /tikhub-card/);
 assert.match(profileResultSource, /dark:/);
@@ -156,6 +160,7 @@ globalThis.fetch = async (url, options) => {
 try {
   await api.triggerServerDownload('https://www.youtube.com/watch?v=example', {
     formatSelector: '137+bestaudio/137',
+    mediaToken: '0123456789abcdef0123456789abcdef',
   });
   await api.triggerServerDownload('https://www.youtube.com/watch?v=audio', {
     audioOnly: true,
@@ -164,6 +169,7 @@ try {
     {
       original_url: 'https://www.youtube.com/watch?v=example',
       format_selector: '137+bestaudio/137',
+      media_token: '0123456789abcdef0123456789abcdef',
     },
     {
       original_url: 'https://www.youtube.com/watch?v=audio',
@@ -210,6 +216,28 @@ try {
     response.results.map((result) => result.original_url),
     urls,
   );
+
+  let chunkCall = 0;
+  const partialSnapshots = [];
+  globalThis.fetch = async (_url, options) => {
+    const chunk = JSON.parse(options.body).urls;
+    chunkCall += 1;
+    if (chunkCall === 2) {
+      return { ok: false, async json() { return { error: 'later chunk failed' }; } };
+    }
+    return {
+      ok: true,
+      async json() {
+        return { success: true, results: chunk.map((original_url) => ({ success: true, original_url })) };
+      },
+    };
+  };
+  await assert.rejects(
+    api.batchParseMediaUrls(urls.slice(0, 11), (items) => partialSnapshots.push(items)),
+    /later chunk failed/i,
+  );
+  assert.equal(partialSnapshots.length, 1);
+  assert.equal(partialSnapshots[0].length, 10);
 
   await assert.rejects(
     api.batchParseMediaUrls(Array.from({ length: 41 }, (_, index) =>

@@ -4,10 +4,12 @@
 抖音使用 curl_cffi 模拟浏览器访问移动端页面
 """
 import json
+import ipaddress
 import logging
 import os
 import random
 import re
+import socket
 import string
 import time
 import uuid
@@ -1359,6 +1361,82 @@ class UniversalDownloader:
         finally:
             response.close()
 
+    def _download_resolved_media(
+        self,
+        media_url: str,
+        filepath: str,
+        max_bytes: Optional[int],
+        referer: str,
+    ) -> bool:
+        """Download a parser-provided media URL without following redirects."""
+        parsed = urlparse(media_url)
+        hostname = (parsed.hostname or '').lower().rstrip('.')
+        try:
+            port = parsed.port
+        except ValueError as exc:
+            raise ValueError('Untrusted resolved media URL') from exc
+        if (
+            parsed.scheme != 'https'
+            or not hostname
+            or parsed.username
+            or parsed.password
+            or port not in (None, 443)
+        ):
+            raise ValueError('Untrusted resolved media URL')
+        try:
+            addresses = {
+                ipaddress.ip_address(item[4][0])
+                for item in socket.getaddrinfo(hostname, port or 443, type=socket.SOCK_STREAM)
+            }
+        except (OSError, ValueError) as exc:
+            raise ValueError('Could not resolve resolved media host') from exc
+        if not addresses or any(not address.is_global for address in addresses):
+            raise ValueError('Resolved media host is not public')
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)',
+            'Referer': referer,
+        }
+        session = None
+        if _has_curl_cffi:
+            session = cffi_requests.Session(impersonate='chrome120')
+            response = session.get(
+                media_url,
+                allow_redirects=False,
+                timeout=(self.connect_timeout, self.download_timeout),
+                headers=headers,
+                stream=True,
+            )
+        else:
+            response = requests.get(
+                media_url,
+                allow_redirects=False,
+                timeout=(self.connect_timeout, self.download_timeout),
+                headers=headers,
+                stream=True,
+            )
+        try:
+            response.raise_for_status()
+            content_type = response.headers.get('Content-Type', '').lower()
+            if not content_type.startswith('video/'):
+                raise ValueError('Unexpected resolved media response type')
+            declared_length = int(response.headers.get('Content-Length', 0) or 0)
+            if max_bytes and declared_length > max_bytes:
+                raise DownloadSizeLimitExceeded('Download exceeds the configured size limit')
+            downloaded_bytes = 0
+            with open(filepath, 'wb') as output:
+                for chunk in response.iter_content(chunk_size=65536):
+                    if not chunk:
+                        continue
+                    downloaded_bytes += len(chunk)
+                    if max_bytes and downloaded_bytes > max_bytes:
+                        raise DownloadSizeLimitExceeded('Download exceeds the configured size limit')
+                    output.write(chunk)
+            return downloaded_bytes > 0
+        finally:
+            response.close()
+            if session is not None:
+                session.close()
+
     def get_profile_info(
         self,
         url: str,
@@ -1658,6 +1736,7 @@ class UniversalDownloader:
         max_bytes: Optional[int] = None,
         format_selector: Optional[str] = None,
         audio_only: bool = False,
+        resolved_media_url: Optional[str] = None,
     ) -> Optional[str]:
         """
         下载视频
@@ -1682,7 +1761,7 @@ class UniversalDownloader:
         if platform_key in ('unknown', 'other'):
             logger.warning('Download rejected for an unsupported platform')
             return None
-        
+
         # 生成文件名
         if not filename:
             timestamp = int(time.time())
@@ -1707,6 +1786,17 @@ class UniversalDownloader:
                         os.remove(partial_path)
                 except OSError:
                     pass
+
+        if resolved_media_url and not audio_only:
+            try:
+                if self._download_resolved_media(
+                    resolved_media_url, filepath, max_bytes, url
+                ):
+                    logger.info('[%s] Downloaded the previously resolved source file', platform_name)
+                    return os.path.basename(filepath)
+            except Exception as exc:
+                cleanup_partial_files()
+                logger.warning('[%s] Resolved media download failed (%s)', platform_name, type(exc).__name__)
 
         def download_twitter_fallback() -> Optional[str]:
             if platform_key != 'twitter' or audio_only:

@@ -11,10 +11,25 @@ import subprocess
 import sys
 import ipaddress
 import importlib.util
+import os
 import socket
 import threading
 from typing import Any
 from urllib.parse import urlparse
+
+DEFAULT_ALLOWED_HOSTS = (
+    "wikipedia.org", "wikimedia.org", "imgur.com", "deviantart.com",
+    "wixmp.com", "unsplash.com", "flickr.com", "staticflickr.com",
+    "reddit.com", "redd.it", "redditmedia.com", "redditstatic.com",
+)
+ALLOWED_HOSTS = tuple(
+    host.strip().lower().rstrip(".")
+    for host in os.environ.get(
+        "GALLERY_ALLOWED_HOSTS", ",".join(DEFAULT_ALLOWED_HOSTS)
+    ).split(",")
+    if host.strip()
+)
+
 
 class GalleryNotInstalled(RuntimeError):
     pass
@@ -29,7 +44,7 @@ class GalleryError(RuntimeError):
 _GALLERY_SLOTS = threading.BoundedSemaphore(2)
 
 
-def validate_public_url(value: Any) -> str:
+def validate_public_url(value: Any, *, require_allowed_host: bool = False) -> str:
     if not isinstance(value, str) or not value.strip() or len(value) > 4096:
         raise GalleryError("A valid public URL is required")
     value = value.strip()
@@ -45,6 +60,11 @@ def validate_public_url(value: Any) -> str:
     hostname = parsed.hostname.rstrip(".").lower()
     if hostname in {"localhost", "localhost.localdomain"} or "." not in hostname:
         raise GalleryError("Private or local URLs are not allowed")
+    if require_allowed_host and not any(
+        hostname == allowed or hostname.endswith(f".{allowed}")
+        for allowed in ALLOWED_HOSTS
+    ):
+        raise GalleryError("This gallery host is not enabled")
     try:
         addresses = [ipaddress.ip_address(hostname)]
     except ValueError:
@@ -61,7 +81,7 @@ def validate_public_url(value: Any) -> str:
 
 
 def resolve_gallery(url: str, *, max_items: int = 40) -> list[str]:
-    url = validate_public_url(url)
+    url = validate_public_url(url, require_allowed_host=True)
     if not 1 <= max_items <= 40:
         raise GalleryError("max_items must be between 1 and 40")
     if importlib.util.find_spec("gallery_dl") is None:
@@ -81,6 +101,11 @@ def resolve_gallery(url: str, *, max_items: int = 40) -> list[str]:
                 text=True,
                 timeout=90,
                 check=False,
+                env={
+                    key: value
+                    for key in ('PATH', 'LANG', 'LC_ALL', 'SSL_CERT_FILE', 'SSL_CERT_DIR')
+                    if (value := os.environ.get(key))
+                },
             )
         except FileNotFoundError as exc:
             raise GalleryNotInstalled("gallery-dl is not installed") from exc
@@ -108,3 +133,14 @@ def resolve_gallery(url: str, *, max_items: int = 40) -> list[str]:
     if not urls:
         raise GalleryError("No public media URLs were found")
     return urls
+
+
+def classify_media_url(url: str) -> str:
+    path = urlparse(url).path.lower()
+    if path.endswith((".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif", ".svg")):
+        return "image"
+    if path.endswith((".mp4", ".webm", ".mov", ".m4v")):
+        return "video"
+    if path.endswith((".mp3", ".m4a", ".aac", ".ogg", ".wav")):
+        return "audio"
+    return "media"

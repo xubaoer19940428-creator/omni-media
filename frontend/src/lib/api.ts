@@ -3,6 +3,35 @@ import { SUPPORTED_PLATFORMS } from './constants';
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
 export const MAX_BATCH_QUEUE_SIZE = 40;
+const DEFAULT_REQUEST_TIMEOUT_MS = 45_000;
+
+async function requestJson<T>(
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+  timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS,
+): Promise<{ response: Response; data: T }> {
+  const controller = new AbortController();
+  let timedOut = false;
+  const timeout = globalThis.setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
+  const externalSignal = init.signal;
+  const abortFromCaller = () => controller.abort();
+  if (externalSignal?.aborted) controller.abort();
+  else externalSignal?.addEventListener('abort', abortFromCaller, { once: true });
+  try {
+    const response = await fetch(input, { ...init, signal: controller.signal });
+    const data = await response.json().catch(() => ({} as T));
+    return { response, data };
+  } catch (error) {
+    if (timedOut) throw new Error('Request timed out. Please try again.');
+    throw error;
+  } finally {
+    globalThis.clearTimeout(timeout);
+    externalSignal?.removeEventListener('abort', abortFromCaller);
+  }
+}
 
 /**
  * Intelligent URL extraction from raw share texts
@@ -49,21 +78,21 @@ export function detectPlatformKey(url: string): PlatformKey {
 /**
  * API client to parse media URL
  */
-export async function parseMediaUrl(rawUrl: string): Promise<ParsedMedia> {
+export async function parseMediaUrl(rawUrl: string, signal?: AbortSignal): Promise<ParsedMedia> {
   const { url } = extractUrlFromText(rawUrl);
   if (!url) {
     throw new Error('No valid URL detected. Please check your input.');
   }
 
-  const res = await fetch(`${API_BASE_URL}/api/parse`, {
+  const { response: res, data } = await requestJson<any>(`${API_BASE_URL}/api/parse`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ url }),
+    signal,
   });
 
-  const data = await res.json().catch(() => ({}));
   if (!res.ok || !data.success) {
     throw new Error(data.error || 'Parsing failed. Please check the URL or server status.');
   }
@@ -76,18 +105,19 @@ export async function parseProfileUrl(
   rawUrl: string,
   limit = 12,
   cursor = 0,
+  signal?: AbortSignal,
 ): Promise<ProfileParseResponse> {
   const { url } = extractUrlFromText(rawUrl);
   if (!url) {
     throw new Error('No valid profile URL detected. Please check your input.');
   }
 
-  const res = await fetch(`${API_BASE_URL}/api/profile/parse`, {
+  const { response: res, data } = await requestJson<ProfileParseResponse & { error?: string }>(`${API_BASE_URL}/api/profile/parse`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ url, limit, cursor }),
+    signal,
   });
-  const data = await res.json().catch(() => ({}));
   if (!res.ok || !data.success) {
     throw new Error(data.error || 'Profile parsing failed. Please check the URL or server status.');
   }
@@ -97,7 +127,10 @@ export async function parseProfileUrl(
 /**
  * API client for batch parse
  */
-export async function batchParseMediaUrls(urls: string[]): Promise<{
+export async function batchParseMediaUrls(
+  urls: string[],
+  onProgress?: (results: ParsedMedia[]) => void,
+): Promise<{
   success: boolean;
   total: number;
   results: ParsedMedia[];
@@ -115,7 +148,7 @@ export async function batchParseMediaUrls(urls: string[]): Promise<{
 
   const results: ParsedMedia[] = [];
   for (let offset = 0; offset < cleanUrls.length; offset += 10) {
-    const res = await fetch(`${API_BASE_URL}/api/batch-parse`, {
+    const { response: res, data } = await requestJson<any>(`${API_BASE_URL}/api/batch-parse`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -123,22 +156,21 @@ export async function batchParseMediaUrls(urls: string[]): Promise<{
       body: JSON.stringify({ urls: cleanUrls.slice(offset, offset + 10) }),
     });
 
-    const data = await res.json();
     if (!res.ok || !data.success) {
       throw new Error(data.error || 'Batch parsing failed.');
     }
     results.push(...data.results);
+    onProgress?.([...results]);
   }
 
   return { success: true, total: results.length, results };
 }
 
 export async function resolveGalleryUrls(url: string, maxItems = 40): Promise<string[]> {
-  const res = await fetch(`${API_BASE_URL}/api/gallery/resolve`, {
+  const { response: res, data } = await requestJson<any>(`${API_BASE_URL}/api/gallery/resolve`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ url, max_items: maxItems }),
   });
-  const data = await res.json().catch(() => ({}));
   if (!res.ok || !data.success) throw new Error(data.error || 'Gallery extraction failed.');
   return Array.isArray(data.images) ? data.images : [];
 }
@@ -149,13 +181,14 @@ export async function resolveGalleryUrls(url: string, maxItems = 40): Promise<st
 export async function triggerServerDownload(originalUrl: string, options: {
   formatSelector?: string;
   audioOnly?: boolean;
+  mediaToken?: string;
 } = {}): Promise<{
   success: boolean;
   filename: string;
   download_url: string;
   expires_in?: number;
 }> {
-  const res = await fetch(`${API_BASE_URL}/api/download`, {
+  const { response: res, data } = await requestJson<any>(`${API_BASE_URL}/api/download`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -164,10 +197,10 @@ export async function triggerServerDownload(originalUrl: string, options: {
       original_url: originalUrl,
       ...(options.formatSelector ? { format_selector: options.formatSelector } : {}),
       ...(options.audioOnly ? { audio_only: true } : {}),
+      ...(options.mediaToken ? { media_token: options.mediaToken } : {}),
     }),
   });
 
-  const data = await res.json();
   if (!res.ok || !data.success) {
     throw new Error(data.error || 'Server-side download processing failed.');
   }
