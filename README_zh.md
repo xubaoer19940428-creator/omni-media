@@ -156,6 +156,12 @@ python app.py
 
 可选配置请查看 [`.env.example`](.env.example)。
 
+如果 Instagram 返回 `The platform is rate-limiting this IP`，说明服务器当前的
+出口 IP 被 Instagram 限流。等待有时可以解除临时限制，但重复重试不会改变出口
+IP。部署在服务器上时，可将 `YTDLP_PROXY` 设置为你自己控制的 HTTP(S) 或 SOCKS
+代理地址，然后重启服务。该代理会用于 yt-dlp 的解析和下载，以及已解析媒体的
+直连抓取；默认不启用。
+
 ## API 示例
 
 Web 界面使用相同的 API。下面的示例假设本地服务运行在

@@ -459,6 +459,57 @@ class PlatformSupportTests(unittest.TestCase):
         ):
             self.assertEqual({}, self.downloader._cookie_options('instagram'))
 
+    def test_yt_dlp_proxy_is_forwarded_when_configured(self):
+        fake_ydl = MagicMock()
+        fake_ydl.__enter__.return_value.extract_info.return_value = {
+            'id': 'example',
+            'title': 'Example video',
+            'formats': [{
+                'url': 'https://cdn.example/video.mp4',
+                'ext': 'mp4',
+                'vcodec': 'avc1',
+                'acodec': 'mp4a',
+            }],
+        }
+
+        with (
+            patch.dict(
+                os.environ,
+                {'YTDLP_PROXY': 'socks5h://proxy.example:1080'},
+                clear=True,
+            ),
+            patch.object(
+                downloader_module.yt_dlp,
+                'YoutubeDL',
+                return_value=fake_ydl,
+            ) as youtube_dl,
+        ):
+            result = self.downloader.get_video_info(
+                'https://www.instagram.com/reel/example/'
+            )
+
+        self.assertTrue(result['success'])
+        self.assertEqual(
+            'socks5h://proxy.example:1080',
+            youtube_dl.call_args.args[0]['proxy'],
+        )
+
+    def test_invalid_yt_dlp_proxy_is_ignored(self):
+        invalid_values = (
+            'file:///tmp/proxy',
+            'http://[::1',
+            'http://:8080',
+            'http://proxy.example:99999',
+            'http://proxy.example?debug=1',
+        )
+        for proxy in invalid_values:
+            with self.subTest(proxy=proxy), patch.dict(
+                os.environ,
+                {'YTDLP_PROXY': proxy},
+                clear=True,
+            ):
+                self.assertEqual({}, self.downloader._proxy_options())
+
     def test_parser_errors_do_not_expose_internal_details(self):
         secret = '/srv/internal/session.sqlite'
         with self.assertLogs(downloader_module.logger, level='WARNING') as captured_logs:

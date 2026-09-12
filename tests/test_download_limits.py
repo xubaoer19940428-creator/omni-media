@@ -117,6 +117,41 @@ class DownloadLimitTests(unittest.TestCase):
             self.assertFalse(request_get.call_args.kwargs['allow_redirects'])
             self.assertTrue(response.closed)
 
+    @patch('universal_downloader.socket.getaddrinfo', return_value=[(None, None, None, None, ('93.184.216.34', 443))])
+    def test_parser_resolved_media_uses_configured_proxy(self, _dns):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            downloader = UniversalDownloader(temp_dir)
+            target = Path(temp_dir) / f'youtube_{"b" * 32}.mp4'
+            response = TypedStreamingResponse()
+            with (
+                patch.dict(
+                    downloader_module.os.environ,
+                    {'YTDLP_PROXY': 'http://proxy.example:8080'},
+                    clear=True,
+                ),
+                patch.object(downloader_module, '_has_curl_cffi', False),
+                patch.object(
+                    downloader_module.requests,
+                    'get',
+                    return_value=response,
+                ) as request_get,
+            ):
+                result = downloader.download_video(
+                    YOUTUBE_URL,
+                    str(target),
+                    max_bytes=10,
+                    resolved_media_url='https://cdn.example/video.mp4',
+                )
+
+            self.assertEqual(target.name, result)
+            self.assertEqual(
+                {
+                    'http': 'http://proxy.example:8080',
+                    'https': 'http://proxy.example:8080',
+                },
+                request_get.call_args.kwargs['proxies'],
+            )
+
     def test_parser_resolved_media_rejects_private_hosts_before_request(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             downloader = UniversalDownloader(temp_dir)

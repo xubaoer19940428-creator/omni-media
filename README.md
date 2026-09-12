@@ -173,6 +173,13 @@ API has no user authentication; only enable it on a private, trusted machine.
 If Chrome is still open or the app runs under another OS user, cookie access may
 fail; set `YTDLP_COOKIES_FROM_BROWSER=off` to disable it.
 
+If Instagram reports `The platform is rate-limiting this IP`, the Instagram
+egress address used by the server has been throttled. Waiting may clear a
+temporary limit, but retries do not change the egress address. For a deployed
+instance, configure `YTDLP_PROXY` with an HTTP(S) or SOCKS proxy that you
+control, then restart the service. The proxy is passed to yt-dlp parsing and
+downloads, plus resolved-media direct fetches; it is unset by default.
+
 For Docker, a remote server, or a service account, the host's Chrome profile is
 not available inside the container. Export a Netscape-format `cookies.txt`
 from a browser profile you control, mount it read-only, and set for example:

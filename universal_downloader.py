@@ -334,6 +334,54 @@ class UniversalDownloader:
 
         logger.warning('Ignoring invalid YTDLP_COOKIES_FROM_BROWSER value')
         return {}
+
+    @staticmethod
+    def _proxy_options() -> Dict[str, Any]:
+        """Return an explicitly configured yt-dlp outbound proxy.
+
+        Instagram can rate-limit a shared cloud egress IP.  Operators may
+        provide a proxy they control, but an unset or malformed value must not
+        change the default direct-connection behaviour.
+        """
+        proxy = os.environ.get('YTDLP_PROXY', '').strip()
+        if not proxy:
+            return {}
+
+        try:
+            parsed = urlparse(proxy)
+            proxy_port = parsed.port
+            proxy_hostname = parsed.hostname
+        except ValueError:
+            logger.warning('Ignoring invalid YTDLP_PROXY value')
+            return {}
+
+        if (
+            parsed.scheme.lower() not in {
+                'http', 'https', 'socks4', 'socks4a', 'socks5', 'socks5h'
+            }
+            or not proxy_hostname
+            or (proxy_port is not None and not 1 <= proxy_port <= 65535)
+            or parsed.path not in ('', '/')
+            or parsed.query
+            or parsed.fragment
+            or any(character.isspace() for character in proxy)
+        ):
+            logger.warning('Ignoring invalid YTDLP_PROXY value')
+            return {}
+
+        return {'proxy': proxy}
+
+    def _proxy_request_options(self) -> Dict[str, Any]:
+        """Return requests-compatible proxy kwargs for resolved media fetches."""
+        proxy = self._proxy_options().get('proxy')
+        if not proxy:
+            return {}
+        if urlparse(proxy).scheme.lower().startswith('socks') and not _has_curl_cffi:
+            # The supported runtime includes curl-cffi, which handles SOCKS
+            # proxies. Avoid making a requests fallback fail with a missing
+            # PySocks dependency when that optional import is unavailable.
+            return {}
+        return {'proxies': {'http': proxy, 'https': proxy}}
     
     def detect_platform(self, url: str) -> Tuple[str, str]:
         """
@@ -1036,6 +1084,7 @@ class UniversalDownloader:
         }
         
         ydl_opts.update(self._cookie_options(platform_key))
+        ydl_opts.update(self._proxy_options())
 
         # Telegram 帖子可能包含多个视频；当前界面按单视频处理
         if platform_key == 'telegram':
@@ -1276,6 +1325,7 @@ class UniversalDownloader:
                 'Referer': referer,
             },
             stream=True,
+            **self._proxy_request_options(),
         )
         try:
             if 300 <= getattr(response, 'status_code', 200) < 400:
@@ -1331,6 +1381,7 @@ class UniversalDownloader:
                 timeout=(self.connect_timeout, self.download_timeout),
                 headers=headers,
                 stream=True,
+                **self._proxy_request_options(),
             )
         else:
             response = requests.get(
@@ -1339,6 +1390,7 @@ class UniversalDownloader:
                 timeout=(self.connect_timeout, self.download_timeout),
                 headers=headers,
                 stream=True,
+                **self._proxy_request_options(),
             )
         try:
             response.raise_for_status()
@@ -1405,6 +1457,7 @@ class UniversalDownloader:
                 timeout=(self.connect_timeout, self.download_timeout),
                 headers=headers,
                 stream=True,
+                **self._proxy_request_options(),
             )
         else:
             response = requests.get(
@@ -1413,6 +1466,7 @@ class UniversalDownloader:
                 timeout=(self.connect_timeout, self.download_timeout),
                 headers=headers,
                 stream=True,
+                **self._proxy_request_options(),
             )
         try:
             response.raise_for_status()
@@ -1475,6 +1529,7 @@ class UniversalDownloader:
             },
         }
         ydl_opts.update(self._cookie_options(platform_key))
+        ydl_opts.update(self._proxy_options())
 
         try:
             logger.info('[%s] Parsing public creator profile', platform_name)
@@ -1870,6 +1925,7 @@ class UniversalDownloader:
             ydl_opts['progress_hooks'] = [enforce_download_size]
         
         ydl_opts.update(self._cookie_options(platform_key))
+        ydl_opts.update(self._proxy_options())
 
         # Telegram 帖子可能包含多个视频；下载帖子中的主视频
         if platform_key == 'telegram':
