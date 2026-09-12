@@ -124,3 +124,31 @@ def require_clerk_auth(view: Callable[..., Any]) -> Callable[..., Any]:
         return view(*args, **kwargs)
 
     return wrapped
+
+
+def require_download_auth(view: Callable[..., Any]) -> Callable[..., Any]:
+    """Authenticate downloads when Clerk is configured, preserving local dev.
+
+    Production deployments set ``CLERK_ISSUER`` and therefore require a real
+    Clerk bearer token. Local tests and offline development may omit Clerk and
+    continue to exercise the downloader without a user account.
+    """
+    @wraps(view)
+    def wrapped(*args: Any, **kwargs: Any) -> Any:
+        from flask import g, jsonify, request
+        if not _clerk_issuer():
+            g.clerk_user_id = None
+            return view(*args, **kwargs)
+        try:
+            claims = verify_bearer_token(bearer_token_from_request(request))
+        except AuthenticationError as exc:
+            response = jsonify({'error': str(exc)})
+            response.status_code = 503 if 'not configured' in str(exc) or 'unavailable' in str(exc) else 401
+            if response.status_code == 401:
+                response.headers['WWW-Authenticate'] = 'Bearer'
+            return response
+        g.clerk_claims = claims
+        g.clerk_user_id = claims['sub']
+        return view(*args, **kwargs)
+
+    return wrapped

@@ -36,7 +36,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="relative flex flex-col min-h-screen">
+    <div className="relative flex min-h-screen flex-col lg:pl-72">
       {/* Interactive 3D Canvas Particle Network (TikHub / Three.js style) */}
       <ThreeBackground />
 
@@ -48,7 +48,7 @@ export default function HomePage() {
       />
 
       {/* Hero Section */}
-      <div className="relative z-10 pt-2">
+      <div className="relative z-10 pt-20 lg:pt-2">
         <HeroSection
           onStartParsing={() => setActiveTab('workbench')}
           onSelectPlatform={() => setActiveTab('platforms')}

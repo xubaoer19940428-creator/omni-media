@@ -19,12 +19,36 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { ParsedMedia } from '@/types';
-import { getProxyImageUrl, resolveGalleryUrls, triggerServerDownload } from '@/lib/api';
+import { AuthTokenGetter, getProxyImageUrl, resolveGalleryUrls, triggerServerDownload } from '@/lib/api';
 import { useTranslation } from '@/lib/i18n';
+import { useAuth, useClerk } from '@clerk/react';
 
 interface ResultCardProps {
   data: ParsedMedia;
   onClear?: () => void;
+}
+
+function DownloadAction({
+  onDownload,
+  disabled,
+  children,
+  className,
+}: {
+  onDownload: (getToken?: AuthTokenGetter) => void;
+  disabled: boolean;
+  children: React.ReactNode;
+  className: string;
+}) {
+  const { isLoaded, isSignedIn, getToken } = useAuth();
+  const { openSignIn } = useClerk();
+  const click = () => {
+    if (!isLoaded || !isSignedIn) {
+      openSignIn();
+      return;
+    }
+    onDownload(getToken);
+  };
+  return <button type="button" onClick={click} disabled={disabled || !isLoaded} className={className}>{children}</button>;
 }
 
 export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
@@ -71,7 +95,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
     setTimeout(() => setCopiedField(null), 2000);
   };
 
-  const handleServerSideDownload = async (override?: { audioOnly?: boolean; formatSelector?: string }) => {
+  const handleServerSideDownload = async (override?: { audioOnly?: boolean; formatSelector?: string }, getToken?: AuthTokenGetter) => {
     if (!data.original_url && !data.video_url) return;
     const downloadWindow = window.open('about:blank', '_blank');
     if (downloadWindow) downloadWindow.opener = null;
@@ -82,6 +106,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
         formatSelector: override?.formatSelector ?? (selectedFormat || undefined),
         audioOnly: override?.audioOnly ?? audioOnly,
         mediaToken: data.media_token,
+        getToken,
       });
       if (downloadWindow) {
         downloadWindow.location.href = res.download_url;
@@ -357,14 +382,26 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
                     </select>
                   </div>
                 )}
-                <button
-                  onClick={() => { void handleServerSideDownload(); }}
-                  disabled={isServerDownloading}
-                  className="w-full btn-primary-pill text-xs flex items-center justify-center gap-2 transition disabled:opacity-50"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>{isServerDownloading ? t.result.serverProcessing : audioOnly ? t.result.downloadAudio : t.result.downloadMp4}</span>
-                </button>
+                {process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? (
+                  <DownloadAction
+                    onDownload={(getToken) => { void handleServerSideDownload(undefined, getToken); }}
+                    disabled={isServerDownloading}
+                    className="w-full btn-primary-pill text-xs flex items-center justify-center gap-2 transition disabled:opacity-50"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>{isServerDownloading ? t.result.serverProcessing : audioOnly ? t.result.downloadAudio : t.result.downloadMp4}</span>
+                  </DownloadAction>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => { void handleServerSideDownload(); }}
+                    disabled={isServerDownloading}
+                    className="w-full btn-primary-pill text-xs flex items-center justify-center gap-2 transition disabled:opacity-50"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>{isServerDownloading ? t.result.serverProcessing : audioOnly ? t.result.downloadAudio : t.result.downloadMp4}</span>
+                  </button>
+                )}
 
                 {downloadError && (
                   <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2">
@@ -466,19 +503,34 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
 
             <div className="flex gap-3 pt-2">
               {data.audio_url && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAudioOnly(true);
-                    setSelectedFormat('');
-                    void handleServerSideDownload({ audioOnly: true });
-                  }}
-                  disabled={isServerDownloading}
-                  className="flex-1 btn-primary-pill text-xs flex items-center justify-center gap-2"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>{isServerDownloading ? t.result.serverProcessing : t.result.downloadAudio}</span>
-                </button>
+                process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? (
+                  <DownloadAction
+                    onDownload={(getToken) => {
+                      setAudioOnly(true);
+                      setSelectedFormat('');
+                      void handleServerSideDownload({ audioOnly: true }, getToken);
+                    }}
+                    disabled={isServerDownloading}
+                    className="flex-1 btn-primary-pill text-xs flex items-center justify-center gap-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>{isServerDownloading ? t.result.serverProcessing : t.result.downloadAudio}</span>
+                  </DownloadAction>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAudioOnly(true);
+                      setSelectedFormat('');
+                      void handleServerSideDownload({ audioOnly: true });
+                    }}
+                    disabled={isServerDownloading}
+                    className="flex-1 btn-primary-pill text-xs flex items-center justify-center gap-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>{isServerDownloading ? t.result.serverProcessing : t.result.downloadAudio}</span>
+                  </button>
+                )
               )}
               <button
                 onClick={() => handleCopy(data.audio_url || '', 'audio_url')}

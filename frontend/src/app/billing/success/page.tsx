@@ -13,13 +13,16 @@ function ConfiguredSuccess() {
   useEffect(() => {
     if (!isLoaded) return;
     if (!isSignedIn) { setStatus('error'); setMessage('Please sign in with the same account used to start checkout.'); return; }
-    const orderId = new URLSearchParams(window.location.search).get('token') || new URLSearchParams(window.location.search).get('order_id');
+    const params = new URLSearchParams(window.location.search);
+    // PayPal Orders returns `token`; PayPal Subscriptions returns
+    // `subscription_id` (and may also include a legacy `token`).
+    const orderId = params.get('subscription_id') || params.get('token') || params.get('order_id');
     if (!orderId) { setStatus('error'); setMessage('No PayPal order was found in this return URL.'); return; }
     let active = true;
     capturePayPalOrder(orderId, getToken).then((result) => {
       if (!active) return;
       setStatus('success');
-      setMessage(`Payment confirmed. ${result.credits_granted} processing credits were recorded on your account.`);
+      setMessage(`Payment confirmed. Unlimited downloads are active while your monthly subscription is active.`);
     }).catch((error: any) => { if (active) { setStatus('error'); setMessage(error?.message || 'We could not confirm this PayPal payment.'); } });
     return () => { active = false; };
   }, [getToken, isLoaded, isSignedIn]);

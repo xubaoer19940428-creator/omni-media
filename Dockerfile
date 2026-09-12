@@ -1,7 +1,7 @@
 FROM node:22-slim AS frontend-builder
 
 WORKDIR /frontend
-ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_Y29ycmVjdC1jcmFuZS02Njk1LmNsZXJrLmFjY291bnRzLmRldiQ
 ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
 RUN corepack enable
 COPY frontend/package.json frontend/pnpm-lock.yaml ./

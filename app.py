@@ -20,7 +20,7 @@ import requests
 from flask import Flask, Response, g, jsonify, render_template, request, send_from_directory
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from auth import require_clerk_auth
+from auth import require_clerk_auth, require_download_auth
 import billing
 from storage import StoragePublishError, create_storage_backend
 from universal_downloader import UniversalDownloader
@@ -827,9 +827,9 @@ def account():
 @app.route('/api/paypal/orders', methods=['POST'])
 @require_clerk_auth
 def create_paypal_order():
-    """Create one fixed-price PayPal order for the signed-in user."""
+    """Create a recurring monthly PayPal subscription for the signed-in user."""
     try:
-        return jsonify(billing.create_order(g.clerk_user_id)), 201
+        return jsonify(billing.create_subscription(g.clerk_user_id)), 201
     except ValueError as exc:
         return jsonify({'error': str(exc)}), 400
     except RuntimeError as exc:
@@ -948,6 +948,7 @@ def batch_parse_urls():
     })
 
 @app.route('/api/download', methods=['POST'])
+@require_download_auth
 def download_video():
     """下载视频文件（支持多平台）"""
     limited = _rate_limit_response('download', DOWNLOAD_RATE_LIMIT)
@@ -986,21 +987,40 @@ def download_video():
         audio_only=audio_only,
     )
 
+    reservation = None
+    download_succeeded = False
+    if g.get('clerk_user_id'):
+        try:
+            reservation = billing.reserve_download(g.clerk_user_id)
+        except ValueError as exc:
+            return jsonify({'error': str(exc)}), 401
+        if not reservation.get('allowed'):
+            return jsonify({
+                'error': 'Free accounts can download 2 videos. Upgrade to the ¥9.90/month plan for unlimited downloads.',
+                'code': 'FREE_DOWNLOAD_LIMIT_REACHED',
+                'downloads_used': reservation.get('downloads_used', 2),
+                'downloads_remaining': 0,
+                'limit': reservation.get('limit', billing.FREE_DOWNLOAD_LIMIT),
+            }), 402
+
     _maybe_remove_expired_downloads(force=True)
     try:
         free_disk_bytes = shutil.disk_usage(DOWNLOAD_DIR).free
     except OSError:
         logging.exception('Could not inspect download disk space')
+        billing.release_download(g.clerk_user_id, reservation) if g.get('clerk_user_id') else None
         return jsonify({'error': 'The download storage is unavailable'}), 500
     required_free_bytes = MIN_FREE_DISK_BYTES + (
         MAX_DOWNLOAD_BYTES * MAX_CONCURRENT_DOWNLOADS
     )
     if free_disk_bytes < required_free_bytes:
+        billing.release_download(g.clerk_user_id, reservation) if g.get('clerk_user_id') else None
         return jsonify({
             'error': 'The download storage is temporarily full'
         }), 507
 
     if not _download_slots.acquire(blocking=False):
+        billing.release_download(g.clerk_user_id, reservation) if g.get('clerk_user_id') else None
         return jsonify({
             'error': 'The download service is busy. Please try again shortly'
         }), 429
@@ -1010,6 +1030,7 @@ def download_video():
     requested_path = _safe_download_path(f'{download_stem}.{requested_extension}')
     if requested_path is None:
         _download_slots.release()
+        billing.release_download(g.clerk_user_id, reservation) if g.get('clerk_user_id') else None
         logging.error('Could not create a safe download path')
         return jsonify({'error': 'The download could not be prepared'}), 500
 
@@ -1094,6 +1115,7 @@ def download_video():
                 completed_path.unlink()
             except OSError:
                 logging.exception('Could not remove the published temporary download')
+        download_succeeded = True
         return jsonify(response)
 
     except StoragePublishError as exc:
@@ -1106,6 +1128,8 @@ def download_video():
         logging.exception('Unexpected download endpoint failure')
         return jsonify({'error': 'The download service encountered an error'}), 500
     finally:
+        if not download_succeeded and g.get('clerk_user_id'):
+            billing.release_download(g.clerk_user_id, reservation)
         _download_slots.release()
 
 @app.route('/download/<filename>')

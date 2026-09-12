@@ -190,6 +190,7 @@ export async function triggerServerDownload(originalUrl: string, options: {
   formatSelector?: string;
   audioOnly?: boolean;
   mediaToken?: string;
+  getToken?: AuthTokenGetter;
 } = {}): Promise<{
   success: boolean;
   filename: string;
@@ -200,6 +201,7 @@ export async function triggerServerDownload(originalUrl: string, options: {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...(await authHeaders(options.getToken)),
     },
     body: JSON.stringify({
       original_url: originalUrl,
@@ -250,8 +252,11 @@ export async function checkBackendHealth(): Promise<{
 
 export interface AccountSnapshot {
   user_id: string;
-  plan: { name: string; price: string; currency: string; credits_per_order: number };
+  plan: { name: string; price: string; currency: string; interval?: string; unlimited?: boolean; subscription_expires_at?: string | null };
   credits_granted: number;
+  downloads_used?: number;
+  downloads_remaining?: number | null;
+  free_download_limit?: number;
   orders: Array<{
     paypal_order_id: string;
     status: string;
@@ -273,11 +278,14 @@ export async function getAccount(getToken: AuthTokenGetter): Promise<AccountSnap
 }
 
 export async function createPayPalOrder(getToken: AuthTokenGetter): Promise<{
-  order_id: string;
+  order_id?: string;
+  subscription_id?: string;
   approval_url?: string | null;
   amount: string;
   currency: string;
-  credits: number;
+  interval?: string;
+  unlimited?: boolean;
+  credits?: number;
 }> {
   const { response, data } = await requestJson<any>(`${API_BASE_URL}/api/paypal/orders`, {
     method: 'POST',
@@ -290,10 +298,13 @@ export async function createPayPalOrder(getToken: AuthTokenGetter): Promise<{
 
 export async function capturePayPalOrder(orderId: string, getToken: AuthTokenGetter): Promise<{
   order_id: string;
+  subscription_id?: string;
   status: string;
   amount: string;
   currency: string;
-  credits_granted: number;
+  credits_granted?: number;
+  interval?: string;
+  unlimited?: boolean;
   captured_at?: string | null;
   idempotent?: boolean;
 }> {
