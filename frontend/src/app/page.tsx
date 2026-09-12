@@ -16,6 +16,7 @@ import { BillingPanel } from '@/components/BillingPanel';
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<'workbench' | 'batch' | 'playground' | 'platforms'>('workbench');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isDocsOpen, setIsDocsOpen] = useState(false);
   const [workbenchUrl, setWorkbenchUrl] = useState('');
   const [autoParseUrl, setAutoParseUrl] = useState(false);
@@ -36,7 +37,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col lg:pl-72">
+    <div className={`relative flex min-h-screen flex-col transition-[padding] duration-300 ${sidebarCollapsed ? 'lg:pl-[76px]' : 'lg:pl-72'}`}>
       {/* Interactive 3D Canvas Particle Network (TikHub / Three.js style) */}
       <ThreeBackground />
 
@@ -45,6 +46,8 @@ export default function HomePage() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onOpenDocs={() => setIsDocsOpen(true)}
+        collapsed={sidebarCollapsed}
+        onCollapsedChange={setSidebarCollapsed}
       />
 
       {/* Hero Section */}
