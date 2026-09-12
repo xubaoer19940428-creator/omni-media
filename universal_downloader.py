@@ -3,6 +3,9 @@
 使用 yt-dlp 实现，支持 Instagram、YouTube、Twitter/X、Facebook 等 1000+ 平台
 抖音使用 curl_cffi 模拟浏览器访问移动端页面
 """
+import atexit
+import base64
+import binascii
 import json
 import ipaddress
 import logging
@@ -11,6 +14,8 @@ import random
 import re
 import socket
 import string
+import tempfile
+import threading
 import time
 import uuid
 from pathlib import Path
@@ -291,6 +296,14 @@ class UniversalDownloader:
         )
         self.download_timeout = _env_timeout('DOWNLOAD_HTTP_TIMEOUT', 300)
         os.makedirs(self.download_dir, exist_ok=True)
+        # Railway and similar hosts do not provide a convenient secret-file
+        # mount.  YTDLP_COOKIE_DATA_B64 is materialised into a private,
+        # process-local Netscape cookie file when first used.  Keep the
+        # decoded value out of logs and remove the temporary file on exit.
+        self._cookie_data_lock = threading.Lock()
+        self._cookie_data_key = None
+        self._cookie_data_path = None
+        atexit.register(self._cleanup_cookie_data)
 
     @property
     def http_timeout(self) -> Tuple[float, float]:
@@ -320,6 +333,10 @@ class UniversalDownloader:
             logger.warning('YTDLP_COOKIE_FILE does not point to a readable file')
             return {}
 
+        cookie_data_path = self._cookie_data_file()
+        if cookie_data_path:
+            return {'cookiefile': cookie_data_path}
+
         # Browser cookies are opt-in: this API is unauthenticated, so silently
         # forwarding an operator's session could expose private account media.
         browser = os.environ.get('YTDLP_COOKIES_FROM_BROWSER', 'off').strip().lower()
@@ -334,6 +351,95 @@ class UniversalDownloader:
 
         logger.warning('Ignoring invalid YTDLP_COOKIES_FROM_BROWSER value')
         return {}
+
+    def _cookie_data_file(self) -> Optional[str]:
+        """Materialise a base64 Netscape cookie export into a private file.
+
+        Railway variables are string-only, so a base64 value is the safest
+        portable way to provide a multi-line ``cookies.txt`` without placing
+        the session in source control.  The temporary file is mode 0600 and
+        is never included in an exception or log message.
+        """
+        encoded = os.environ.get('YTDLP_COOKIE_DATA_B64', '').strip()
+        with self._cookie_data_lock:
+            if encoded == self._cookie_data_key:
+                return self._cookie_data_path
+
+            self._remove_cookie_data_file()
+            self._cookie_data_key = encoded
+            self._cookie_data_path = None
+            if not encoded:
+                return None
+
+            # Bound the input before decoding.  A normal Instagram export is
+            # only a few KB; this prevents a malformed Railway variable from
+            # consuming unbounded memory or disk.
+            if len(encoded) > 4 * 1024 * 1024:
+                logger.warning('Ignoring YTDLP_COOKIE_DATA_B64 larger than 4 MiB')
+                return None
+
+            try:
+                raw = base64.b64decode(
+                    ''.join(encoded.split()),
+                    validate=True,
+                )
+            except (ValueError, binascii.Error):
+                logger.warning('Ignoring invalid YTDLP_COOKIE_DATA_B64')
+                return None
+
+            if not raw or len(raw) > 2 * 1024 * 1024:
+                logger.warning('Ignoring empty or oversized YTDLP_COOKIE_DATA_B64')
+                return None
+            try:
+                text = raw.decode('utf-8')
+            except UnicodeDecodeError:
+                logger.warning('Ignoring non-text YTDLP_COOKIE_DATA_B64')
+                return None
+
+            # yt-dlp expects the Netscape cookie-file format.  Requiring the
+            # header catches accidental pastes of a raw Cookie request header
+            # before they are written to disk.
+            header = text.lstrip('\ufeff\r\n ')
+            if not (
+                header.startswith('# Netscape HTTP Cookie File')
+                or header.startswith('# HTTP Cookie File')
+            ):
+                logger.warning('Ignoring YTDLP_COOKIE_DATA_B64 without a Netscape cookie header')
+                return None
+
+            try:
+                fd, path = tempfile.mkstemp(
+                    prefix='omnimedia-cookies-',
+                    suffix='.txt',
+                )
+                os.chmod(path, 0o600)
+                with os.fdopen(fd, 'w', encoding='utf-8', newline='') as handle:
+                    handle.write(text)
+            except OSError:
+                try:
+                    os.close(fd)
+                except (NameError, OSError):
+                    pass
+                logger.warning('Unable to materialise YTDLP_COOKIE_DATA_B64')
+                return None
+
+            self._cookie_data_path = path
+            return path
+
+    def _remove_cookie_data_file(self) -> None:
+        path = self._cookie_data_path
+        self._cookie_data_path = None
+        if path:
+            try:
+                os.unlink(path)
+            except FileNotFoundError:
+                pass
+            except OSError:
+                logger.warning('Unable to remove temporary cookie file')
+
+    def _cleanup_cookie_data(self) -> None:
+        with self._cookie_data_lock:
+            self._remove_cookie_data_file()
 
     @staticmethod
     def _proxy_options() -> Dict[str, Any]:

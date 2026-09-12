@@ -195,6 +195,22 @@ Treat this file like a password: never commit it, paste it into chat, or expose
 it in logs. Cookies only grant the access already held by that account, and
 private posts still require that account to be authorized to view them.
 
+Railway does not provide a file mount for a normal service. In that case,
+base64-encode the same `cookies.txt` locally and add the result as a **Secret**
+variable named `YTDLP_COOKIE_DATA_B64` (not a plain variable):
+
+```bash
+base64 < cookies.txt | tr -d '\n' | pbcopy   # macOS
+# Linux: base64 -w 0 cookies.txt | xclip -selection clipboard
+```
+
+After saving the variable, redeploy the service. The app writes it to a mode-
+0600 temporary file for yt-dlp and removes that file when the process exits.
+Only use this on a private/authenticated deployment: a public unauthenticated
+API with your Instagram session configured would let anyone request media that
+your account can view. Rotate the session and remove the variable when you no
+longer need login-required downloads.
+
 ## API examples
 
 The browser interface uses the same API. All examples below assume a local

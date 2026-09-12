@@ -162,6 +162,21 @@ IP。部署在服务器上时，可将 `YTDLP_PROXY` 设置为你自己控制的
 代理地址，然后重启服务。该代理会用于 yt-dlp 的解析和下载，以及已解析媒体的
 直连抓取；默认不启用。
 
+如果 Instagram 链接必须登录，Railway 普通服务没有可直接挂载的本地文件，
+可以把浏览器导出的 Netscape 格式 `cookies.txt` 转成 Base64，作为 Railway 的
+**Secret** 变量 `YTDLP_COOKIE_DATA_B64` 保存（不要用普通变量、不要提交到 Git、
+也不要发到聊天中）：
+
+```bash
+base64 < cookies.txt | tr -d '\n' | pbcopy   # macOS，结果已复制到剪贴板
+# Linux：base64 -w 0 cookies.txt | xclip -selection clipboard
+```
+
+保存变量后重新部署。程序只会在运行时把它写入权限为 600 的临时文件供 yt-dlp
+使用，进程退出时删除。由于当前服务是公开接口，配置个人登录 Cookie 前应先给
+服务加访问鉴权或改为私有；否则任何调用者都可能借助该账号访问其有权查看的媒体。
+用完后请删除该 Secret，并在 Cookie 失效或泄露时退出 Instagram 的其他会话。
+
 ## API 示例
 
 Web 界面使用相同的 API。下面的示例假设本地服务运行在

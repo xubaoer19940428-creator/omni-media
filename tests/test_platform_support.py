@@ -1,6 +1,7 @@
 import os
 import re
 import tempfile
+import base64
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -60,6 +61,7 @@ class PlatformSupportTests(unittest.TestCase):
         self.downloader = UniversalDownloader(self.temp_dir.name)
 
     def tearDown(self):
+        self.downloader._cleanup_cookie_data()
         self.temp_dir.cleanup()
 
     def test_exactly_39_platforms_are_exposed(self):
@@ -458,6 +460,37 @@ class PlatformSupportTests(unittest.TestCase):
             patch.object(self.downloader, '_local_chrome_profile_exists', return_value=True),
         ):
             self.assertEqual({}, self.downloader._cookie_options('instagram'))
+
+    def test_base64_cookie_export_is_materialised_as_private_file(self):
+        cookie_text = (
+            '# Netscape HTTP Cookie File\n'
+            '.instagram.com\tTRUE\t/\tTRUE\t2147483647\tsessionid\ttest\n'
+        )
+        encoded = base64.b64encode(cookie_text.encode('utf-8')).decode('ascii')
+        with patch.dict(
+            os.environ,
+            {'YTDLP_COOKIE_DATA_B64': encoded},
+            clear=True,
+        ):
+            options = self.downloader._cookie_options('instagram')
+            twitter_options = self.downloader._cookie_options('twitter')
+
+        cookie_path = options['cookiefile']
+        self.assertTrue(Path(cookie_path).is_file())
+        self.assertEqual(cookie_text, Path(cookie_path).read_text(encoding='utf-8'))
+        self.assertEqual(0o600, Path(cookie_path).stat().st_mode & 0o777)
+        self.assertEqual(options, twitter_options)
+
+    def test_invalid_base64_cookie_export_is_ignored_without_logging_value(self):
+        invalid = 'not-a-cookie-export'
+        with patch.dict(
+            os.environ,
+            {'YTDLP_COOKIE_DATA_B64': invalid},
+            clear=True,
+        ), self.assertLogs(downloader_module.logger, level='WARNING') as captured:
+            self.assertEqual({}, self.downloader._cookie_options('instagram'))
+
+        self.assertNotIn(invalid, '\n'.join(captured.output))
 
     def test_yt_dlp_proxy_is_forwarded_when_configured(self):
         fake_ydl = MagicMock()
