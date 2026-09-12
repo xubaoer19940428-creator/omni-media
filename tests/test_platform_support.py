@@ -579,6 +579,22 @@ class PlatformSupportTests(unittest.TestCase):
         self.assertFalse(result['success'])
         self.assertIn('verification checkpoint', result['error'])
 
+    def test_instagram_audience_restriction_error_is_actionable(self):
+        with patch.object(
+            downloader_module.yt_dlp.YoutubeDL,
+            'extract_info',
+            side_effect=RuntimeError(
+                "ERROR: [Instagram] reel: This content isn't available to everyone: "
+                "It can't be seen by certain audiences."
+            ),
+        ):
+            result = self.downloader.get_video_info(
+                'https://www.instagram.com/reel/DbmIlm5vZBL/'
+            )
+
+        self.assertFalse(result['success'])
+        self.assertIn('active Chrome login', result['error'])
+
     def test_twitter_fxtwitter_fallback_extracts_amplify_video(self):
         class Response:
             def raise_for_status(self):

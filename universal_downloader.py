@@ -1162,7 +1162,15 @@ class UniversalDownloader:
                 return self._error_response(
                     "Instagram requires a browser verification checkpoint. Open Instagram in Chrome, complete the check, then retry"
                 )
-            elif 'empty media' in error_msg.lower():
+            elif any(
+                marker in error_msg.lower()
+                for marker in (
+                    'empty media',
+                    "isn't available to everyone",
+                    "can't be seen by certain audiences",
+                    'not available to everyone',
+                )
+            ):
                 return self._error_response("This content may be private, or Instagram may require an active Chrome login")
             elif 'login' in error_msg.lower() or 'private' in error_msg.lower():
                 return self._error_response("This video may be private or require an account to view")
