@@ -80,6 +80,7 @@ server_startup.log
 *.temp
 docs
 !docs/
+docs/*
 !docs/paypal-review.md
 
 # ==========================================
