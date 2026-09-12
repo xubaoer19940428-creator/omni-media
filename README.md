@@ -60,6 +60,11 @@
 - Download supported media through the server instead of relying on fragile source links.
 - Use the Chrome/Edge extension to parse the current tab or a pasted link from the toolbar.
 - Switch between English and Simplified Chinese, light and dark themes, on desktop or mobile.
+- Includes optional Clerk authentication and a PayPal digital-service checkout with account-linked order history.
+
+## Clerk and PayPal checkout
+
+The `/pricing/` page exposes the complete flow: Clerk sign-in → PayPal Order creation → official PayPal checkout → server-side capture → `/billing/success/`. Orders are bound to the Clerk user and stored in SQLite; mount a Railway Volume at `/data` in production. See [`docs/paypal-review.md`](docs/paypal-review.md) for the PayPal review walkthrough and required variables.
 
 ## Supported platforms
 

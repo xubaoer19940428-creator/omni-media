@@ -1,6 +1,8 @@
 FROM node:22-slim AS frontend-builder
 
 WORKDIR /frontend
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
 RUN corepack enable
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
@@ -32,7 +34,7 @@ RUN groupadd --system quickclean \
 
 COPY --chown=quickclean:quickclean . .
 COPY --from=frontend-builder --chown=quickclean:quickclean /frontend/out /app/frontend/out
-RUN mkdir -p /app/downloads && chown quickclean:quickclean /app/downloads
+RUN mkdir -p /app/downloads /app/data /data && chown -R quickclean:quickclean /app/downloads /app/data /data
 
 EXPOSE 7860
 

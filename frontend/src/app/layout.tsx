@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { LanguageProvider } from '@/lib/i18n';
 import { ThemeProvider } from '@/lib/theme';
+import { ClerkRoot } from '@/components/ClerkRoot';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://useomnimedia.com'),
@@ -125,9 +126,11 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased min-h-screen flex flex-col justify-between selection:bg-blue-500 selection:text-white bg-[#fafbfc] dark:bg-[#07090e] text-slate-900 dark:text-slate-100 transition-colors duration-200">
-        <ThemeProvider>
-          <LanguageProvider>{children}</LanguageProvider>
-        </ThemeProvider>
+        <ClerkRoot>
+          <ThemeProvider>
+            <LanguageProvider>{children}</LanguageProvider>
+          </ThemeProvider>
+        </ClerkRoot>
       </body>
     </html>
   );

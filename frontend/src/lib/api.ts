@@ -5,6 +5,14 @@ const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
 export const MAX_BATCH_QUEUE_SIZE = 40;
 const DEFAULT_REQUEST_TIMEOUT_MS = 45_000;
 
+export type AuthTokenGetter = () => Promise<string | null>;
+
+async function authHeaders(getToken?: AuthTokenGetter): Promise<Record<string, string>> {
+  if (!getToken) return {};
+  const token = await getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 async function requestJson<T>(
   input: RequestInfo | URL,
   init: RequestInit = {},
@@ -238,4 +246,62 @@ export async function checkBackendHealth(): Promise<{
   } catch {
     return { status: 'offline', supported_platforms_count: 39 };
   }
+}
+
+export interface AccountSnapshot {
+  user_id: string;
+  plan: { name: string; price: string; currency: string; credits_per_order: number };
+  credits_granted: number;
+  orders: Array<{
+    paypal_order_id: string;
+    status: string;
+    amount: string;
+    currency: string;
+    credits: number;
+    created_at: string;
+    captured_at?: string | null;
+  }>;
+}
+
+export async function getAccount(getToken: AuthTokenGetter): Promise<AccountSnapshot> {
+  const { response, data } = await requestJson<AccountSnapshot & { error?: string }>(
+    `${API_BASE_URL}/api/account`,
+    { headers: await authHeaders(getToken) },
+  );
+  if (!response.ok) throw new Error(data.error || 'Unable to load account.');
+  return data;
+}
+
+export async function createPayPalOrder(getToken: AuthTokenGetter): Promise<{
+  order_id: string;
+  approval_url?: string | null;
+  amount: string;
+  currency: string;
+  credits: number;
+}> {
+  const { response, data } = await requestJson<any>(`${API_BASE_URL}/api/paypal/orders`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(await authHeaders(getToken)) },
+    body: JSON.stringify({}),
+  });
+  if (!response.ok) throw new Error(data.error || 'Unable to start PayPal checkout.');
+  return data;
+}
+
+export async function capturePayPalOrder(orderId: string, getToken: AuthTokenGetter): Promise<{
+  order_id: string;
+  status: string;
+  amount: string;
+  currency: string;
+  credits_granted: number;
+  captured_at?: string | null;
+  idempotent?: boolean;
+}> {
+  const { response, data } = await requestJson<any>(`${API_BASE_URL}/api/paypal/orders/${encodeURIComponent(orderId)}/capture`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(await authHeaders(getToken)) },
+    body: JSON.stringify({}),
+  });
+  if (!response.ok) throw new Error(data.error || 'Unable to confirm PayPal payment.');
+  return data;
 }

@@ -60,6 +60,11 @@
 - 通过服务端下载支持的媒体，减少源站临时链接失效带来的影响。
 - 使用 Chrome/Edge 扩展，从工具栏解析当前页面或粘贴的链接。
 - 支持简体中文与英文、浅色与深色主题，并适配桌面和移动设备。
+- 支持 Clerk 登录、PayPal 数字服务订单和账户订单记录（配置后启用）。
+
+## Clerk 与 PayPal 收款
+
+网站的 `/pricing/` 页面提供完整的 PayPal 收款流程：Clerk 登录 → 创建 PayPal Order → PayPal 官方结账 → 服务器 Capture → `/billing/success/` 返回结果。订单会绑定 Clerk 用户并写入 SQLite；生产环境建议为 `/data` 挂载 Railway Volume。详细的 PayPal 审核截图和收款说明见 [`docs/paypal-review.md`](docs/paypal-review.md)。
 
 ## 支持平台
 

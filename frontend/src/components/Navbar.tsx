@@ -20,6 +20,7 @@ import { checkBackendHealth } from '@/lib/api';
 import { useTranslation, Language } from '@/lib/i18n';
 import { useTheme } from '@/lib/theme';
 import { OmniMediaLogo } from './OmniMediaLogo';
+import { AuthControls } from './AuthControls';
 
 interface NavbarProps {
   activeTab: 'workbench' | 'batch' | 'playground' | 'platforms';
@@ -172,6 +173,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenD
 
         {/* Right: Action Buttons Suite */}
         <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+          <a href="/pricing/" className="hidden lg:flex items-center rounded-full border border-blue-200 bg-blue-50 px-3.5 py-1.5 text-xs font-bold text-blue-700 transition hover:-translate-y-0.5 hover:border-blue-400 dark:border-cyan-500/25 dark:bg-cyan-500/10 dark:text-cyan-300">Plans</a>
           {/* Live Operational Status */}
           <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-slate-100/90 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 text-[11px] font-mono">
             <Activity className="w-3.5 h-3.5 text-emerald-500" />
@@ -282,6 +284,8 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenD
             <Github className="w-3.5 h-3.5" />
             <span className="hidden md:inline">GitHub</span>
           </a>
+
+          <AuthControls />
         </div>
       </div>
       {isMobileMenuOpen && (

@@ -12,6 +12,7 @@ import { McpBentoSection } from '@/components/McpBentoSection';
 import { ApiDocsModal } from '@/components/ApiDocsModal';
 import { Footer } from '@/components/Footer';
 import { ThreeBackground } from '@/components/ThreeBackground';
+import { BillingPanel } from '@/components/BillingPanel';
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<'workbench' | 'batch' | 'playground' | 'platforms'>('workbench');
@@ -66,6 +67,7 @@ export default function HomePage() {
         {activeTab === 'workbench' && (
           <div className="space-y-12">
             <Workbench initialUrl={workbenchUrl} autoParse={autoParseUrl} />
+            <BillingPanel />
             <McpBentoSection
               onExplorePlayground={() => setActiveTab('playground')}
             />

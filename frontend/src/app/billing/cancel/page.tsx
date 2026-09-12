@@ -1,0 +1,4 @@
+export default function BillingCancelPage() {
+  return <main className="relative z-10 grid min-h-screen place-items-center px-4"><div className="tikhub-panel w-full max-w-lg rounded-2xl p-8 text-center sm:p-12"><p className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-amber-600 dark:text-amber-400">CHECKOUT CANCELED</p><h1 className="mt-4 text-2xl font-black text-slate-950 dark:text-white">No charge was made</h1><p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">You can return to the plans page whenever you are ready. Your account and previous orders remain unchanged.</p><div className="mt-7 flex justify-center gap-3"><a href="/pricing/" className="btn-gradient-pill text-xs">Return to plans</a><a href="/" className="btn-secondary-pill text-xs">Back home</a></div></div></main>;
+}
+

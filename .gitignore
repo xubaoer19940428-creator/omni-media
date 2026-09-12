@@ -2,6 +2,7 @@
 # 媒体与下载文件
 # ==========================================
 downloads/
+data/
 test_downloads/
 *.mp4
 !.github/assets/omnimedia-demo.mp4
@@ -78,6 +79,8 @@ server_startup.log
 *.tmp
 *.temp
 docs
+!docs/
+!docs/paypal-review.md
 
 # ==========================================
 # 本地工具与 IDE 缓存

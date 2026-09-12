@@ -20,6 +20,8 @@ import requests
 from flask import Flask, Response, g, jsonify, render_template, request, send_from_directory
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+from auth import require_clerk_auth
+import billing
 from storage import StoragePublishError, create_storage_backend
 from universal_downloader import UniversalDownloader
 from gallery_integrations import GalleryError, GalleryNotInstalled, classify_media_url, resolve_gallery
@@ -726,11 +728,12 @@ def add_security_headers(response):
     response.headers.setdefault(
         'Content-Security-Policy',
         "default-src 'self'; "
-        f"script-src {script_sources} https://www.googletagmanager.com; "
+        f"script-src {script_sources} https://www.googletagmanager.com https://*.clerk.com https://*.clerk.accounts.dev; "
         "style-src 'self' 'unsafe-inline'; "
         "img-src 'self' data: blob: https:; "
         "media-src 'self' blob: https:; "
-        "connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com https://analytics.google.com; "
+        "connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com https://analytics.google.com https://*.clerk.com https://*.clerk.accounts.dev https://api-m.paypal.com https://api-m.sandbox.paypal.com; "
+        "frame-src 'self' https://*.clerk.com https://*.clerk.accounts.dev; "
         "font-src 'self' data:; object-src 'none'; base-uri 'self'; "
         "frame-ancestors 'self'; form-action 'self'",
     )
@@ -812,6 +815,43 @@ def get_platforms():
     return jsonify({
         'platforms': downloader.get_supported_platforms()
     })
+
+
+@app.route('/api/account')
+@require_clerk_auth
+def account():
+    """Return the signed-in user's billing ledger and current entitlement."""
+    return jsonify(billing.account_snapshot(g.clerk_user_id))
+
+
+@app.route('/api/paypal/orders', methods=['POST'])
+@require_clerk_auth
+def create_paypal_order():
+    """Create one fixed-price PayPal order for the signed-in user."""
+    try:
+        return jsonify(billing.create_order(g.clerk_user_id)), 201
+    except ValueError as exc:
+        return jsonify({'error': str(exc)}), 400
+    except RuntimeError as exc:
+        logging.warning('PayPal order creation unavailable (%s)', type(exc).__name__)
+        return jsonify({'error': str(exc)}), 503
+
+
+@app.route('/api/paypal/orders/<order_id>/capture', methods=['POST'])
+@require_clerk_auth
+def capture_paypal_order(order_id):
+    """Capture a PayPal order and grant its recorded credits exactly once."""
+    if not isinstance(order_id, str) or not re.fullmatch(r'[A-Za-z0-9-]{5,64}', order_id):
+        return jsonify({'error': 'Invalid PayPal order ID'}), 400
+    try:
+        return jsonify(billing.capture_order(g.clerk_user_id, order_id))
+    except LookupError:
+        return jsonify({'error': 'PayPal order not found'}), 404
+    except ValueError as exc:
+        return jsonify({'error': str(exc)}), 400
+    except RuntimeError as exc:
+        logging.warning('PayPal capture unavailable (%s)', type(exc).__name__)
+        return jsonify({'error': str(exc)}), 502
 
 @app.route('/api/parse', methods=['POST'])
 def parse_url():
