@@ -317,6 +317,10 @@ def create_subscription(clerk_user_id: str) -> dict[str, Any]:
         connection.close()
     import json
     for row in pending_rows:
+        if str(row['subscription_status'] or '').upper() not in {'APPROVAL_PENDING', 'APPROVED', 'ACTIVE'}:
+            continue
+        if row['plan_id'] and str(row['plan_id']) != plan_id:
+            continue
         try:
             raw = json.loads(row['raw_json'] or '{}')
         except (TypeError, ValueError):
