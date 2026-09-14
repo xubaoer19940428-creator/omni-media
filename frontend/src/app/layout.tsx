@@ -42,13 +42,13 @@ export const metadata: Metadata = {
     'Parse public media links across 39 platforms with normalized JSON responses and server-side downloads.',
     type: 'website',
     url: 'https://useomnimedia.com',
-    images: [{ url: '/og-image-v2.png', width: 1200, height: 630, alt: 'OmniMedia universal media extraction platform' }],
+    images: [{ url: '/og-image-v2.png?v=1', width: 1200, height: 630, alt: 'OmniMedia universal media extraction platform' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'OmniMedia — Universal Social Media API',
     description: 'Parse public media links across 39 platforms with one normalized API.',
-    images: ['/og-image-v2.png'],
+    images: ['/og-image-v2.png?v=1'],
   },
 };
 
