@@ -109,7 +109,10 @@ function MembershipPlanLink({ collapsed, isMobile }: MembershipPlanLinkProps) {
 
   const compact = collapsed && !isMobile;
   const showMember = isSignedIn && membership === 'member';
-  const showPlan = !isSignedIn || membership === 'free';
+  // Do not treat Clerk's initial `undefined` state as signed-out. Rendering
+  // the upgrade price before auth is resolved can briefly expose it to a
+  // member during a page refresh.
+  const showPlan = isLoaded && (!isSignedIn || membership === 'free');
 
   if (showMember) {
     return (
