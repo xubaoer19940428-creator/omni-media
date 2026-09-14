@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import {
   Activity,
   BookOpen,
+  CheckCircle2,
   ChevronRight,
   CreditCard,
   Globe,
@@ -19,11 +20,12 @@ import {
   UserRound,
   X,
 } from 'lucide-react';
-import { checkBackendHealth } from '@/lib/api';
+import { AccountSnapshot, checkBackendHealth, getAccount } from '@/lib/api';
 import { useTranslation } from '@/lib/i18n';
 import { useTheme } from '@/lib/theme';
 import { OmniMediaLogo } from './OmniMediaLogo';
 import { AuthControls } from './AuthControls';
+import { useAuth } from '@clerk/react';
 
 type ActiveTab = 'workbench' | 'batch' | 'playground' | 'platforms';
 
@@ -36,6 +38,101 @@ interface NavbarProps {
 }
 
 const SIDEBAR_STORAGE_KEY = 'omnimedia_sidebar_collapsed';
+
+type MembershipState = 'loading' | 'member' | 'free' | 'unknown';
+
+interface MembershipPlanLinkProps {
+  collapsed: boolean;
+  isMobile: boolean;
+}
+
+function PlanLinkFrame({
+  collapsed,
+  isMobile,
+  children,
+  title,
+  active = false,
+}: MembershipPlanLinkProps & {
+  children: React.ReactNode;
+  title?: string;
+  active?: boolean;
+}) {
+  const compact = collapsed && !isMobile;
+  return (
+    <a
+      href="/pricing/"
+      className={`mt-5 flex items-center rounded-2xl border transition hover:-translate-y-0.5 ${compact ? 'justify-center p-3' : 'justify-between gap-2 px-3 py-3'} ${active
+        ? 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-200'
+        : 'border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200'}`}
+      title={compact ? title : undefined}
+    >
+      {children}
+    </a>
+  );
+}
+
+function StaticPlanLink({ collapsed, isMobile }: MembershipPlanLinkProps) {
+  const compact = collapsed && !isMobile;
+  return (
+    <PlanLinkFrame collapsed={collapsed} isMobile={isMobile} title="Creator plan · US$9.90/month">
+      <CreditCard className="h-4 w-4 shrink-0" />
+      {!compact && <span><span className="block font-mono text-[10px] uppercase tracking-wider opacity-70">Creator plan</span><span className="text-sm font-bold">US$9.90 / month · unlimited</span></span>}
+      {!compact && <ChevronRight className="h-4 w-4 shrink-0" />}
+    </PlanLinkFrame>
+  );
+}
+
+function MembershipPlanLink({ collapsed, isMobile }: MembershipPlanLinkProps) {
+  const { isLoaded, isSignedIn, getToken } = useAuth();
+  const [membership, setMembership] = React.useState<MembershipState>('loading');
+
+  React.useEffect(() => {
+    let active = true;
+    if (!isLoaded) return () => { active = false; };
+    if (!isSignedIn) {
+      setMembership('free');
+      return () => { active = false; };
+    }
+
+    setMembership('loading');
+    getAccount(getToken)
+      .then((account: AccountSnapshot) => {
+        if (active) setMembership(account.plan?.unlimited ? 'member' : 'free');
+      })
+      .catch(() => {
+        // Keep the signed-in link neutral if the account endpoint is briefly
+        // unavailable; this prevents exposing a price to an existing member.
+        if (active) setMembership('unknown');
+      });
+    return () => { active = false; };
+  }, [getToken, isLoaded, isSignedIn]);
+
+  const compact = collapsed && !isMobile;
+  const showMember = isSignedIn && membership === 'member';
+  const showPlan = !isSignedIn || membership === 'free';
+
+  if (showMember) {
+    return (
+      <PlanLinkFrame collapsed={collapsed} isMobile={isMobile} active title="Membership active · unlimited downloads">
+        <CheckCircle2 className="h-4 w-4 shrink-0" />
+        {!compact && <span><span className="block font-mono text-[10px] uppercase tracking-wider opacity-70">Membership active</span><span className="text-sm font-bold">Unlimited downloads</span></span>}
+        {!compact && <ChevronRight className="h-4 w-4 shrink-0" />}
+      </PlanLinkFrame>
+    );
+  }
+
+  if (showPlan) return <StaticPlanLink collapsed={collapsed} isMobile={isMobile} />;
+
+  // A signed-in account is still being checked (or the API is unavailable).
+  // Use a neutral destination with no price or free-limit messaging.
+  return (
+    <PlanLinkFrame collapsed={collapsed} isMobile={isMobile} title="View membership">
+      <CreditCard className="h-4 w-4 shrink-0" />
+      {!compact && <span><span className="block font-mono text-[10px] uppercase tracking-wider opacity-70">Membership</span><span className="text-sm font-bold">View account plan</span></span>}
+      {!compact && <ChevronRight className="h-4 w-4 shrink-0" />}
+    </PlanLinkFrame>
+  );
+}
 
 export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
@@ -150,11 +247,9 @@ export const Navbar: React.FC<NavbarProps> = ({
         {isMobile ? <button type="button" onClick={() => setDrawerOpen(false)} className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-blue-300 hover:text-blue-600 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-cyan-400/40 dark:hover:text-cyan-300" aria-label="Close navigation"><X className="h-4 w-4" /></button> : <button type="button" onClick={toggleCollapsed} className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-blue-300 hover:text-blue-600 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-cyan-400/40 dark:hover:text-cyan-300 ${collapsed ? 'absolute -right-1 -top-1 shadow-md' : ''}`} aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>{collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}</button>}
       </div>
       <div className="mt-8">{navigation(collapsed && !isMobile)}</div>
-      <a href="/pricing/" className={`mt-5 flex items-center rounded-2xl border border-amber-300 bg-amber-50 text-amber-900 transition hover:-translate-y-0.5 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200 ${collapsed && !isMobile ? 'justify-center p-3' : 'justify-between gap-2 px-3 py-3'}`} title={collapsed && !isMobile ? 'Creator plan · US$9.90/month' : undefined}>
-        <CreditCard className="h-4 w-4 shrink-0" />
-        {(!collapsed || isMobile) && <span><span className="block font-mono text-[10px] uppercase tracking-wider opacity-70">Creator plan</span><span className="text-sm font-bold">US$9.90 / month · unlimited</span></span>}
-        {(!collapsed || isMobile) && <ChevronRight className="h-4 w-4 shrink-0" />}
-      </a>
+      {process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+        ? <MembershipPlanLink collapsed={collapsed} isMobile={isMobile} />
+        : <StaticPlanLink collapsed={collapsed} isMobile={isMobile} />}
       <div className="mt-auto space-y-4">
         {!collapsed || isMobile ? <AuthControls /> : <a href="/account/" className="mx-auto grid h-10 w-10 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300" title="Account" aria-label="Account"><UserRound className="h-4 w-4" /></a>}
         {utility(collapsed && !isMobile)}
