@@ -266,6 +266,8 @@ export interface AccountSnapshot {
     created_at: string;
     captured_at?: string | null;
   }>;
+  pending_checkout_url?: string | null;
+  pending_subscription_id?: string | null;
 }
 
 export async function getAccount(getToken: AuthTokenGetter): Promise<AccountSnapshot> {

@@ -299,6 +299,48 @@ def create_subscription(clerk_user_id: str) -> dict[str, Any]:
     if not clerk_user_id:
         raise ValueError('An authenticated user is required')
 
+    # Reuse an existing approval-pending subscription. PayPal subscriptions
+    # are created before the buyer signs in; retrying the button after an
+    # interrupted login would otherwise create duplicate subscriptions.
+    connection = _connect()
+    try:
+        pending_rows = connection.execute(
+            """
+            SELECT * FROM paypal_orders
+            WHERE clerk_user_id = ? AND status != 'COMPLETED'
+              AND subscription_id IS NOT NULL
+            ORDER BY created_at DESC LIMIT 10
+            """,
+            (clerk_user_id,),
+        ).fetchall()
+    finally:
+        connection.close()
+    import json
+    for row in pending_rows:
+        try:
+            raw = json.loads(row['raw_json'] or '{}')
+        except (TypeError, ValueError):
+            raw = {}
+        links = raw.get('links') if isinstance(raw, dict) else None
+        approval_url = next(
+            (link.get('href') for link in links or []
+             if isinstance(link, dict)
+             and link.get('rel') in {'approve', 'payer-action'}
+             and isinstance(link.get('href'), str)),
+            None,
+        )
+        if approval_url:
+            return {
+                'subscription_id': row['subscription_id'],
+                'status': str(row['subscription_status'] or row['status'] or 'APPROVAL_PENDING').upper(),
+                'amount': row['amount'],
+                'currency': row['currency'],
+                'interval': 'month',
+                'unlimited': True,
+                'approval_url': approval_url,
+                'reused': True,
+            }
+
     payload = _paypal_request(
         'POST',
         '/v1/billing/subscriptions',
@@ -680,7 +722,8 @@ def account_snapshot(clerk_user_id: str) -> dict[str, Any]:
         connection.commit()
         rows = connection.execute(
             """
-            SELECT paypal_order_id, status, amount, currency, credits, created_at, captured_at
+            SELECT paypal_order_id, status, amount, currency, credits, created_at, captured_at,
+                   raw_json, subscription_id, subscription_status
             FROM paypal_orders WHERE clerk_user_id = ? ORDER BY created_at DESC LIMIT 50
             """,
             (clerk_user_id,),
@@ -694,6 +737,33 @@ def account_snapshot(clerk_user_id: str) -> dict[str, Any]:
     finally:
         connection.close()
     completed = [row for row in rows if row['status'] == 'COMPLETED']
+    pending_approval_url = None
+    pending_subscription_id = None
+    # A browser can be interrupted after PayPal creates a subscription but
+    # before the user finishes approval. Reuse that approval URL on the next
+    # visit instead of creating a second subscription.
+    for row in rows:
+        if str(row['status'] or '').upper() == 'COMPLETED':
+            continue
+        if str(row['subscription_status'] or '').upper() not in {'APPROVAL_PENDING', 'APPROVED', 'ACTIVE'}:
+            continue
+        try:
+            import json
+            raw = json.loads(row['raw_json'] or '{}')
+        except (TypeError, ValueError):
+            raw = {}
+        links = raw.get('links') if isinstance(raw, dict) else None
+        if isinstance(links, list):
+            pending_approval_url = next(
+                (link.get('href') for link in links
+                 if isinstance(link, dict)
+                 and link.get('rel') in {'approve', 'payer-action'}
+                 and isinstance(link.get('href'), str)),
+                None,
+            )
+        if pending_approval_url:
+            pending_subscription_id = row['subscription_id']
+            break
     return {
         'user_id': clerk_user_id,
         'plan': {
@@ -708,7 +778,15 @@ def account_snapshot(clerk_user_id: str) -> dict[str, Any]:
         'downloads_used': int(usage_row['downloads_used']) if usage_row else 0,
         'downloads_remaining': None if subscription_expires_at else max(0, FREE_DOWNLOAD_LIMIT - (int(usage_row['downloads_used']) if usage_row else 0)),
         'free_download_limit': FREE_DOWNLOAD_LIMIT,
-        'orders': [dict(row) for row in rows],
+        'orders': [
+            {
+                key: row[key]
+                for key in ('paypal_order_id', 'status', 'amount', 'currency', 'credits', 'created_at', 'captured_at')
+            }
+            for row in rows
+        ],
+        'pending_checkout_url': pending_approval_url,
+        'pending_subscription_id': pending_subscription_id,
     }
 
 

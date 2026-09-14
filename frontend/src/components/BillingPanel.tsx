@@ -70,6 +70,10 @@ function ConfiguredBillingPanel() {
     setCheckoutLoading(true);
     setError(null);
     try {
+      if (account?.pending_checkout_url) {
+        window.location.assign(account.pending_checkout_url);
+        return;
+      }
       const order = await createPayPalOrder(getToken);
       if (!order.approval_url) throw new Error(lang === 'zh' ? 'PayPal 未返回结账链接' : 'PayPal did not return an approval link.');
       window.location.assign(order.approval_url);
