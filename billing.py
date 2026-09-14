@@ -137,8 +137,8 @@ def _amount() -> str:
 
 
 def _currency() -> str:
-    value = os.environ.get('PAYPAL_CURRENCY', 'CNY').strip().upper()
-    return value if len(value) == 3 and value.isalpha() else 'CNY'
+    value = os.environ.get('PAYPAL_CURRENCY', 'USD').strip().upper()
+    return value if len(value) == 3 and value.isalpha() else 'USD'
 
 
 def _credits() -> int:

@@ -6,6 +6,14 @@ import { SignInButton, useAuth } from '@clerk/react';
 import { AccountSnapshot, createPayPalOrder, getAccount } from '@/lib/api';
 import { useTranslation } from '@/lib/i18n';
 
+const FALLBACK_PLAN = { price: '9.90', currency: 'USD' };
+
+function formatPrice(price: string, currency: string) {
+  if (currency === 'CNY') return `¥${price}`;
+  if (currency === 'USD') return `US$${price}`;
+  return `${currency} ${price}`;
+}
+
 function SignedOutBillingCard() {
   const { lang } = useTranslation();
   return (
@@ -55,6 +63,8 @@ function ConfiguredBillingPanel() {
   if (!isSignedIn) return <SignedOutBillingCard />;
 
   const plan = account?.plan;
+  const displayPlan = plan || FALLBACK_PLAN;
+  const displayPrice = formatPrice(displayPlan.price, displayPlan.currency);
   const orderCount = account?.orders.length || 0;
   const handleCheckout = async () => {
     setCheckoutLoading(true);
@@ -75,7 +85,7 @@ function ConfiguredBillingPanel() {
         <div className="p-6 sm:p-8">
           <div className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-blue-600 dark:text-cyan-400"><Sparkles className="h-3.5 w-3.5" />{lang === 'zh' ? '账户中心' : 'ACCOUNT CENTER'}</div>
           <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-slate-950 dark:text-white">{lang === 'zh' ? '月度无限下载' : 'Monthly unlimited downloads'}</h2>
-          <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600 dark:text-slate-400">{lang === 'zh' ? 'PayPal 安全结账。¥9.90/月自动续费，订阅有效期间可无限下载，订单与当前 Clerk 账户绑定。' : 'Secure PayPal checkout. ¥9.90/month renews automatically for unlimited downloads while your subscription is active.'}</p>
+          <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600 dark:text-slate-400">{lang === 'zh' ? `PayPal 安全结账。${displayPrice}/月自动续费，订阅有效期间可无限下载，订单与当前 Clerk 账户绑定。` : `Secure PayPal checkout. ${displayPrice}/month renews automatically for unlimited downloads while your subscription is active.`}</p>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/70"><p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">{lang === 'zh' ? '剩余下载' : 'Downloads left'}</p><p className="mt-1 text-2xl font-black text-slate-950 dark:text-white">{loading ? '—' : account?.downloads_remaining == null ? '∞' : account.downloads_remaining}</p></div>
@@ -88,9 +98,9 @@ function ConfiguredBillingPanel() {
         <div className="border-t border-slate-200 bg-slate-50/80 p-6 dark:border-slate-800 dark:bg-slate-900/60 lg:border-l lg:border-t-0 sm:p-8">
           <p className="text-[10px] font-mono font-bold uppercase tracking-[0.18em] text-slate-500">{lang === 'zh' ? '月度订阅' : 'MONTHLY MEMBERSHIP'}</p>
           <h3 className="mt-2 text-lg font-extrabold text-slate-950 dark:text-white">{plan?.name || 'OmniMedia Monthly Unlimited'}</h3>
-          <div className="mt-4 flex items-end gap-2"><span className="text-4xl font-black text-slate-950 dark:text-white">{plan ? `${plan.currency === 'CNY' ? '¥' : plan.currency} ${plan.price}` : '¥9.90'}</span><span className="pb-1 text-xs font-bold text-slate-500">/ month</span></div>
+          <div className="mt-4 flex items-end gap-2"><span className="text-4xl font-black text-slate-950 dark:text-white">{displayPrice}</span><span className="pb-1 text-xs font-bold text-slate-500">/ month</span></div>
           <p className="mt-1 text-xs text-slate-500">{lang === 'zh' ? '每月自动续费 · 无限下载' : 'Auto-renewing monthly · unlimited downloads'}</p>
-          <ul className="mt-5 space-y-2 text-xs text-slate-600 dark:text-slate-300"><li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-500" />{lang === 'zh' ? '每月 9.90 元' : '¥9.90 per month'}</li><li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-500" />{lang === 'zh' ? '无限视频下载' : 'Unlimited video downloads'}</li><li className="flex items-center gap-2"><ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />{lang === 'zh' ? 'PayPal 安全结账' : 'Secure PayPal checkout'}</li></ul>
+          <ul className="mt-5 space-y-2 text-xs text-slate-600 dark:text-slate-300"><li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-500" />{lang === 'zh' ? `每月 ${displayPrice}` : `${displayPrice} per month`}</li><li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-500" />{lang === 'zh' ? '无限视频下载' : 'Unlimited video downloads'}</li><li className="flex items-center gap-2"><ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />{lang === 'zh' ? 'PayPal 安全结账' : 'Secure PayPal checkout'}</li></ul>
           <button type="button" onClick={handleCheckout} disabled={checkoutLoading} className="btn-gradient-pill mt-6 flex w-full items-center justify-center gap-2 text-xs disabled:cursor-not-allowed disabled:opacity-60"><CreditCard className="h-4 w-4" />{checkoutLoading ? (lang === 'zh' ? '正在跳转…' : 'Opening PayPal…') : (lang === 'zh' ? '使用 PayPal 支付' : 'Pay with PayPal')}</button>
           <p className="mt-3 text-center text-[10px] leading-5 text-slate-500">{lang === 'zh' ? '数字服务 · 每月自动续费 · 无需配送' : 'Digital service · Auto-renews monthly · No shipping required'}</p>
         </div>

@@ -3,7 +3,7 @@
 OmniMedia 现在提供完整的数字服务收款流程：
 
 1. 访问 `https://useomnimedia.com/pricing/`，点击「登录 / 注册」，使用 Clerk 创建或登录账户。
-2. 在账户中心选择「使用 PayPal 支付」。服务器通过 PayPal Subscriptions API 创建 ¥9.90/月的数字会员订阅；未配置月度计划时会明确提示暂不可购买，不会降级成一次性订单。
+2. 在账户中心选择「使用 PayPal 支付」。服务器通过 PayPal Subscriptions API 创建 US$9.90/月的数字会员订阅；未配置月度计划时会明确提示暂不可购买，不会降级成一次性订单。
 3. 页面跳转到 PayPal 官方结账页。买家登录 PayPal、确认金额并付款。
 4. PayPal 将买家返回 `https://useomnimedia.com/billing/success/`。服务器校验当前 Clerk 用户与订阅的绑定关系，并查询订阅状态确认已激活。
 5. 成功页显示支付完成和会员有效期；账户页可以查看订单状态、金额、时间和会员状态。
@@ -33,7 +33,7 @@ OmniMedia 现在提供完整的数字服务收款流程：
 - `CLERK_JWKS_URL`（例如 issuer 后的 `/.well-known/jwks.json`）
 - `PAYPAL_ENVIRONMENT=sandbox`（审核测试阶段）或 `live`（正式收款）
 - `PAYPAL_CLIENT_ID`、`PAYPAL_CLIENT_SECRET`
-- `PAYPAL_PLAN_ID`（PayPal 月度订阅计划 ID；计划价格设置为 CNY 9.90、周期为 Month）
+- `PAYPAL_PLAN_ID`（PayPal 月度订阅计划 ID；计划价格设置为 USD 9.90、周期为 Month）
 - `PUBLIC_APP_URL=https://useomnimedia.com`
 - `DATABASE_PATH=/data/omnimedia.db`，并在 Railway 挂载 `/data` Volume 以持久化订单记录
 
