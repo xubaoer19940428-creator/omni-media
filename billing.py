@@ -421,7 +421,56 @@ def capture_order(clerk_user_id: str, paypal_order_id: str) -> dict[str, Any]:
             (paypal_order_id, clerk_user_id),
         ).fetchone()
         if row is None:
-            raise LookupError('PayPal order not found')
+            # Railway may restart between approval and the browser callback
+            # when SQLite is running without a mounted volume. Reconcile a
+            # subscription directly from PayPal, but only after verifying its
+            # status, plan, and custom_id binding to this Clerk user.
+            if not paypal_order_id.startswith('I-'):
+                raise LookupError('PayPal order not found')
+            connection.close()
+            payload = _paypal_request('GET', f'/v1/billing/subscriptions/{paypal_order_id}')
+            status = str(payload.get('status') or '').upper()
+            if status not in {'ACTIVE', 'APPROVED'}:
+                raise RuntimeError('PayPal subscription has not been activated')
+            if _paypal_plan_id() and str(payload.get('plan_id') or '') != _paypal_plan_id():
+                raise RuntimeError('PayPal subscription plan could not be verified')
+            if str(payload.get('custom_id') or '') != clerk_user_id:
+                raise RuntimeError('PayPal subscription does not belong to this account')
+            now = _now()
+            connection = _connect()
+            try:
+                _ensure_user(connection, clerk_user_id)
+                connection.execute(
+                    """
+                    INSERT OR IGNORE INTO paypal_orders
+                        (clerk_user_id, paypal_order_id, status, amount, currency, credits, created_at,
+                         captured_at, raw_json, subscription_id, plan_id, subscription_status, subscription_next_billing_at)
+                    VALUES (?, ?, 'COMPLETED', ?, ?, 0, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (clerk_user_id, paypal_order_id, _amount(), _currency(), now, now, _json(payload),
+                     paypal_order_id, _paypal_plan_id(), status, _subscription_next_billing_at(payload)),
+                )
+                connection.commit()
+                row = connection.execute(
+                    'SELECT * FROM paypal_orders WHERE paypal_order_id = ? AND clerk_user_id = ?',
+                    (paypal_order_id, clerk_user_id),
+                ).fetchone()
+            finally:
+                connection.close()
+            if row is None:
+                raise LookupError('PayPal order not found')
+            return {
+                'order_id': row['paypal_order_id'],
+                'subscription_id': paypal_order_id,
+                'status': row['status'],
+                'amount': row['amount'],
+                'currency': row['currency'],
+                'interval': 'month',
+                'unlimited': True,
+                'captured_at': row['captured_at'],
+                'idempotent': False,
+                'reconciled': True,
+            }
         if row['status'] == 'COMPLETED':
             return {
                 'order_id': row['paypal_order_id'],
