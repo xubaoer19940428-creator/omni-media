@@ -996,7 +996,7 @@ def download_video():
             return jsonify({'error': str(exc)}), 401
         if not reservation.get('allowed'):
             return jsonify({
-                'error': 'Free accounts can download 2 videos. Upgrade to the ¥9.90/month plan for unlimited downloads.',
+                'error': 'Free accounts can download 2 videos. Upgrade to the monthly plan for unlimited downloads.',
                 'code': 'FREE_DOWNLOAD_LIMIT_REACHED',
                 'downloads_used': reservation.get('downloads_used', 2),
                 'downloads_remaining': 0,

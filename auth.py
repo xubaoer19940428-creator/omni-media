@@ -127,18 +127,24 @@ def require_clerk_auth(view: Callable[..., Any]) -> Callable[..., Any]:
 
 
 def require_download_auth(view: Callable[..., Any]) -> Callable[..., Any]:
-    """Authenticate downloads when Clerk is configured, preserving local dev.
+    """Require a Clerk identity before a download can consume quota.
 
-    Production deployments set ``CLERK_ISSUER`` and therefore require a real
-    Clerk bearer token. Local tests and offline development may omit Clerk and
-    continue to exercise the downloader without a user account.
+    Anonymous downloads are only available in tests or when explicitly opted
+    into with ``ALLOW_ANONYMOUS_DOWNLOADS=1``. This prevents a production
+    deployment with a missing Clerk variable from silently bypassing the free
+    quota and billing boundary.
     """
     @wraps(view)
     def wrapped(*args: Any, **kwargs: Any) -> Any:
-        from flask import g, jsonify, request
+        from flask import current_app, g, jsonify, request
         if not _clerk_issuer():
-            g.clerk_user_id = None
-            return view(*args, **kwargs)
+            allow_anonymous = current_app.config.get('TESTING') or os.environ.get(
+                'ALLOW_ANONYMOUS_DOWNLOADS', ''
+            ).strip().lower() in {'1', 'true', 'yes'}
+            if allow_anonymous:
+                g.clerk_user_id = None
+                return view(*args, **kwargs)
+            return jsonify({'error': 'Clerk authentication is not configured'}), 503
         try:
             claims = verify_bearer_token(bearer_token_from_request(request))
         except AuthenticationError as exc:

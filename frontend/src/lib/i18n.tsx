@@ -109,6 +109,9 @@ export const translations = {
       comments: 'Comments:',
       descAndTags: 'Description & Tags',
       copyJson: 'Copy JSON',
+      signInToDownload: 'Sign in to download · 2 free videos included',
+      unlimitedDownloads: 'Unlimited downloads active',
+      checkingAccount: 'Checking account…',
     },
     // API Playground
     playground: {
@@ -210,6 +213,20 @@ export const translations = {
       license: 'MIT License',
       madeWith: 'Made with',
       forDevelopers: 'for Global Developers',
+    },
+    audience: {
+      eyebrow: 'BUILT FOR EVERY WORKFLOW',
+      title: 'From one link to a ready-to-use media asset.',
+      subtitle: 'Creators can save public content in seconds. Developers get one normalized JSON contract across 39 platforms. Start free, then upgrade when you need more.',
+      tryNow: 'Try it now',
+      exploreApi: 'Explore the API',
+      trustLine: 'NO CARD REQUIRED · PUBLIC LINKS · 10-MINUTE DOWNLOAD LINKS',
+      creatorTitle: 'Creator workflow',
+      creatorItems: ['Paste any share text', 'MP4, MP3, and HD galleries', 'Try 2 videos free'],
+      seePlan: 'See the monthly plan',
+      developerTitle: 'Developer workflow',
+      developerItems: ['One REST + JSON contract', 'Batch parsing and platform status', 'Snippets in 5 languages'],
+      openPlayground: 'Open the playground',
     }
   },
   zh: {
@@ -316,6 +333,9 @@ export const translations = {
       comments: '评论量:',
       descAndTags: '文案与话题标签',
       copyJson: '复制 JSON',
+      signInToDownload: '登录后下载 · 免费可用 2 个视频',
+      unlimitedDownloads: '无限下载已开启',
+      checkingAccount: '正在检查账户…',
     },
     // API Playground
     playground: {
@@ -417,6 +437,20 @@ export const translations = {
       license: 'MIT 开源协议',
       madeWith: '用心构建',
       forDevelopers: '献给全球开发者',
+    },
+    audience: {
+      eyebrow: '为每一种工作流准备',
+      title: '从一个链接，到可用的媒体资产。',
+      subtitle: '创作者可以快速保存公开内容，开发者可以用统一 JSON 接入 39 个平台。先免费试用，再按需升级。',
+      tryNow: '立即试用',
+      exploreApi: '查看 API',
+      trustLine: '无需信用卡 · 公开链接 · 10 分钟下载链接',
+      creatorTitle: '创作者工作流',
+      creatorItems: ['粘贴分享文案即可识别', 'MP4、MP3 与高清图集', '免费账户先试 2 个视频'],
+      seePlan: '查看月度套餐',
+      developerTitle: '开发者接入',
+      developerItems: ['统一 REST + JSON 契约', '批量解析与平台状态', '5 种语言代码示例'],
+      openPlayground: '打开调试台',
     }
   }
 };

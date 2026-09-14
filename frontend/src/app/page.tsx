@@ -13,6 +13,7 @@ import { ApiDocsModal } from '@/components/ApiDocsModal';
 import { Footer } from '@/components/Footer';
 import { ThreeBackground } from '@/components/ThreeBackground';
 import { BillingPanel } from '@/components/BillingPanel';
+import { AudienceSection } from '@/components/AudienceSection';
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<'workbench' | 'batch' | 'playground' | 'platforms'>('workbench');
@@ -63,6 +64,11 @@ export default function HomePage() {
       <div className="relative z-10 mb-8">
         <PlatformMarquee onSelectPlatform={() => setActiveTab('platforms')} />
       </div>
+
+      <AudienceSection
+        onStartParsing={() => setActiveTab('workbench')}
+        onExploreApi={() => setActiveTab('playground')}
+      />
 
       {/* Main Container */}
       <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-12">

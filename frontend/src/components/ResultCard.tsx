@@ -32,11 +32,15 @@ function DownloadAction({
   onDownload,
   disabled,
   children,
+  signedOutLabel,
+  loadingLabel,
   className,
 }: {
   onDownload: (getToken?: AuthTokenGetter) => void;
   disabled: boolean;
   children: React.ReactNode;
+  signedOutLabel: string;
+  loadingLabel: string;
   className: string;
 }) {
   const { isLoaded, isSignedIn, getToken } = useAuth();
@@ -48,7 +52,7 @@ function DownloadAction({
     }
     onDownload(getToken);
   };
-  return <button type="button" onClick={click} disabled={disabled || !isLoaded} className={className}>{children}</button>;
+  return <button type="button" onClick={click} disabled={disabled || !isLoaded} className={className}>{!isLoaded ? loadingLabel : !isSignedIn ? signedOutLabel : children}</button>;
 }
 
 export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
@@ -386,6 +390,8 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
                   <DownloadAction
                     onDownload={(getToken) => { void handleServerSideDownload(undefined, getToken); }}
                     disabled={isServerDownloading}
+                    signedOutLabel={t.result.signInToDownload}
+                    loadingLabel={t.result.checkingAccount}
                     className="w-full btn-primary-pill text-xs flex items-center justify-center gap-2 transition disabled:opacity-50"
                   >
                     <Download className="w-4 h-4" />
@@ -511,6 +517,8 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onClear }) => {
                       void handleServerSideDownload({ audioOnly: true }, getToken);
                     }}
                     disabled={isServerDownloading}
+                    signedOutLabel={t.result.signInToDownload}
+                    loadingLabel={t.result.checkingAccount}
                     className="flex-1 btn-primary-pill text-xs flex items-center justify-center gap-2"
                   >
                     <Download className="w-4 h-4" />

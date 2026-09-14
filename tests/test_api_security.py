@@ -42,6 +42,23 @@ class ApiSecurityTests(unittest.TestCase):
         self.download_dir_patch.stop()
         self.temp_dir.cleanup()
 
+    def test_download_fails_closed_without_clerk_outside_tests(self):
+        previous_testing = app_module.app.config.get('TESTING')
+        app_module.app.config.update(TESTING=False)
+        try:
+            with patch.dict(os.environ, {
+                'CLERK_ISSUER': '',
+                'ALLOW_ANONYMOUS_DOWNLOADS': '',
+            }, clear=False):
+                response = self.client.post('/api/download', json={
+                    'original_url': YOUTUBE_URL,
+                })
+        finally:
+            app_module.app.config.update(TESTING=previous_testing)
+
+        self.assertEqual(503, response.status_code)
+        self.assertEqual('Clerk authentication is not configured', response.get_json()['error'])
+
     def test_download_uses_server_generated_filename_and_hides_internal_path(self):
         captured = {}
 

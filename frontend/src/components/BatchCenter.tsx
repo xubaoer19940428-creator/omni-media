@@ -19,9 +19,22 @@ import { extractUrlFromText, batchParseMediaUrls, triggerServerDownload, MAX_BAT
 import { SUPPORTED_PLATFORMS } from '@/lib/constants';
 import { useTranslation } from '@/lib/i18n';
 import { PlatformIcon } from './PlatformIcons';
+import { useAuth, useClerk } from '@clerk/react';
 
-export const BatchCenter: React.FC = () => {
+interface BatchAuth {
+  isLoaded: boolean;
+  isSignedIn: boolean | undefined;
+  getToken: () => Promise<string | null>;
+  openSignIn: () => void;
+}
+
+const BatchCenterBody: React.FC<{ auth?: BatchAuth }> = ({ auth }) => {
   const { t, lang } = useTranslation();
+  const isAuthConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+  const isLoaded = auth?.isLoaded ?? true;
+  const isSignedIn = auth?.isSignedIn ?? true;
+  const getToken = auth?.getToken;
+  const openSignIn = auth?.openSignIn;
   const [inputText, setInputText] = useState('');
   const [tasks, setTasks] = useState<BatchTaskItem[]>([]);
   const [isProcessingAll, setIsProcessingAll] = useState(false);
@@ -115,12 +128,17 @@ export const BatchCenter: React.FC = () => {
   };
 
   const downloadTaskMedia = async (task: BatchTaskItem) => {
+    if (isAuthConfigured && (!isLoaded || !isSignedIn)) {
+      openSignIn?.();
+      return;
+    }
     if (task.extractedUrl) {
       const downloadWindow = window.open('about:blank', '_blank');
       if (downloadWindow) downloadWindow.opener = null;
       try {
         const res = await triggerServerDownload(task.extractedUrl, {
           mediaToken: task.result?.media_token,
+          getToken: isAuthConfigured ? getToken : undefined,
         });
         if (downloadWindow) {
           downloadWindow.location.href = res.download_url;
@@ -327,3 +345,15 @@ export const BatchCenter: React.FC = () => {
     </div>
   );
 };
+
+function AuthenticatedBatchCenter() {
+  const auth = useAuth();
+  const clerk = useClerk();
+  return <BatchCenterBody auth={{ ...auth, openSignIn: clerk.openSignIn }} />;
+}
+
+export const BatchCenter: React.FC = () => (
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+    ? <AuthenticatedBatchCenter />
+    : <BatchCenterBody />
+);

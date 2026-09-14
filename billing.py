@@ -397,6 +397,9 @@ def capture_order(clerk_user_id: str, paypal_order_id: str) -> dict[str, Any]:
             raise RuntimeError('PayPal subscription has not been activated')
         if _paypal_plan_id() and str(payload.get('plan_id') or '') != _paypal_plan_id():
             raise RuntimeError('PayPal subscription plan could not be verified')
+        provider_user_id = payload.get('custom_id')
+        if str(provider_user_id or '') != clerk_user_id:
+            raise RuntimeError('PayPal subscription does not belong to this account')
         captured_at = _now()
         connection = _connect()
         try:
